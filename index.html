@@ -68,7 +68,7 @@ main{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:14px;padding:12p
 .card.tapped{transform:rotate(90deg);margin-inline:calc(var(--w)*.198)}
 .card .txt{position:absolute;inset:0;padding:6px;border:2px solid var(--line);border-radius:inherit;background:linear-gradient(160deg,#3a4a44,#202b27);font-size:calc(var(--w)*.11);line-height:1.15;overflow:hidden}
 .card .txt b{display:block;margin-bottom:3px}
-.card .back{position:absolute;inset:0;border-radius:inherit;border:3px solid #3b2c1b;background:repeating-linear-gradient(45deg,#4a3621 0 6px,#5b4329 6px 12px);display:grid;place-items:center;color:#e5cfa3;font-family:var(--f-display);font-size:calc(var(--w)*.12)}
+.card .back{position:absolute;inset:0;border-radius:inherit;border:3px solid rgba(0,0,0,.45);background-color:var(--sl,#7a5230);background-image:repeating-linear-gradient(45deg,rgba(255,255,255,.10) 0 6px,transparent 6px 12px),radial-gradient(circle at 50% 50%,rgba(255,255,255,.18),transparent 60%);display:grid;place-items:center;color:rgba(255,255,255,.85);font-family:var(--f-display);font-size:calc(var(--w)*.12);text-shadow:0 1px 2px rgba(0,0,0,.6)}
 .badge{position:absolute;top:4px;right:4px;background:var(--brass);color:var(--brass-ink);font-weight:700;border-radius:999px;padding:0 6px;font-size:13px;min-width:22px;text-align:center;font-variant-numeric:tabular-nums}
 .badge.neg{background:var(--red);color:#fff}
 .tokmark{position:absolute;bottom:4px;left:4px;background:rgba(0,0,0,.7);font-size:10px;padding:0 4px;border-radius:4px;letter-spacing:.08em}
@@ -149,6 +149,69 @@ main{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:14px;padding:12p
   .toast{top:auto;bottom:calc(80px + env(safe-area-inset-bottom, 0px))}
   .log{max-height:260px}
 }
+
+/* Grafik-Effekte */
+.fxlayer{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:66;overflow:visible}
+.fxarrow{filter:drop-shadow(0 2px 6px rgba(0,0,0,.6));transition:opacity .5s ease}
+.fxarrow.out{opacity:0}
+.floatnum{position:fixed;transform:translate(-50%,0);z-index:67;pointer-events:none;font-family:var(--f-display);font-size:30px;font-weight:700;text-shadow:0 2px 8px rgba(0,0,0,.7);animation:floatup 1.4s ease-out forwards}
+.floatnum.neg{color:var(--red)}
+.floatnum.pos{color:var(--green)}
+@keyframes floatup{0%{opacity:0;transform:translate(-50%,6px) scale(.8)}15%{opacity:1;transform:translate(-50%,-6px) scale(1.15)}100%{opacity:0;transform:translate(-50%,-56px) scale(1)}}
+.spotlight{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:44;pointer-events:none;display:flex;flex-direction:column;align-items:center;gap:10px;opacity:0}
+.spotlight img{width:min(250px,60vw);border-radius:14px;box-shadow:0 20px 60px rgba(0,0,0,.7),0 0 0 2px var(--brass)}
+.spotlight .spot-txt{width:min(250px,60vw);aspect-ratio:63/88;border-radius:14px;background:var(--panel);border:2px solid var(--brass);display:grid;place-items:center;font-family:var(--f-display);font-size:22px;padding:12px;text-align:center}
+.spotlight .spot-cap{background:var(--panel);border:1px solid var(--brass);border-radius:999px;padding:4px 14px;font-weight:700}
+.spotlight.in{animation:spotin .35s ease-out forwards}
+.spotlight.out{animation:spotout .4s ease-in forwards}
+@keyframes spotin{from{opacity:0;transform:translate(-50%,-46%) scale(.85)}to{opacity:1;transform:translate(-50%,-50%) scale(1)}}
+@keyframes spotout{from{opacity:1;transform:translate(-50%,-50%) scale(1)}to{opacity:0;transform:translate(-50%,-50%) scale(.6) translate(40vw,30vh)}}
+.dicefx{position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);z-index:68;pointer-events:none;display:flex;flex-direction:column;align-items:center;gap:8px}
+.dicefx .die{min-width:110px;height:110px;padding:0 18px;border-radius:22px;background:var(--ink);color:var(--felt);display:grid;place-items:center;font-family:var(--f-display);font-size:52px;font-weight:700;box-shadow:0 16px 40px rgba(0,0,0,.6)}
+.dicefx.rolling .die{animation:shake .14s linear infinite}
+.dicefx.done .die{background:var(--brass);color:var(--brass-ink);animation:pop .3s ease-out}
+.dicefx .dicecap{background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:3px 12px;font-size:14px}
+@keyframes shake{0%{transform:rotate(-8deg)}50%{transform:rotate(8deg)}100%{transform:rotate(-8deg)}}
+@keyframes pop{0%{transform:scale(1.35)}100%{transform:scale(1)}}
+@media (prefers-reduced-motion:reduce){.floatnum,.spotlight.in,.spotlight.out,.dicefx .die{animation:none!important}.spotlight.in{opacity:1}}
+/* Look */
+.avatar{width:38px;height:38px;border-radius:50%;object-fit:cover;border:2px solid var(--brass);flex:none}
+.avatar.big{width:64px;height:64px}
+.z-opp .avatar{width:32px;height:32px}
+.matpick{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px}
+.matbtn{display:flex;flex-direction:column;gap:6px;align-items:stretch;padding:6px}
+.matbtn.on,.sleevebtn.on{border-color:var(--brass);box-shadow:0 0 0 2px var(--brass)}
+.matswatch{height:54px;border-radius:6px;display:block}
+.sleevebtn{width:42px;height:58px;border-radius:6px;background-color:var(--sl);background-image:repeating-linear-gradient(45deg,rgba(255,255,255,.12) 0 5px,transparent 5px 10px);padding:0}
+.dialog h3{margin-top:4px}
+#tableArea.roundtable{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,2.1fr) minmax(0,1fr);grid-template-areas:"l t r" "l me r" "l hand r";gap:12px;align-items:start}
+#tableArea.roundtable #opps{display:contents}
+#tableArea.roundtable .pboard.mine{grid-area:me}
+#tableArea.roundtable .handwrap{grid-area:hand;margin-top:0}
+#tableArea.roundtable .z-opp{--w:50px}
+/* Auswertungen */
+.ms{width:16px;height:16px;vertical-align:-3px;margin-left:1px}
+.tabs button.on{border-color:var(--brass);background:var(--felt);color:var(--brass)}
+.statrow{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px}
+.statcard{background:var(--felt);border:1px solid var(--line);border-radius:8px;padding:8px 10px;display:flex;flex-direction:column}
+.statcard b{font-family:var(--f-display);font-size:24px;color:var(--brass)}
+.charts{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(300px,100%),1fr));gap:14px}
+figure{margin:0;min-width:0}
+figcaption{font-size:13px;color:var(--muted);margin-bottom:4px}
+.chart{width:100%;height:auto;display:block}
+.chart .grid{stroke:var(--line);stroke-width:1}
+.chart .lab{fill:var(--muted);font-size:11px;font-family:var(--f-body)}
+.chart .val{fill:var(--ink);font-size:11px;font-weight:700;font-family:var(--f-body)}
+.legend{display:inline-flex;gap:6px;align-items:center;font-size:13px}
+.legend i{width:14px;height:4px;border-radius:2px;display:inline-block}
+.tablewrap{overflow-x:auto}
+table.stats{border-collapse:collapse;width:100%;font-size:14px}
+table.stats th,table.stats td{text-align:left;padding:5px 8px;border-bottom:1px solid var(--line)}
+table.stats th{color:var(--muted);font-weight:500;font-size:12px;text-transform:uppercase;letter-spacing:.06em}
+.ratebar{height:8px;border-radius:4px;background:var(--felt);min-width:80px;overflow:hidden}
+.ratebar i{display:block;height:100%;background:var(--green)}
+.win{color:var(--green);font-weight:700}
+.loss{color:var(--red);font-weight:700}
 .update-bar{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom, 0px));z-index:80;display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:center;background:var(--panel);border:1px solid var(--brass);border-radius:10px;padding:10px 14px;box-shadow:0 10px 30px rgba(0,0,0,.5);max-width:calc(100% - 32px)}
 .mybar{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center}
 .zones{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;margin-top:8px}
@@ -205,6 +268,8 @@ textarea{width:100%;min-height:240px;resize:vertical;font-size:14px}
     <button id="bCoin">Münze</button>
     <button id="bToken">Token</button>
     <button id="bBot">KI-Gegner</button>
+    <button id="bLook">Aussehen</button>
+    <button id="bStats">Statistik</button>
     <button id="bLobby">Tisch</button>
   </div>
   <div class="turnbar" id="turnBar" aria-live="polite">
@@ -216,10 +281,11 @@ textarea{width:100%;min-height:240px;resize:vertical;font-size:14px}
 </header>
 
 <main>
-  <section style="min-width:0">
+  <section style="min-width:0" id="tableArea">
     <div class="opps" id="opps"></div>
     <div class="pboard mine">
       <div class="mybar">
+        <img class="avatar" id="myAvatar" alt="" hidden>
         <span class="pname" id="myName"></span>
         <div class="lifebox">
           <button class="small" data-life="-5">−5</button>
@@ -302,6 +368,9 @@ textarea{width:100%;min-height:240px;resize:vertical;font-size:14px}
   </div>
 </div>
 
+<svg class="fxlayer" id="fxLayer" aria-hidden="true"></svg>
+<div class="spotlight" id="spotlight" hidden aria-hidden="true"></div>
+<div class="dicefx" id="diceFx" hidden role="status"></div>
 <div class="stackbox" id="stackBox" hidden aria-live="polite"></div>
 <div class="toast" id="toast" hidden role="status"></div>
 <div class="update-bar" id="updBar" hidden role="status">
@@ -415,6 +484,7 @@ function startGame(){
   const lib = [], cz = [];
   S.deck.forEach(t => { if(t.sb) return; (t.cmdr ? cz : lib).push(newCard(t)); });
   Object.assign(S, {library:shuffle(lib), hand:[], bf:[], gy:[], ex:[], cz, st:[], poison:0, cmd:{}, turn:0, life: cz.length ? 40 : 20});
+  lifeLogReset();
   const sbN = S.deck.filter(t => t.sb).length;
   act(`startet ein neues Spiel (${lib.length} Karten${sbN ? `, Sideboard ${sbN}` : ""}${cz.length ? ", Commander: " + cz.map(c=>c.n).join(" & ") : ""})`);
   draw(7);
@@ -491,10 +561,12 @@ function cloneToken(u){
 function cardEl(c, mine, zone){
   const d = document.createElement("div");
   d.className = "card" + (c.tap ? " tapped" : "");
+  if(c.u && zone !== "stack" && zone !== "modal") d.dataset.u = c.u;
+  const sl = mine ? LOOK.sleeve : (okColor(c.sl) ? c.sl : "#7a5230");
   d.tabIndex = 0;
   const src = c.flip && c.back ? c.back : c.img;
-  if(c.fd && !mine){ d.innerHTML = `<div class="back">verdeckt</div>`; }
-  else if(c.fd && mine){ d.innerHTML = `<div class="back">verdeckt</div><span class="fdmark">${esc(c.n)}</span>`; }
+  if(c.fd && !mine){ d.innerHTML = `<div class="back" style="--sl:${sl}">verdeckt</div>`; }
+  else if(c.fd && mine){ d.innerHTML = `<div class="back" style="--sl:${sl}">verdeckt</div><span class="fdmark">${esc(c.n)}</span>`; }
   else if(okImg(src)){ const im = document.createElement("img"); im.src = src; im.alt = c.n || ""; im.loading = "lazy"; d.append(im); }
   else { d.innerHTML = `<div class="txt"><b>${esc(c.n)}</b>${esc(c.type)}</div>`; }
   if(c.c){ const b = document.createElement("span"); b.className = "badge" + (c.c < 0 ? " neg" : ""); b.textContent = (c.c > 0 ? "+" : "") + c.c; d.append(b); }
@@ -561,7 +633,7 @@ function makeDraggable(el, c, zone){
       window.removeEventListener("pointercancel", end);
       if(!ghost) return;
       ghost.remove(); el.style.opacity = ""; markDrop(null);
-      el._dragged = true; setTimeout(() => { el._dragged = false; }, 0);
+      el._dragged = true; setTimeout(() => { el._dragged = false; }, 0); skipFlip = c.u;
       if(ev.type === "pointercancel") return;
       const t = dropTarget(ev.clientX, ev.clientY); if(!t) return;
       const z = t.dataset.drop;
@@ -645,8 +717,9 @@ function renderOpps(){
     const p = document.createElement("div"); p.className = "pboard z-opp" + (o.off ? " off" : "");
     if(!o.off && id !== "bot"){ p.dataset.drop = "opp"; p.dataset.pid = id; }
     if(id === TURN.active) p.classList.add("active-turn");
+    p.dataset.player = id;
     p.innerHTML = `<div class="phead">
-      <span class="pname">${esc(o.name)}${o.off ? " (weg)" : ""}</span>${id === TURN.active ? '<span class="turnflag">am Zug</span>' : ""}
+      ${avatarEl(o.avatar, o.name)}<span class="pname">${esc(o.name)}${o.off ? " (weg)" : ""}</span>${id === TURN.active ? '<span class="turnflag">am Zug</span>' : ""}
       <span class="lifebox-opp row" style="gap:8px"><span class="life num">${Number(o.life)||0}</span></span>
       ${o.poison ? `<span class="stat poison">Gift <b class="num">${Number(o.poison)}</b></span>` : ""}
       <span class="stat">Hand <b class="num">${Number(o.handN)||0}</b></span>
@@ -678,7 +751,8 @@ function renderOpps(){
     const all = (Array.isArray(o.bf) ? [...o.bf] : []).sort((a, b) => (Math.round((a.y||0)/60) - Math.round((b.y||0)/60)) || ((a.x||0) - (b.x||0)));
     [["Spielfeld", all.filter(c=>!isLand(c))], ["Länder", all.filter(isLand)]].forEach(([lab, cards]) => {
       const l = document.createElement("div"); l.className = "lane";
-      cards.forEach(c => { const el = cardEl(c, false, "bf"); bindCard(el, () => bigView(c), e => openMenu(e, oppCardMenu(id, c))); l.append(el); });
+      if(o.mat && MATS[o.mat]) l.style.background = matBg(o.mat);
+      cards.forEach(c => { const el = cardEl(okColor(o.sleeve) ? {...c, sl:o.sleeve} : c, false, "bf"); bindCard(el, () => bigView(c), e => openMenu(e, oppCardMenu(id, c))); l.append(el); });
       if(!cards.length){ l.innerHTML = `<span class="muted" style="font-size:12px;padding:4px">${lab}: leer</span>`; }
       p.append(l);
     });
@@ -686,7 +760,14 @@ function renderOpps(){
   });
 }
 
-function renderAll(){ renderMine(); renderOpps(); renderTurn(); renderStack(); if(modalState) renderModal(); }
+function renderAll(){
+  const before = snapRects();
+  renderMine(); renderOpps(); renderTurn(); renderStack();
+  const mb = document.querySelector(".pboard.mine"); if(mb) mb.dataset.player = me.id;
+  applyLook(); applyTableLayout();
+  animateCards(before); lifeFloats(); spotlightStack();
+  if(modalState) renderModal();
+}
 
 /* ---------- Kontextmenü ---------- */
 function cardMenu(c, zone){
@@ -1075,7 +1156,9 @@ function recordGame(win){
   S.match = S.match || {w:0, l:0};
   win ? S.match.w++ : S.match.l++;
   act(`${win ? "gewinnt" : "verliert"} Spiel ${S.match.w + S.match.l}. Match-Stand ${S.match.w}–${S.match.l}`);
+  historyAdd(win);
   commit();
+  openStats("life");
 }
 
 /* Token anhand der Scryfall-ID erzeugen (aus «all_parts» der Karte) */
@@ -1157,7 +1240,8 @@ function pub(){
   };
   const m = S.match || {w:0, l:0};
   return {name: me.name, life:S.life, poison:S.poison, turn:S.turn, handN:S.hand.length, libN:S.library.length,
-    bf:S.bf.map(strip), gy:S.gy.map(strip), ex:S.ex.map(strip), cz:S.cz.map(strip), match: (m.w || m.l) ? `${m.w}–${m.l}` : ""};
+    bf:S.bf.map(strip), gy:S.gy.map(strip), ex:S.ex.map(strip), cz:S.cz.map(strip), match: (m.w || m.l) ? `${m.w}–${m.l}` : "",
+    mat: LOOK.mat, sleeve: okColor(LOOK.sleeve) ? LOOK.sleeve : "", avatar: okImg(LOOK.avatar) ? LOOK.avatar : "", deckName: String(S.deckName || "").slice(0, 40)};
 }
 let pushTimer = null;
 function schedulePush(){ clearTimeout(pushTimer); pushTimer = setTimeout(pushState, 120); }
@@ -1302,6 +1386,7 @@ function hostRecv(m, c){
     if(fresh) relayLog({from:m.pub.name, text:"hat sich an den Tisch gesetzt", sys:true});
     broadcastAll(); updateCount();
   } else if(m.t === "log"){ relayLog(m); }
+  else if(m.t === "fx" && m.fx && typeof m.fx === "object"){ relayFx(m, c); }
   else if(!c._pid) return;
   else if(ROUTED.includes(m.t) && typeof m.to === "string"){ m.from = c._pid; m.by = (net.players[c._pid] || {}).name || "Gegner"; route(m); }
   else if(HOSTED.includes(m.t)){ m.from = c._pid; m.by = (net.players[c._pid] || {}).name || "Gegner"; hostHandle(m); }
@@ -1328,6 +1413,7 @@ function connectToHost(){
     if(!m || typeof m !== "object") return;
     if(m.t === "all") applyAll(m);
     else if(m.t === "log") addLog({from:String(m.from||""), text:String(m.text||""), sys:!!m.sys});
+    else if(m.t === "fx") drawFx(m.fx);
     else if(ROUTED.includes(m.t) && m.to === me.id) deliver(m);
   });
   c.on("close", () => { if(net.role !== "client") return; setStatus("Verbindung zum Tisch unterbrochen, verbinde neu …"); retryConnect(3000); scheduleTakeover(); });
@@ -1496,12 +1582,12 @@ function renderStack(){
   h.innerHTML = `<b class="stack-title">Stapel (${STACK.length})</b><span class="stat">${mustAct ? "Du bist gefragt" : "Warte auf: " + esc(waiting.map(id => id === "bot" ? "KI" : displayName(id)).join(", "))}</span>`;
   box.append(h);
   [...STACK].reverse().forEach((it, i) => {
-    const r = document.createElement("div"); r.className = "stack-item" + (i === 0 ? " top" : "");
+    const r = document.createElement("div"); r.className = "stack-item" + (i === 0 ? " top" : ""); r.dataset.sid = it.id;
     const el = cardEl({...it, u: it.u || it.id}, false, "stack"); el.style.setProperty("--w", "54px");
     bindCard(el, () => bigView(it), () => bigView(it));
     const t = document.createElement("div"); t.style.minWidth = "0";
     const tgt = it.target && STACK.find(x => x.id === it.target);
-    t.innerHTML = `<b>${esc(it.n)}</b><div class="stat">${esc(it.by)}${tgt ? " · gegen " + esc(tgt.n) : ""}${it.countered ? " · <span class=\"err\">gekontert</span>" : ""}</div>`;
+    t.innerHTML = `<b>${esc(it.n)}</b> ${manaHtml(it.mc)}<div class="stat">${esc(it.by)}${tgt ? " · gegen " + esc(tgt.n) : ""}${it.countered ? " · <span class=\"err\">gekontert</span>" : ""}</div>`;
     r.append(el, t); box.append(r);
   });
   const row = document.createElement("div"); row.className = "row";
@@ -1693,6 +1779,7 @@ function applyRemovalToMe(card, rem){
   if(!t) return false;
   const zone = rem.kind === "exile" ? "ex" : rem.kind === "bounce" ? "hand" : "gy";
   botLog(`${card.n} trifft ${t.fd ? "eine verdeckte Karte" : t.n}`);
+  fxSend({kind:"arrow", style:"hit", from:{pid:"bot"}, to:{u:t.u}});
   moveCard(t.u, zone);
   return true;
 }
@@ -1891,6 +1978,10 @@ function applyEffects(src, effects){
   (Array.isArray(effects) ? effects : []).forEach(e => {
     const amt = Math.max(0, Math.min(99, parseInt(e.amount, 10) || (["draw","create_token","mill_self"].includes(e.kind) ? 1 : 0)));
     const t = e.target === "opponent" || e.target === "self" ? null : findAny(e.target);
+    if(["damage","destroy","exile","bounce","tap","opponent_loses_life"].includes(e.kind)){
+      if(e.target === "opponent" || e.kind === "opponent_loses_life") fxSend({kind:"arrow", style:"hit", from:{pid:"bot"}, to:{pid:me.id}});
+      else if(t && t.who === "me" && t.zone === "bf") fxSend({kind:"arrow", style:"hit", from:{pid:"bot"}, to:{u:t.c.u}});
+    }
     switch(e.kind){
       case "damage":
         if(e.target === "opponent"){ S.life -= amt; botLog(`${src.n}: ${amt} Schaden an dich (Leben ${S.life})`); }
@@ -1975,6 +2066,7 @@ async function botTurn(){
     if(attackers.length){
       attackers.forEach(c => { if(!kwHas(c, "vigilance")) c.tap = true; });
       botChanged();
+      attackers.forEach(c => fxSend({kind:"arrow", style:"attack", from:{u:c.u}, to:{pid:me.id}}));
       const blocks = await openBlockDialog(attackers);
       resolveCombat(attackers, blocks, true);
     }
@@ -2124,8 +2216,10 @@ function openAttackDialog(preTarget){
     commit();
     for(const [tid, group] of Object.entries(groups)){
       act(`greift ${tid === "bot" ? "die KI" : displayName(tid)} an mit ${group.map(c => c.n).join(", ")}`);
+      group.forEach(c => fxSend({kind:"arrow", style:"attack", from:{u:c.u}, to:{pid:tid}}));
       if(tid === "bot" && net.role !== "client"){
         const blocks = await botDefend(group, false);
+        blocks.forEach((b, aU) => fxSend({kind:"arrow", style:"block", from:{u:b.u}, to:{u:aU}}));
         resolveCombat(group.filter(a => S.bf.includes(a)), blocks, false);
       } else {
         const cid = uid();
@@ -2140,6 +2234,7 @@ async function receiveAttack(m){
   if(!attackers.length) return;
   const blocks = await blockDialog(attackers, `${String(m.by || "Ein Gegner").slice(0, 24)} greift dich an`, null);
   const list = [...blocks.entries()].map(([a, b]) => ({a, b: combatInfo(b)}));
+  list.forEach(x => fxSend({kind:"arrow", style:"block", from:{u:x.b.u}, to:{u:x.a}}));
   if(list.length) act(`blockt: ${list.map(x => `${x.b.n} gegen ${(attackers.find(a => a.u === x.a) || {}).n}`).join(", ")}`);
   else act("blockt nicht");
   sendTo(m.from, {t:"blocks", cid:m.cid, blocks:list});
@@ -2209,6 +2304,7 @@ async function botReceiveAttack(m){
   const attackers = (Array.isArray(m.attackers) ? m.attackers : []).slice(0, 40).map(cleanInfo).filter(Boolean);
   const blocks = await botDefend(attackers, true, m.from);
   const list = [...blocks.entries()].map(([a, b]) => ({a, b: combatInfo(b)}));
+  list.forEach(x => fxSend({kind:"arrow", style:"block", from:{u:x.b.u}, to:{u:x.a}}));
   route({t:"blocks", to:m.from, from:"bot", by:"KI", cid:m.cid, blocks:list});
 }
 function botReceiveCombat(m){
@@ -2371,6 +2467,8 @@ injectBot();
 let LAST_SRC = "";
 function lastSource(){ return S.bf.some(c => c.n === LAST_SRC) ? LAST_SRC : ""; }
 function hitOpponent(pid, hdef){
+  const srcCard = hdef.src && S.bf.find(c => c.n === hdef.src);
+  fxSend({kind:"arrow", style:"hit", from: srcCard ? {u:srcCard.u} : {pid:me.id}, to: hdef.card ? {u:hdef.card} : {pid}});
   sendTo(pid, {t:"hit", kind:hdef.kind || "damage", amount: Math.max(0, Math.min(99, parseInt(hdef.amount, 10) || 0)), card: hdef.card || null, src: String(hdef.src || "").slice(0, 80)});
 }
 function hitText(m, what){
@@ -2512,7 +2610,7 @@ function onMyTurnStart(){
   S.turn = (S.turn || 0) + 1;
   S.bf.forEach(c => c.tap = false);
   const skipDraw = S.turn === 1 && TURN.starter === me.id;
-  remindTriggers("upkeep", true);
+  remindTriggers("upkeep", true); sfx("turn");
   if(!S.deck.length || !S.library.length){ act(`beginnt den Zug (Runde ${TURN.n}) und enttappt alles`); commit(); return; }
   act(`beginnt den Zug (Runde ${TURN.n}) und enttappt alles${skipDraw ? " (im ersten Zug wird nicht gezogen)" : ""}`);
   if(skipDraw) commit(); else draw(1);
@@ -2567,10 +2665,410 @@ function renderTurn(){
   document.title = (mine ? "▶ Dein Zug · " : (STACK.length && STACK[STACK.length - 1] && !STACK[STACK.length - 1].passes.includes(me.id) ? "● Stapel · " : "")) + "Küchentisch MTG";
 }
 
+/* ---------- Grafik: Animationen, Pfeile, Effekte ---------- */
+const SVGNS = "http://www.w3.org/2000/svg";
+const cssEsc = s => (window.CSS && CSS.escape) ? CSS.escape(String(s)) : String(s).replace(/[^a-zA-Z0-9_-]/g, ch => "\\" + ch);
+const reduceMotion = () => !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+const CARD_SEL = "#myField .card[data-u], #myHand .card[data-u], #opps .card[data-u]";
+let fxReady = false, skipFlip = null;
+const seenU = new Set(), lastLife = {}, seenStack = new Set();
+function snapRects(){ const m = new Map(); document.querySelectorAll(CARD_SEL).forEach(e => m.set(e.dataset.u, e.getBoundingClientRect())); return m; }
+/* Karten gleiten an ihren neuen Platz (z. B. Hand → Spielfeld), neue Karten erscheinen mit kurzem Aufploppen */
+function animateCards(before){
+  const els = document.querySelectorAll(CARD_SEL);
+  if(!fxReady || reduceMotion() || !Element.prototype.animate){ els.forEach(e => seenU.add(e.dataset.u)); fxReady = true; return; }
+  let played = false;
+  els.forEach(e => {
+    const u = e.dataset.u, r = e.getBoundingClientRect();
+    const rot = e.classList.contains("tapped") ? " rotate(90deg)" : "";
+    const old = before.get(u);
+    if(old && u !== skipFlip){
+      const dx = old.left - r.left, dy = old.top - r.top;
+      if(Math.abs(dx) + Math.abs(dy) > 6){
+        e.animate([{transform:`translate(${dx}px,${dy}px)${rot}`}, {transform: rot || "none"}], {duration:420, easing:"cubic-bezier(.2,.8,.2,1)"});
+        if(e.closest("#myField") && !before.has(u + "@field")) played = true;
+      }
+    } else if(!seenU.has(u)){
+      e.animate([{opacity:0, transform:`translateY(-14px) scale(.7)${rot}`}, {opacity:1, transform: rot || "none"}], {duration:340, easing:"ease-out"});
+    }
+    seenU.add(u);
+  });
+  if(played) sfx("play");
+  skipFlip = null;
+}
+/* Schwebende Zahlen bei Lebensänderungen, für alle Spieler */
+function lifeFloats(){
+  const cur = {[me.id]: {life:S.life, el:$("#myLife"), name: me.name || "Du"}};
+  Object.entries(others).forEach(([id, o]) => cur[id] = {life: Number(o.life) || 0, el: playerLifeEl(id), name: o.name});
+  for(const [id, v] of Object.entries(cur)){
+    if(id in lastLife && lastLife[id] !== v.life){
+      if(v.el) floatNum(v.el, v.life - lastLife[id]);
+      lifeLogAdd(id, v.name, v.life);
+    } else if(!(id in lastLife)) lifeLogAdd(id, v.name, v.life);
+    lastLife[id] = v.life;
+  }
+}
+function playerLifeEl(id){
+  if(id === me.id) return $("#myLife");
+  return document.querySelector(`.pboard[data-player="${cssEsc(id)}"] .life`);
+}
+function floatNum(el, d){
+  const r = el.getBoundingClientRect(); if(!r.width) return;
+  const f = document.createElement("div");
+  f.className = "floatnum " + (d < 0 ? "neg" : "pos");
+  f.textContent = (d > 0 ? "+" : "") + d;
+  f.style.left = (r.left + r.width / 2) + "px"; f.style.top = (r.top - 4) + "px";
+  document.body.append(f);
+  if(d < 0) sfx("hit");
+  setTimeout(() => f.remove(), 1500);
+}
+/* Effekte an alle schicken: Pfeile und Würfel */
+function fxSend(fx){
+  const m = {t:"fx", fx};
+  if(net.role === "host") relayFx(m);
+  else if(net.role === "client" && net.conn && net.conn.open){ net.conn.send(m); drawFx(fx); }
+  else drawFx(fx);
+}
+function relayFx(m, fromConn){
+  const msg = {t:"fx", fx:m.fx};
+  net.conns.forEach(c => { if(c.open && c !== fromConn) c.send(msg); });
+  if(!fromConn || true) drawFx(m.fx);
+}
+function anchorEl(a){
+  if(!a || typeof a !== "object") return null;
+  if(typeof a.sid === "string") return document.querySelector(`#stackBox [data-sid="${cssEsc(a.sid)}"]`);
+  if(typeof a.u === "string") return document.querySelector(`#myField .card[data-u="${cssEsc(a.u)}"], #opps .card[data-u="${cssEsc(a.u)}"]`);
+  if(typeof a.pid === "string") return playerLifeEl(a.pid) || document.querySelector(`.pboard[data-player="${cssEsc(a.pid)}"]`);
+  return null;
+}
+function drawFx(fx){
+  if(!fx || typeof fx !== "object") return;
+  if(fx.kind === "arrow") requestAnimationFrame(() => drawArrow(fx));
+  else if(fx.kind === "dice") showDice(fx);
+}
+const ARROW_COLORS = {attack:"var(--brass)", block:"var(--blue)", hit:"var(--red)", counter:"var(--blue)"};
+function drawArrow(fx){
+  const a = anchorEl(fx.from), b = anchorEl(fx.to);
+  if(!a || !b || a === b) return;
+  const ra = a.getBoundingClientRect(), rb = b.getBoundingClientRect();
+  if(!ra.width || !rb.width) return;
+  const x1 = ra.left + ra.width / 2, y1 = ra.top + ra.height / 2, x2 = rb.left + rb.width / 2, y2 = rb.top + rb.height / 2;
+  const dist = Math.hypot(x2 - x1, y2 - y1); if(dist < 10) return;
+  const nx = -(y2 - y1) / dist, ny = (x2 - x1) / dist, bend = Math.min(110, dist * 0.22);
+  const mx = (x1 + x2) / 2 + nx * bend, my = (y1 + y2) / 2 + ny * bend;
+  const col = ARROW_COLORS[fx.style] || ARROW_COLORS.attack;
+  const svg = $("#fxLayer");
+  const g = document.createElementNS(SVGNS, "g"); g.setAttribute("class", "fxarrow");
+  const path = document.createElementNS(SVGNS, "path");
+  path.setAttribute("d", `M${x1},${y1} Q${mx},${my} ${x2},${y2}`);
+  path.style.stroke = col; path.setAttribute("fill", "none"); path.setAttribute("stroke-width", "5"); path.setAttribute("stroke-linecap", "round");
+  // Pfeilspitze in Richtung der Kurve am Ende
+  const tx = x2 - mx, ty = y2 - my, tl = Math.hypot(tx, ty) || 1, ux = tx / tl, uy = ty / tl, s = 16;
+  const head = document.createElementNS(SVGNS, "polygon");
+  head.setAttribute("points", `${x2},${y2} ${x2 - ux * s - uy * s * .6},${y2 - uy * s + ux * s * .6} ${x2 - ux * s + uy * s * .6},${y2 - uy * s - ux * s * .6}`);
+  head.style.fill = col;
+  const dot = document.createElementNS(SVGNS, "circle"); dot.setAttribute("cx", x1); dot.setAttribute("cy", y1); dot.setAttribute("r", "7"); dot.style.fill = col;
+  g.append(path, head, dot);
+  svg.append(g);
+  if(!reduceMotion() && path.getTotalLength){
+    const L = path.getTotalLength();
+    path.style.strokeDasharray = L; path.style.strokeDashoffset = L;
+    path.animate([{strokeDashoffset:L}, {strokeDashoffset:0}], {duration:420, easing:"ease-out", fill:"forwards"});
+    head.animate([{opacity:0}, {opacity:0, offset:.7}, {opacity:1}], {duration:420, fill:"forwards"});
+  }
+  setTimeout(() => { g.classList.add("out"); setTimeout(() => g.remove(), 600); }, 2600);
+}
+/* Würfel und Münze: kurze Animation für alle */
+function showDice(fx){
+  const box = $("#diceFx"); if(!box) return;
+  const sides = Math.max(2, Math.min(100, parseInt(fx.sides, 10) || 6));
+  const res = String(fx.result).slice(0, 12);
+  const label = sides === 2 ? "Münze" : `W${sides}`;
+  box.hidden = false; box.className = "dicefx rolling";
+  box.innerHTML = `<div class="die">${sides === 2 ? "?" : "1"}</div><div class="dicecap">${esc(String(fx.by || "").slice(0, 24))} · ${label}</div>`;
+  const die = box.querySelector(".die");
+  sfx("dice");
+  let k = 0;
+  const spin = setInterval(() => {
+    k++; die.textContent = sides === 2 ? (k % 2 ? "Kopf" : "Zahl") : 1 + Math.floor(Math.random() * sides);
+    if(k >= (reduceMotion() ? 1 : 9)){ clearInterval(spin); die.textContent = res; box.className = "dicefx done"; }
+  }, 70);
+  clearTimeout(box._t); box._t = setTimeout(() => { box.hidden = true; }, 2300);
+}
+function rollDie(sides){
+  const result = sides === 2 ? (Math.random() < .5 ? "Kopf" : "Zahl") : 1 + Math.floor(Math.random() * sides);
+  fxSend({kind:"dice", sides, result, by: me.name || "Jemand"});
+  act(sides === 2 ? `wirft eine Münze: ${result}` : `würfelt W${sides}: ${result}`);
+}
+/* Neuer Zauber auf dem Stapel: kurz gross in der Tischmitte */
+function spotlightStack(){
+  STACK.forEach(it => {
+    if(seenStack.has(it.id)) return;
+    seenStack.add(it.id);
+    if(!fxReady) return;
+    const box = $("#spotlight"); if(!box) return;
+    const tgt = it.target && STACK.find(x => x.id === it.target);
+    box.innerHTML = "";
+    if(okImg(it.img)){ const im = document.createElement("img"); im.src = it.img; im.alt = it.n; box.append(im); }
+    else box.append(Object.assign(document.createElement("div"), {className:"spot-txt", textContent: it.n}));
+    box.append(Object.assign(document.createElement("div"), {className:"spot-cap", textContent: `${it.by} wirkt ${it.n}${tgt ? " gegen " + tgt.n : ""}`}));
+    box.hidden = false; box.classList.remove("out"); void box.offsetWidth; box.classList.add("in");
+    clearTimeout(box._t); box._t = setTimeout(() => { box.classList.add("out"); setTimeout(() => { box.hidden = true; box.classList.remove("in", "out"); }, 450); }, 1700);
+    if(it.target) setTimeout(() => drawArrow({kind:"arrow", style:"counter", from:{sid:it.id}, to:{sid:it.target}}), 60);
+  });
+}
+/* Geräusche (optional, in «Aussehen» einschaltbar) */
+let audioCtx = null;
+function sfx(kind){
+  if(!LOOK.sound) return;
+  try{
+    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    const t = audioCtx.currentTime;
+    const tone = (f, d, type = "sine", v = .08, at = 0) => {
+      const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+      o.type = type; o.frequency.setValueAtTime(f, t + at);
+      g.gain.setValueAtTime(v, t + at); g.gain.exponentialRampToValueAtTime(.0001, t + at + d);
+      o.connect(g).connect(audioCtx.destination); o.start(t + at); o.stop(t + at + d);
+    };
+    if(kind === "turn"){ tone(523, .18); tone(784, .25, "sine", .07, .12); }
+    else if(kind === "dice"){ for(let i = 0; i < 6; i++) tone(180 + Math.random() * 220, .05, "square", .03, i * .06); }
+    else if(kind === "play"){ tone(330, .12, "triangle", .06); }
+    else if(kind === "hit"){ tone(140, .2, "sawtooth", .05); }
+    else if(kind === "draw"){ tone(660, .07, "triangle", .04); }
+  }catch(e){}
+}
+
+/* ---------- Eigener Look: Spielmatte, Sleeves, Spielerbild, Rundtisch ---------- */
+const MATS = {
+  filz:  {name:"Filz grün", bg:"radial-gradient(120% 90% at 50% 0%, #2b3d36 0%, #1a2622 70%)"},
+  holz:  {name:"Holz", bg:"repeating-linear-gradient(92deg, #4a3322 0 14px, #523928 14px 22px, #45301f 22px 37px), linear-gradient(#4a3322, #3a281a)"},
+  stein: {name:"Stein", bg:"radial-gradient(circle at 20% 30%, rgba(255,255,255,.05) 0 2px, transparent 3px) 0 0/34px 34px, radial-gradient(circle at 70% 60%, rgba(0,0,0,.18) 0 3px, transparent 4px) 0 0/46px 46px, linear-gradient(160deg, #4a4d52, #33363b)"},
+  nacht: {name:"Sternennacht", bg:"radial-gradient(circle at 15% 20%, rgba(255,255,255,.5) 0 1px, transparent 2px) 0 0/90px 90px, radial-gradient(circle at 60% 70%, rgba(255,255,255,.35) 0 1px, transparent 2px) 0 0/130px 130px, linear-gradient(180deg, #141a33, #0d1020)"},
+  samt:  {name:"Roter Samt", bg:"radial-gradient(130% 100% at 50% 10%, #6a2230 0%, #3a1119 75%)"},
+  blau:  {name:"Ozean", bg:"radial-gradient(120% 90% at 50% 0%, #1f4a5e 0%, #12293a 75%)"}
+};
+const SLEEVES = ["#7a5230", "#2f5d8a", "#8a2f3c", "#2f7a52", "#5b3f8a", "#b8892f", "#2b2b2b", "#d9d4c5"];
+let LOOK = Object.assign({mat:"filz", sleeve:"#7a5230", avatar:"", avatarName:"", sound:false, table:"auto"}, LS.get("kt-look", {}));
+function saveLook(){ LS.set("kt-look", LOOK); }
+const okColor = c => typeof c === "string" && /^#[0-9a-f]{6}$/i.test(c);
+const matBg = key => (MATS[key] || MATS.filz).bg;
+function applyLook(){
+  const f = $("#myField"); if(f) f.style.background = matBg(LOOK.mat);
+  const av = $("#myAvatar");
+  if(av){ if(okImg(LOOK.avatar)){ av.src = LOOK.avatar; av.alt = LOOK.avatarName || "Spielerbild"; av.hidden = false; } else av.hidden = true; }
+}
+function avatarEl(url, name){
+  if(!okImg(url)) return "";
+  return `<img class="avatar" src="${esc(url)}" alt="${esc(name || "")}">`;
+}
+/* Rundtisch: bei drei Gegnern sitzen sie links, gegenüber und rechts */
+function applyTableLayout(){
+  const area = $("#tableArea"); if(!area) return;
+  const opps = order.filter(id => id !== me.id && others[id]);
+  const want = LOOK.table === "rund" || (LOOK.table === "auto" && opps.length >= 3 && window.innerWidth >= 1280);
+  area.classList.toggle("roundtable", want && opps.length >= 2 && opps.length <= 3 && window.innerWidth > 900);
+  if(!area.classList.contains("roundtable")){ document.querySelectorAll("#opps .pboard").forEach(p => p.style.gridArea = ""); return; }
+  // Sitzordnung ab mir: der Nächste sitzt links, dann gegenüber, dann rechts
+  const ids = order.filter(id => id === me.id || others[id]);
+  const i = ids.indexOf(me.id);
+  const after = i < 0 ? opps : [...ids.slice(i + 1), ...ids.slice(0, i)].filter(id => id !== me.id);
+  const seats = after.length === 2 ? ["l", "r"] : ["l", "t", "r", "t2", "t3"];
+  after.forEach((id, k) => { const p = document.querySelector(`#opps .pboard[data-player="${cssEsc(id)}"]`); if(p) p.style.gridArea = seats[k] || "t"; });
+}
+function openLookDialog(){
+  modalState = {kind:"ask"}; $("#modal").hidden = false;
+  const box = $("#modalBox"); box.innerHTML = "";
+  box.append(head("Aussehen"));
+  box.insertAdjacentHTML("beforeend", `
+    <h3>Spielmatte</h3>
+    <div class="matpick" id="matPick"></div>
+    <h3>Sleeves (Rückseite deiner verdeckten Karten)</h3>
+    <div class="row" id="sleevePick"></div>
+    <h3>Spielerbild</h3>
+    <p class="muted" style="margin:0">Das Artwork einer Karte erscheint neben deinem Namen, auch bei deinen Mitspielern.</p>
+    <div class="row">
+      <img class="avatar big" id="lookAv" alt="" hidden>
+      <input id="avName" placeholder="Kartenname, z. B. Ragavan, Nimble Pilferer" style="flex:1;min-width:200px" value="${esc(LOOK.avatarName)}">
+      <button id="avSet">Übernehmen</button>
+      <button id="avCmd" class="small">Mein Commander</button>
+      <button id="avClear" class="small">Entfernen</button>
+    </div>
+    <div class="stat" id="avMsg"></div>
+    <h3>Tisch</h3>
+    <label class="stat">Anordnung bei drei Gegnern <select id="tablePick">
+      <option value="auto">Automatisch (Rundtisch auf breiten Bildschirmen)</option>
+      <option value="rund">Immer Rundtisch</option>
+      <option value="liste">Immer untereinander</option>
+    </select></label>
+    <label class="row stat"><input type="checkbox" id="soundPick"> Geräusche (Zugbeginn, Würfel, Ausspielen, Schaden)</label>`);
+  const mp = $("#matPick");
+  Object.entries(MATS).forEach(([k, m]) => {
+    const b = document.createElement("button"); b.className = "matbtn" + (LOOK.mat === k ? " on" : "");
+    b.innerHTML = `<span class="matswatch" style="background:${m.bg}"></span><span>${esc(m.name)}</span>`;
+    b.onclick = () => { LOOK.mat = k; saveLook(); applyLook(); schedulePush(); mp.querySelectorAll(".matbtn").forEach(x => x.classList.toggle("on", x === b)); };
+    mp.append(b);
+  });
+  const sp = $("#sleevePick");
+  SLEEVES.forEach(c => {
+    const b = document.createElement("button"); b.className = "sleevebtn" + (LOOK.sleeve === c ? " on" : ""); b.style.setProperty("--sl", c); b.setAttribute("aria-label", "Sleeve-Farbe " + c);
+    b.onclick = () => { LOOK.sleeve = c; saveLook(); schedulePush(); renderAll(); sp.querySelectorAll(".sleevebtn").forEach(x => x.classList.toggle("on", x === b)); };
+    sp.append(b);
+  });
+  const showAv = () => { const im = $("#lookAv"); if(okImg(LOOK.avatar)){ im.src = LOOK.avatar; im.hidden = false; } else im.hidden = true; };
+  showAv();
+  const setAv = async name => {
+    if(!name) return;
+    $("#avMsg").textContent = "Suche …";
+    try{
+      const r = await fetch(`${API}/cards/named?fuzzy=${encodeURIComponent(name)}`);
+      if(!r.ok) throw new Error("nicht gefunden");
+      const sc = await r.json();
+      const art = (sc.image_uris && sc.image_uris.art_crop) || (sc.card_faces && sc.card_faces[0].image_uris && sc.card_faces[0].image_uris.art_crop);
+      if(!okImg(art)) throw new Error("kein Bild");
+      LOOK.avatar = art; LOOK.avatarName = sc.name; saveLook(); applyLook(); schedulePush(); showAv();
+      $("#avName").value = sc.name; $("#avMsg").textContent = `Spielerbild: ${sc.name}`;
+    }catch(e){ $("#avMsg").textContent = "Diese Karte habe ich nicht gefunden. Prüfe den Namen (englisch klappt am besten)."; }
+  };
+  $("#avSet").onclick = () => setAv($("#avName").value.trim());
+  $("#avName").addEventListener("keydown", e => { if(e.key === "Enter") setAv($("#avName").value.trim()); });
+  $("#avCmd").onclick = () => { const c = S.deck.find(t => t.cmdr); if(c) setAv(c.n); else $("#avMsg").textContent = "In deinem Deck ist kein Commander."; };
+  $("#avClear").onclick = () => { LOOK.avatar = ""; LOOK.avatarName = ""; saveLook(); applyLook(); schedulePush(); showAv(); $("#avMsg").textContent = "Spielerbild entfernt."; };
+  $("#tablePick").value = LOOK.table;
+  $("#tablePick").onchange = () => { LOOK.table = $("#tablePick").value; saveLook(); renderAll(); };
+  $("#soundPick").checked = !!LOOK.sound;
+  $("#soundPick").onchange = () => { LOOK.sound = $("#soundPick").checked; saveLook(); if(LOOK.sound) sfx("turn"); };
+}
+
+/* ---------- Auswertungen: Deck-Analyse, Lebensverlauf, Match-Historie ---------- */
+const MANA_COL = {W:"#efe6c8", U:"#6aa7de", B:"#a493b4", R:"#e0745e", G:"#6fbf73", C:"#b9b9b0"};
+const MANA_NAME = {W:"Weiss", U:"Blau", B:"Schwarz", R:"Rot", G:"Grün", C:"Farblos"};
+const PLAYER_COL = ["#c9a35a", "#7fb0d6", "#e0745e", "#79c294", "#b48ad6", "#e6d38a"];
+/* Manasymbole von Scryfall statt {2}{R} */
+function manaHtml(mc){
+  return String(mc || "").replace(/\{([^}]{1,6})\}/g, (m, s) => {
+    const f = s.replace(/\//g, "").toUpperCase();
+    return /^[0-9WUBRGCXSP]+$/.test(f) ? `<img class="ms" src="https://svgs.scryfall.io/card-symbols/${f}.svg" alt="{${esc(s)}}">` : esc(m);
+  });
+}
+/* Lebensverlauf: pro Spieler und Runde der letzte Stand */
+let LIFELOG = LS.get("kt-lifelog", {pts:[]});
+function lifeLogAdd(pid, name, life){
+  const n = Math.max(0, TURN.n || 0);
+  const pts = LIFELOG.pts;
+  const last = [...pts].reverse().find(p => p.pid === pid);
+  if(last && last.n === n){ last.life = life; last.name = name; }
+  else pts.push({pid, name: String(name || "?").slice(0, 24), n, life});
+  if(pts.length > 600) pts.splice(0, pts.length - 600);
+  LS.set("kt-lifelog", LIFELOG);
+}
+function lifeLogReset(){ LIFELOG = {pts:[]}; LS.set("kt-lifelog", LIFELOG); Object.keys(lastLife).forEach(k => delete lastLife[k]); }
+function svgBars(data, opts){
+  // data: [{label, value, color}]; einfache senkrechte Balken mit Werten
+  const W = opts.w || 340, H = opts.h || 170, pad = 26, max = Math.max(1, ...data.map(d => d.value));
+  const bw = (W - pad) / data.length;
+  let s = `<svg viewBox="0 0 ${W} ${H + 22}" class="chart" role="img" aria-label="${esc(opts.title || "")}">`;
+  for(let k = 0; k <= 4; k++){ const y = H - (H - 10) * k / 4; s += `<line x1="${pad}" x2="${W}" y1="${y}" y2="${y}" class="grid"/>`; }
+  data.forEach((d, i) => {
+    const h = (H - 10) * d.value / max, x = pad + i * bw + bw * .15, y = H - h;
+    s += `<rect x="${x}" y="${y}" width="${bw * .7}" height="${h}" rx="3" style="fill:${d.color || "var(--brass)"}"/>`;
+    if(d.value) s += `<text x="${x + bw * .35}" y="${y - 4}" text-anchor="middle" class="val">${d.value}</text>`;
+    s += `<text x="${x + bw * .35}" y="${H + 16}" text-anchor="middle" class="lab">${esc(d.label)}</text>`;
+  });
+  return s + `</svg>`;
+}
+function svgLines(series, opts){
+  // series: [{name, color, pts:[{x,y}]}]
+  const W = opts.w || 620, H = opts.h || 240, padL = 34, padB = 26, padT = 14, padR = 30;
+  const xs = series.flatMap(s => s.pts.map(p => p.x)), ys = series.flatMap(s => s.pts.map(p => p.y));
+  if(!xs.length) return `<p class="muted">Noch keine Daten. Der Verlauf füllt sich, sobald sich Leben ändern.</p>`;
+  const x0 = Math.min(...xs), x1 = Math.max(x0 + 1, ...xs), y0 = Math.min(0, ...ys), y1 = Math.max(1, ...ys);
+  const X = x => padL + (W - padL - padR) * (x - x0) / (x1 - x0), Y = y => padT + (H - padT - padB) * (1 - (y - y0) / (y1 - y0));
+  let s = `<svg viewBox="0 0 ${W} ${H}" class="chart" role="img" aria-label="${esc(opts.title || "")}">`;
+  const step = Math.max(1, Math.ceil((y1 - y0) / 5 / 5) * 5);
+  for(let v = Math.ceil(y0 / step) * step; v <= y1; v += step) s += `<line x1="${padL}" x2="${W - padR}" y1="${Y(v)}" y2="${Y(v)}" class="grid"/><text x="${padL - 6}" y="${Y(v) + 4}" text-anchor="end" class="lab">${v}</text>`;
+  for(let x = x0; x <= x1; x++) s += `<text x="${X(x)}" y="${H - 6}" text-anchor="middle" class="lab">${x}</text>`;
+  series.forEach(se => {
+    if(!se.pts.length) return;
+    const d = se.pts.map((p, i) => `${i ? "L" : "M"}${X(p.x).toFixed(1)},${Y(p.y).toFixed(1)}`).join(" ");
+    s += `<path d="${d}" fill="none" style="stroke:${se.color}" stroke-width="2.5" stroke-linejoin="round"/>`;
+    const last = se.pts[se.pts.length - 1];
+    s += `<circle cx="${X(last.x)}" cy="${Y(last.y)}" r="4.5" style="fill:${se.color}"/><text x="${X(last.x) + 7}" y="${Y(last.y) - 6}" class="val">${last.y}</text>`;
+  });
+  return s + `</svg>`;
+}
+function deckAnalysisHtml(deck){
+  const main = deck.filter(t => !t.sb);
+  if(!main.length) return `<p class="muted">Lade zuerst ein Deck.</p>`;
+  const spells = main.filter(t => !isLand(t));
+  const lands = main.length - spells.length;
+  const curve = [0, 1, 2, 3, 4, 5, 6, 7].map(k => ({label: k === 7 ? "7+" : String(k), value: spells.filter(t => k === 7 ? (t.cmc || 0) >= 7 : Math.floor(t.cmc || 0) === k).length}));
+  const sym = {W:0, U:0, B:0, R:0, G:0, C:0};
+  spells.forEach(t => (String(t.mc || "").match(/\{[^}]+\}/g) || []).forEach(m => { "WUBRGC".split("").forEach(c => { if(m.includes(c)) sym[c]++; }); }));
+  const colors = Object.entries(sym).filter(([, v]) => v).map(([k, v]) => ({label: MANA_NAME[k], value: v, color: MANA_COL[k]}));
+  const types = ["Creature", "Instant", "Sorcery", "Artifact", "Enchantment", "Planeswalker", "Battle"].map(ty => ({label: {Creature:"Kreatur", Instant:"Spontan", Sorcery:"Hexerei", Artifact:"Artefakt", Enchantment:"Verzaub.", Planeswalker:"Planesw.", Battle:"Schlacht"}[ty], value: spells.filter(t => new RegExp("\\b" + ty + "\\b").test(t.type || "")).length})).filter(d => d.value);
+  types.push({label:"Land", value: lands, color:"var(--muted)"});
+  const avg = spells.length ? (spells.reduce((s, t) => s + (t.cmc || 0), 0) / spells.length).toFixed(2) : "0";
+  return `<div class="statrow">
+      <div class="statcard"><span class="stat">Karten</span><b class="num">${main.length}</b></div>
+      <div class="statcard"><span class="stat">Länder</span><b class="num">${lands}</b></div>
+      <div class="statcard"><span class="stat">Ø Manawert</span><b class="num">${avg}</b></div>
+      <div class="statcard"><span class="stat">Sideboard</span><b class="num">${deck.filter(t => t.sb).length}</b></div>
+    </div>
+    <div class="charts">
+      <figure><figcaption>Manakurve (ohne Länder)</figcaption>${svgBars(curve, {title:"Manakurve"})}</figure>
+      <figure><figcaption>Farben (Manasymbole in den Kosten)</figcaption>${colors.length ? svgBars(colors, {title:"Farben"}) : '<p class="muted">Keine Manakosten bekannt. Lade das Deck einmal neu.</p>'}</figure>
+      <figure><figcaption>Kartentypen</figcaption>${svgBars(types, {title:"Kartentypen"})}</figure>
+    </div>`;
+}
+function lifeChartHtml(){
+  const by = {};
+  LIFELOG.pts.forEach(p => { (by[p.pid] = by[p.pid] || {name:p.name, pts:[]}); by[p.pid].name = p.name; by[p.pid].pts.push({x:p.n, y:p.life}); });
+  const series = Object.entries(by).map(([pid, v], i) => ({name: pid === me.id ? (me.name || "Du") : v.name, color: PLAYER_COL[i % PLAYER_COL.length], pts: v.pts}));
+  const legend = series.map(s => `<span class="legend"><i style="background:${s.color}"></i>${esc(s.name)}</span>`).join("");
+  return `<div class="row">${legend}</div>${svgLines(series, {title:"Lebensverlauf"})}<p class="stat">Waagrecht: Runde. Der Verlauf beginnt bei jedem neuen Spiel von vorn.</p>`;
+}
+function historyHtml(){
+  const h = LS.get("kt-history", []);
+  if(!h.length) return `<p class="muted">Noch keine Spiele erfasst. Trage nach jedem Spiel mit «Sieg» oder «Niederlage» das Ergebnis ein.</p>`;
+  const per = {};
+  h.forEach(g => { const k = g.deck || "Ohne Namen"; (per[k] = per[k] || {w:0, l:0}); g.win ? per[k].w++ : per[k].l++; });
+  const rows = Object.entries(per).sort((a, b) => (b[1].w + b[1].l) - (a[1].w + a[1].l)).map(([k, v]) => {
+    const q = Math.round(100 * v.w / (v.w + v.l));
+    return `<tr><td>${esc(k)}</td><td class="num">${v.w}–${v.l}</td><td><div class="ratebar"><i style="width:${q}%"></i></div></td><td class="num">${q}%</td></tr>`;
+  }).join("");
+  const last = h.slice(-15).reverse().map(g => `<tr><td class="num">${esc(g.d)}</td><td>${esc(g.deck || "")}</td><td>${esc(g.opp || "")}</td><td>${g.win ? '<span class="win">Sieg</span>' : '<span class="loss">Niederlage</span>'}</td></tr>`).join("");
+  return `<h3>Siegquote pro Deck</h3><div class="tablewrap"><table class="stats"><thead><tr><th>Deck</th><th>Bilanz</th><th></th><th>Quote</th></tr></thead><tbody>${rows}</tbody></table></div>
+    <h3>Letzte Spiele</h3><div class="tablewrap"><table class="stats"><thead><tr><th>Datum</th><th>Mein Deck</th><th>Gegner</th><th>Ergebnis</th></tr></thead><tbody>${last}</tbody></table></div>
+    <button class="small" id="histClear">Historie löschen</button>`;
+}
+function openStats(tab){
+  modalState = {kind:"ask"}; $("#modal").hidden = false;
+  const box = $("#modalBox"); box.innerHTML = "";
+  box.append(head("Statistik"));
+  const tabs = document.createElement("div"); tabs.className = "row tabs";
+  const body = document.createElement("div");
+  const show = t => {
+    tabs.querySelectorAll("button").forEach(b => b.classList.toggle("on", b.dataset.t === t));
+    body.innerHTML = t === "deck" ? deckAnalysisHtml(S.deck) : t === "life" ? lifeChartHtml() : historyHtml();
+    const hc = body.querySelector("#histClear");
+    if(hc) hc.onclick = () => { if(hc.dataset.sure){ LS.set("kt-history", []); show("hist"); } else { hc.dataset.sure = "1"; hc.textContent = "Wirklich löschen?"; } };
+  };
+  [["deck", "Deck-Analyse"], ["life", "Lebensverlauf"], ["hist", "Match-Historie"]].forEach(([t, l]) => { const b = btn(l, () => show(t), "small"); b.dataset.t = t; tabs.append(b); });
+  box.append(tabs, body);
+  show(tab || "deck");
+}
+function historyAdd(win){
+  const h = LS.get("kt-history", []);
+  const d = new Date();
+  h.push({d: `${String(d.getDate()).padStart(2, "0")}.${String(d.getMonth() + 1).padStart(2, "0")}.${String(d.getFullYear()).slice(2)}`, deck: S.deckName || "", opp: Object.values(others).filter(o => !o.off).map(o => o.deckName ? `${o.name} (${o.deckName})` : o.name).join(", "), win});
+  if(h.length > 500) h.splice(0, h.length - 500);
+  LS.set("kt-history", h);
+}
+
 /* ---------- Automatische Updates ---------- */
 // Liegt die App im Web, prüft sie regelmässig version.json im selben Ordner und lädt sich bei einer neuen Version neu.
 // Alles Wichtige (Spielstand, Deck, Tisch) liegt im Browser-Speicher und ist nach dem Neuladen wieder da.
-const APP_VERSION = "2026.11.03-2";
+const APP_VERSION = "2026.11.03-3";
 const ONLINE = /^https?:$/.test(location.protocol);
 let updPending = null, updTimer = null, updSnoozeUntil = 0;
 function busyForUpdate(){ return botBusy || (!$("#modal").hidden && modalState && ["block","deck"].includes(modalState.kind)); }
@@ -2634,9 +3132,11 @@ $("#bNew").onclick = () => { if(!S.deck.length) return openDeckDialog(); startGa
 $("#bTurn").onclick = () => passTurn();
 $("#bReroll").onclick = () => rollStarter(true);
 $("#bUntap").onclick = () => { S.bf.forEach(c => c.tap = false); act("enttappt alle Karten"); commit(); };
-$("#bD6").onclick = () => act(`würfelt W6: ${1 + Math.floor(Math.random()*6)}`);
-$("#bD20").onclick = () => act(`würfelt W20: ${1 + Math.floor(Math.random()*20)}`);
-$("#bCoin").onclick = () => act(`wirft eine Münze: ${Math.random() < .5 ? "Kopf" : "Zahl"}`);
+$("#bD6").onclick = () => rollDie(6);
+$("#bD20").onclick = () => rollDie(20);
+$("#bCoin").onclick = () => rollDie(2);
+$("#bLook").onclick = openLookDialog;
+$("#bStats").onclick = () => openStats();
 $("#bToken").onclick = openTokenDialog;
 $("#bTokenField").onclick = openTokenDialog;
 $("#bLobby").onclick = () => { $("#lobby").hidden = false; };
