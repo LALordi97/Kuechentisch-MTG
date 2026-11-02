@@ -22,6 +22,19 @@
 2 Unholy Heat
 1 Arid Mesa
 4 Moonshadow
+
+Sideboard
+1 Nihil Spellbomb
+1 Ob Nixilis, the Adversary
+1 Fatal Push
+1 End of the Hunt
+2 Glistening Deluge
+1 Grafdigger's Cage
+1 Ingot Chewer
+1 Inquisition of Kozilek
+2 Meltdown
+3 Obsidian Charmaw
+1 Strategic Betrayal
 ### Broodscale Bloodchief | 13% | MTGO Challenge 32, 1. Platz, 02.11.26
 4 Basking Broodscale
 3 Dismember
@@ -45,6 +58,17 @@
 2 Sire of Seven Deaths
 4 Emrakul, the Promised End
 6 Forest
+
+Sideboard
+1 Gemstone Caverns
+1 Vexing Bauble
+3 Trinisphere
+2 Nature's Claim
+2 Thought-Knot Seer
+1 Cavern of Souls
+1 Grafdigger's Cage
+2 The Stone Brain
+2 Engineered Explosives
 ### Pinnacle Affinity | 7% | MTGO Challenge 16, 2. Platz, 31.10.26
 4 Kappa Cannoneer
 4 Metallic Rebuke
@@ -68,6 +92,15 @@
 1 Pithing Needle
 2 Mox Amber
 4 Darkslick Shores
+
+Sideboard
+3 Consign to Memory
+1 Vexing Bauble
+1 Strix Serenade
+4 Fatal Push
+4 Thoughtseize
+1 Grafdigger's Cage
+1 Damping Sphere
 ### UW Control (Scepter Chant) | 7% | Regional Championship MIT, 2. Platz, 01.11.26
 4 Solitude
 1 Isochron Scepter
@@ -97,6 +130,14 @@
 1 Polluted Delta
 1 Thundering Falls
 3 Wrath of the Skies
+
+Sideboard
+3 Consign to Memory
+3 High Noon
+3 Mystical Dispute
+3 Sanctifier en-Vec
+2 The Wandering Emperor
+1 Wrath of the Skies
 ### Boros Aggro | 6% | MTGO Challenge 32, 2. Platz, 28.10.26
 4 Ajani, Nacatl Pariah
 2 Plains
@@ -120,6 +161,15 @@
 2 Thraben Charm
 2 Voice of Victory
 3 Sanctifier en-Vec
+
+Sideboard
+1 Clarion Conqueror
+2 High Noon
+3 Rest in Peace
+4 Obsidian Charmaw
+1 Meltdown
+2 Wear/Tear
+2 Wrath of the Skies
 ### Amulet Titan | 6% | MTGO League 5-0, 22.10.26
 2 Summoner's Pact
 4 Gruul Turf
@@ -145,6 +195,16 @@
 4 Simic Growth Chamber
 1 Azusa, Lost but Seeking
 3 Green Sun's Zenith
+
+Sideboard
+3 Trinisphere
+3 Grafdigger's Cage
+1 Bojuka Bog
+2 Sowing Mycospawn
+3 Dismember
+1 Force of Vigor
+1 Ba Sing Se
+1 Thrun, the Last Troll
 ### UR Cutter Prowess | 5% | MTGO Challenge 32, Top 4, 01.11.26
 4 Cori-Steel Cutter
 3 Bloodstained Mire
@@ -167,6 +227,17 @@
 2 Violent Urge
 2 Wooded Foothills
 2 Arid Mesa
+
+Sideboard
+1 Expressive Iteration
+1 Tormod's Crypt
+4 Consign to Memory
+1 Meltdown
+1 Murktide Regent
+1 Obsidian Charmaw
+1 Spell Pierce
+2 Spell Snare
+3 Unholy Heat
 ### Domain Zoo (4/5c Aggro) | 4% | LDXPSAC26 ReCQ, 2. Platz, 25.10.26
 4 Quantum Riddler
 4 Ragavan, Nimble Pilferer
@@ -191,6 +262,17 @@
 1 Plains
 1 Temple Garden
 1 Thundering Falls
+
+Sideboard
+2 Consign to Memory
+1 Pest Control
+3 Obsidian Charmaw
+2 Mystical Dispute
+2 Rest in Peace
+2 Wrath of the Skies
+1 High Noon
+1 Teferi, Time Raveler
+1 Wear/Tear
 ### Tron | 4% | MTGO Challenge 32, Top 4, 27.10.26
 4 Ugin, Eye of the Storms
 4 Ugin's Labyrinth
@@ -211,6 +293,23 @@
 4 Urza's Power Plant
 2 Emrakul, the Promised End
 4 Portent of Calamity
+
+Sideboard
+1 Disruptor Flute
+1 Grafdigger's Cage
+1 The Stone Brain
+1 Ensnaring Bridge
+1 Cityscape Leveler
+1 Pithing Needle
+1 Torpor Orb
+1 Trinisphere
+1 The Endstone
+1 Oblivion Stone
+1 Engineered Explosives
+1 Golos, Tireless Pilgrim
+1 Tormod's Crypt
+1 Walking Ballista
+1 Extinguisher Battleship
 ### Devoted Combo | 3% | 14ª Liga Lleida, Top 4, 01.11.26
 4 Badgermole Cub
 4 Delighted Halfling
@@ -238,6 +337,18 @@
 1 Temple Garden
 1 Underground Mortuary
 2 Wooded Foothills
+
+Sideboard
+2 Abrupt Decay
+3 Endurance
+1 Murderous Cut
+1 Grist, the Hunger Tide
+1 Guerrilla Gorilla
+1 Kraul Harpooner
+3 Chalice of the Void
+1 Boromir, Warden of the Tower
+1 Karn, Argent Defender
+1 Crystal Barricade
 ### Ruby Storm | 3% | MTGO Challenge 32, 1. Platz, 29.10.26
 3 Arid Mesa
 1 Artist's Talent
@@ -261,6 +372,15 @@
 3 Bloodstained Mire
 2 Scalding Tarn
 3 Wooded Foothills
+
+Sideboard
+1 Past in Flames
+1 Grapeshot
+1 Fatal Push
+1 Empty the Warrens
+4 Prismatic Ending
+3 Wear/Tear
+4 Thoughtseize
 ### Living End | 3% | MTGO Challenge 64, Top 8, 05.10.26
 4 Street Wraith
 4 Oliphaunt
@@ -289,6 +409,13 @@
 1 Temple Garden
 1 Commercial District
 2 Striped Riverwinder
+
+Sideboard
+4 Mystical Dispute
+3 Inevitable Betrayal
+2 Brotherhood's End
+4 Clarion Conqueror
+2 Force of Vigor
 ### Esper Blink | 2% | MTGO Challenge 32, 1. Platz, 26.10.26
 1 Ephemerate
 1 Consign to Memory
@@ -316,6 +443,14 @@
 2 Plains
 4 Marsh Flats
 4 Flooded Strand
+
+Sideboard
+2 Nihil Spellbomb
+3 White Orchid Phantom
+3 High Noon
+3 Clarion Conqueror
+3 Consign to Memory
+1 Pest Control
 ### Dimir Control | 2% | 14ª Liga Lleida, 2. Platz, 17.10.26
 4 Island
 4 Polluted Delta
@@ -339,6 +474,17 @@
 2 Surgical Extraction
 2 Spell Snare
 2 Spell Pierce
+
+Sideboard
+1 Spell Snare
+2 Requiting Hex
+1 Nihil Spellbomb
+2 Mystical Dispute
+1 Murktide Regent
+1 Engineered Explosives
+2 Damnation
+4 Consign to Memory
+1 Stern Scolding
 ### Goryo's Vengeance (Instant Reanimator) | 2% | MTGO Challenge 32, 01.11.26
 4 Ephemerate
 4 Faithful Mending
@@ -366,6 +512,16 @@
 3 Prismatic Ending
 1 Superior Spider-Man
 1 Pest Control
+
+Sideboard
+1 Force of Negation
+1 Pest Control
+2 Teferi, Time Raveler
+2 Mystical Dispute
+4 Consign to Memory
+2 Wrath of the Skies
+2 Nihil Spellbomb
+1 Damping Sphere
 ### Dimir Reanimator (Persist) | 1% | Regional Championship MIT, Top 4, 01.11.26
 4 Archon of Cruelty
 4 Gran-Gran
@@ -389,3 +545,11 @@
 1 Island
 1 Otawara, Soaring City
 4 Thoughtseize
+
+Sideboard
+4 Consign to Memory
+3 Engineered Explosives
+2 Harbinger of the Seas
+2 Mystical Dispute
+2 Requiting Hex
+2 Surgical Extraction

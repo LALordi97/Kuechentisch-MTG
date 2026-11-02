@@ -23,6 +23,14 @@
 4 Wasteland
 4 Wight of the Reliquary
 1 Wooded Foothills
+
+Sideboard
+2 Abrupt Decay
+2 Collector Ouphe
+3 Dread of Night
+2 Duress
+2 Force of Vigor
+4 Leyline of the Void
 ### UWx Control | 7% | 11 Etapa Sul de Minas, 1. Platz, 31.10.26
 1 Consign to Memory
 2 Force of Negation
@@ -46,6 +54,16 @@
 3 Polluted Delta
 4 Wasteland
 4 Flooded Strand
+
+Sideboard
+1 Supreme Verdict
+2 Containment Priest
+2 Hydroblast
+2 Red Elemental Blast
+2 Spell Snare
+2 Triumph of Saint Katherine
+2 Wrath of the Skies
+2 Consign to Memory
 ### Dimir Tempo | 6% | 159º Alpha RJ, 3. Platz, 31.10.26
 2 Bloodstained Mire
 4 Brainstorm
@@ -69,6 +87,16 @@
 1 Undercity Sewers
 4 Underground Sea
 4 Wasteland
+
+Sideboard
+2 Barrowgoyf
+3 Consign to Memory
+2 Dauthi Voidwalker
+1 Engineered Explosives
+2 Force of Negation
+2 Hydroblast
+1 Sheoldred's Edict
+2 Surgical Extraction
 ### Boros Energy | 6% | God of Legacy Trial, 1. Platz, 25.10.26
 4 Sand Scout
 4 Guide of Souls
@@ -93,6 +121,18 @@
 2 Sunbaked Canyon
 1 Elegant Parlor
 2 Lazotep Quarry
+
+Sideboard
+1 Static Prison
+1 Blood Moon
+1 Celestial Purge
+1 Wear/Tear
+1 Price of Progress
+3 Pyroblast
+1 Rest in Peace
+2 Containment Priest
+3 Deafening Silence
+1 Soul-Guide Lantern
 ### Doomsday | 6% | MTGO League, 01.11.26
 4 Polluted Delta
 3 Daze
@@ -120,6 +160,15 @@
 1 Scalding Tarn
 1 Consider
 3 Thoughtseize
+
+Sideboard
+1 Murktide Regent
+1 Voice of Victory
+3 Dauthi Voidwalker
+4 Barrowgoyf
+2 Force of Negation
+3 Fatal Push
+1 Hide on the Ceiling
 ### UR Tempo | 5% | Lega Lair #1, 2. Platz, 25.10.26
 4 Brainstorm
 1 Brazen Borrower
@@ -144,6 +193,17 @@
 1 Unholy Heat
 4 Volcanic Island
 4 Wasteland
+
+Sideboard
+2 Unholy Heat
+2 Consign to Memory
+2 Force of Negation
+2 Hydroblast
+1 Karakas
+1 Meltdown
+1 Price of Progress
+3 Pyroblast
+1 Rough/Tumble
 ### Sneak and Show | 5% | MTGO Showcase Challenge, Top 4, 25.10.26
 1 Mountain
 4 Ponder
@@ -168,6 +228,19 @@
 1 Spell Pierce
 1 Sink into Stupor
 2 Omniscience
+
+Sideboard
+1 Pyroclasm
+2 Consign to Memory
+1 Surgical Extraction
+1 Abrade
+1 Brotherhood's End
+1 Pyroblast
+2 Defense Grid
+2 Hexing Squelcher
+1 Grafdigger's Cage
+2 Faerie Macabre
+1 Sear
 ### Eldrazi Stompy | 4% | Monthly, 1. Platz, 02.10.26
 4 Abundant Countryside
 4 Ancient Tomb
@@ -186,6 +259,14 @@
 4 Thought-Knot Seer
 4 Wasteland
 4 Wastescape Battlemage
+
+Sideboard
+2 Dismember
+3 Disruptor Flute
+2 Eldrazi Confluence
+4 Leyline of the Void
+2 Null Rod
+2 Warping Wail
 ### Death & Taxes (BW) | 4% | Mont Weekly Event, 1. Platz, 30.10.26
 4 Overlord of the Balemurk
 4 Phelia, Exuberant Shepherd
@@ -217,6 +298,19 @@
 2 Shadowy Backstreet
 1 Flooded Strand
 1 Swamp
+
+Sideboard
+1 Yorion, Sky Nomad
+2 Deafening Silence
+2 Disruptor Flute
+2 Erode
+2 Wrath of the Skies
+1 Damping Sphere
+1 Duress
+1 Faerie Macabre
+1 Nihil Spellbomb
+1 Surgical Extraction
+1 Temporary Lockdown
 ### Ux Tron | 4% | MTGO Challenge 32, 2. Platz, 28.10.26
 2 Eldrazi Confluence
 4 Urza's Power Plant
@@ -237,6 +331,19 @@
 2 Force of Negation
 2 Expedition Map
 4 Urza's Tower
+
+Sideboard
+1 The One Ring
+2 Force of Negation
+1 Tormod's Crypt
+2 Barrowgoyf
+1 Extinguisher Battleship
+2 Summon: Bahamut
+1 Invasion Submersible
+1 Mycosynth Lattice
+1 Karakas
+1 Ensnaring Bridge
+2 Dismember
 ### Lands | 4% | LawLeague #1, 1. Platz, 13.09.26
 1 Bedeck/Bedazzle
 4 Yavimaya, Cradle of Growth
@@ -264,6 +371,14 @@
 1 Bojuka Bog
 4 Mox Diamond
 1 Expedition Map
+
+Sideboard
+3 Force of Vigor
+3 Endurance
+3 Disruptor Flute
+2 Dismember
+2 Icetill Explorer
+2 Choke
 ### Bant Control | 4% | MTGO Challenge 32, 1. Platz, 14.10.26
 1 Lorien Revealed
 1 Terminus
@@ -290,6 +405,18 @@
 3 Wasteland
 4 Flooded Strand
 4 Misty Rainforest
+
+Sideboard
+1 Wrath of the Skies
+1 Surgical Extraction
+2 Carpet of Flowers
+1 Celestial Purge
+3 Consign to Memory
+2 Containment Priest
+1 Erode
+2 Lavinia, Azorius Renegade
+1 Triumph of Saint Katherine
+1 Terminus
 ### Aluren | 4% | Oslo Open 2026, 1. Platz, 24.10.26
 4 Acererak the Archlich
 4 Atraxa, Grand Unifier
@@ -313,6 +440,17 @@
 1 Forest
 1 Polluted Delta
 1 Scalding Tarn
+
+Sideboard
+2 Veil of Summer
+1 Boseiju, Who Endures
+3 Carpet of Flowers
+3 Consign to Memory
+2 Defense Grid
+1 Dismember
+1 Disruptor Flute
+1 Force of Negation
+1 Grafdigger's Cage
 ### Welder Cam | 4% | MTGO Challenge 32, 1. Platz, 11.09.26
 1 Legion Extruder
 4 Emry, Lurker of the Loch
@@ -339,6 +477,22 @@
 1 Seat of the Synod
 4 Pinnacle Emissary
 1 Lion's Eye Diamond
+
+Sideboard
+1 Loki, God of Mischief
+2 Consign to Memory
+1 Portable Hole
+1 Twinshot Sniper
+1 Jegantha, the Wellspring
+1 Torpor Orb
+1 Disruptor Flute
+1 Damping Sphere
+1 Haywire Mite
+1 Pithing Needle
+1 Island
+1 Rip Apart
+1 Spell Pierce
+1 Flusterstorm
 ### Karn Forge | 3% | Best Event each Month, 1. Platz, 25.10.26
 4 Urza's Workshop
 4 Glaring Fleshraker
@@ -361,6 +515,21 @@
 4 Urza's Tower
 4 Kozilek's Command
 3 Tezzeret, Cruel Captain
+
+Sideboard
+1 Mystic Forge
+1 Paradox Engine
+1 Tormod's Crypt
+1 Ensnaring Bridge
+1 Perilous Snare
+1 Archive Arbiter
+1 Dismember
+1 Torpor Orb
+2 Trinisphere
+1 Engineered Explosives
+1 Mycosynth Lattice
+2 Disruptor Flute
+1 The Echoverse Fulcrum
 ### Dragon Stompy | 2% | MTGO Challenge 32, Top 4, 22.09.26
 4 Simian Spirit Guide
 4 Fury
@@ -378,3 +547,15 @@
 4 Karn, the Great Creator
 4 Broadside Bombardiers
 4 Blood Moon
+
+Sideboard
+2 Pyrogoyf
+1 Magus of the Moon
+3 Disruptor Flute
+1 Ensnaring Bridge
+1 Liquimetal Coating
+2 Eldrazi Confluence
+1 Mycosynth Lattice
+1 Tormod's Crypt
+1 Perilous Snare
+2 Fiery Confluence

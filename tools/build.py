@@ -11,7 +11,8 @@ Format der Deck-Dateien:
     4 Lightning Bolt
     ...
 cEDH-Decks beginnen mit einem Abschnitt «Commander», danach eine Leerzeile und «Deck».
-Erwartet werden 60 Karten (Modern/Legacy, Ausnahmen: 61 oder 80 mit Yorion) und 100 Karten (cEDH).
+Modern/Legacy: nach dem Hauptdeck eine Leerzeile, dann «Sideboard» und bis zu 15 Karten.
+Erwartet werden 60 Karten im Hauptdeck (Modern/Legacy, Ausnahmen: 61 oder 80 mit Yorion) und 100 Karten (cEDH, ohne Sideboard).
 """
 import json, re, sys, datetime, pathlib
 
@@ -21,14 +22,22 @@ SOURCES = "Modern und Legacy: MTGTop8, Metagame der letzten 2 Wochen · cEDH: ED
 
 
 def count(body):
-    n = 0
+    """Liefert (Hauptdeck inkl. Commander, Sideboard)."""
+    n, sb, side = 0, 0, False
     for line in body.splitlines():
         line = line.strip()
-        if not line or line in ("Commander", "Deck") or line.lower() == "sideboard":
+        if not line or line in ("Commander", "Deck"):
+            continue
+        if line.lower() == "sideboard":
+            side = True
             continue
         m = re.match(r"^(\d+)\s+", line)
-        n += int(m.group(1)) if m else 1
-    return n
+        k = int(m.group(1)) if m else 1
+        if side:
+            sb += k
+        else:
+            n += k
+    return n, sb
 
 
 def load():
@@ -44,10 +53,12 @@ def load():
                 continue
             name, share, src = parts
             body = body.strip()
-            n = count(body)
-            ok = (n == 100) if key == "cEDH" else n in (60, 61, 80)
+            n, sb = count(body)
+            ok = (n == 100 and sb == 0) if key == "cEDH" else (n in (60, 61, 80) and sb <= 15)
             if not ok:
-                problems.append(f"{key}: «{name}» hat {n} Karten")
+                problems.append(f"{key}: «{name}» hat {n} Karten im Hauptdeck und {sb} im Sideboard")
+            elif key != "cEDH" and sb != 15:
+                print(f"Hinweis: {key} «{name}» hat {sb} Sideboard-Karten")
             decks.append({"n": name, "p": share, "s": src, "l": body})
         if len(decks) != 16:
             problems.append(f"{key}: {len(decks)} statt 16 Decks")

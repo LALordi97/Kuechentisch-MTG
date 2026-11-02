@@ -17,7 +17,7 @@ Anleitung für das monatliche Update der eingebauten Top-16-Decks (cEDH, Modern,
 - Metagame: `https://www.mtgtop8.com/format?f=MO` (Modern) bzw. `?f=LE` (Legacy), Standard-Zeitraum «Last 2 Weeks».
 - Die 16 Archetypen mit dem höchsten Anteil nehmen. Bei Gleichstand am Ende das Deck mit der jüngeren Top-Platzierung.
 - Pro Archetyp die Archetyp-Seite öffnen und eine aktuelle, möglichst gut platzierte Liste wählen (Sieg oder Top 4 bevorzugt, jüngstes Datum).
-- Die Liste als Text: `https://www.mtgtop8.com/mtgo?d=<Deck-ID>`. Nur das Hauptdeck übernehmen (alles vor «Sideboard»).
+- Die Liste als Text: `https://www.mtgtop8.com/mtgo?d=<Deck-ID>`. Hauptdeck und Sideboard übernehmen, genau wie dort aufgeteilt.
 - Deckname: der Name der gewählten Liste (z. B. «Rakdos Delirium»), bei Bedarf mit Archetyp in Klammern.
 
 **cEDH: EDHTop16**
@@ -33,7 +33,7 @@ Jedes Deck beginnt mit einer Kopfzeile:
 ### Deckname | Anteil | Turnier, Platz, Datum
 ```
 
-Modern und Legacy: danach das Hauptdeck, eine Karte pro Zeile mit Anzahl, z. B. `4 Lightning Bolt`. 60 Karten (61 oder 80 nur, wenn die Liste wirklich so gespielt wurde, z. B. mit Yorion).
+Modern und Legacy: danach das Hauptdeck, eine Karte pro Zeile mit Anzahl, z. B. `4 Lightning Bolt`. 60 Karten (61 oder 80 nur, wenn die Liste wirklich so gespielt wurde, z. B. mit Yorion). Danach eine Leerzeile, die Zeile `Sideboard` und das Sideboard im gleichen Format (normalerweise 15 Karten).
 
 cEDH: zuerst der Abschnitt `Commander` mit einem oder zwei Commandern, dann eine Leerzeile, dann `Deck` und die übrigen Karten, je eine pro Zeile (Anzahl nur, wenn grösser als 1, z. B. `8 Mountain`). Zusammen genau 100 Karten. Doppelseitige Karten nur mit dem Namen der Vorderseite.
 
