@@ -1,1 +1,1 @@
-# K-chentisch-MTG
+# Kuechentisch-MTG
