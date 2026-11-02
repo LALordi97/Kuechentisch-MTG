@@ -72,6 +72,9 @@ main{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:14px;padding:12p
 .badge{position:absolute;top:4px;right:4px;background:var(--brass);color:var(--brass-ink);font-weight:700;border-radius:999px;padding:0 6px;font-size:13px;min-width:22px;text-align:center;font-variant-numeric:tabular-nums}
 .badge.neg{background:var(--red);color:#fff}
 .tokmark{position:absolute;bottom:4px;left:4px;background:rgba(0,0,0,.7);font-size:10px;padding:0 4px;border-radius:4px;letter-spacing:.08em}
+.ptmark{position:absolute;bottom:4px;right:4px;background:var(--ink);color:var(--felt);font-weight:700;font-size:12px;padding:0 5px;border-radius:4px;font-variant-numeric:tabular-nums}
+.ptin{display:flex;gap:4px;align-items:center;font-size:12px}
+.ptin input{width:48px;padding:3px 5px}
 .fdmark{position:absolute;bottom:4px;right:4px;background:rgba(0,0,0,.75);font-size:10px;padding:0 4px;border-radius:4px}
 
 .field{position:relative;height:470px;border-radius:8px;background:rgba(0,0,0,.14);overflow:hidden;--w:96px}
@@ -366,7 +369,7 @@ function moveCard(u, to, where){
   const from = f.z, c = f.c;
   S[from].splice(f.i, 1);
   const wasFd = c.fd;
-  if(from === "bf" && to !== "bf"){ c.tap=false; c.c=0; c.flip=false; delete c.x; delete c.y; }
+  if(from === "bf" && to !== "bf"){ c.tap=false; c.c=0; c.flip=false; delete c.x; delete c.y; c.pwO = null; c.tgO = null; }
   if(to !== "bf" && to !== "ex") c.fd = false;
   if(c.tok && to !== "bf"){ act(`entfernt Token ${c.n}`); commit(); return; }
   if(c.ow && to !== "bf"){
@@ -495,6 +498,7 @@ function cardEl(c, mine, zone){
   else if(okImg(src)){ const im = document.createElement("img"); im.src = src; im.alt = c.n || ""; im.loading = "lazy"; d.append(im); }
   else { d.innerHTML = `<div class="txt"><b>${esc(c.n)}</b>${esc(c.type)}</div>`; }
   if(c.c){ const b = document.createElement("span"); b.className = "badge" + (c.c < 0 ? " neg" : ""); b.textContent = (c.c > 0 ? "+" : "") + c.c; d.append(b); }
+  if(!c.fd && /\bCreature\b/.test(c.type || "") && (c.pwO != null || c.pto)){ const b = document.createElement("span"); b.className = "ptmark"; b.textContent = `${(c.pwO ?? c.pw ?? 0) + (c.c || 0)}/${(c.tgO ?? c.tg ?? 0) + (c.c || 0)}`; d.append(b); }
   if(c.tok){ const t = document.createElement("span"); t.className="tokmark"; t.textContent="TOKEN"; d.append(t); }
   const owner = c.ow ? (typeof c.ow === "string" ? c.ow : c.ow.name) : null;
   if(owner){ const o = document.createElement("span"); o.className="owmark"; o.textContent = "von " + owner; d.append(o); }
@@ -696,6 +700,7 @@ function cardMenu(c, zone){
     items.push({l: c.fd ? "Aufdecken" : "Verdecken", f:() => { c.fd=!c.fd; act(c.fd ? "verdeckt eine Karte" : `deckt ${c.n} auf`); commit(); }});
     items.push({l:"Marke +1", f:() => { c.c++; commit(); }});
     items.push({l:"Marke −1", f:() => { c.c--; commit(); }});
+    if(isCreature(c)) items.push({l: c.pwO != null ? `Stärke/Widerstand ändern (${power(c)}/${tough(c)})` : "Stärke/Widerstand setzen …", f:() => openPtDialog(c)});
     items.push({l:"Kopie als Token", f:() => cloneToken(c.u)});
     (c.tk || []).forEach(t => items.push({l:`Token erzeugen: ${t.n}`, f:() => createTokenFromId(t.id, t.n, 1, c)}));
     const opp = order.filter(id => id !== me.id && id !== "bot" && others[id] && !others[id].off);
@@ -823,7 +828,7 @@ function tpl(sc){
   const img = (sc.image_uris && sc.image_uris.normal) || (f && f[0] && f[0].image_uris && f[0].image_uris.normal) || null;
   const back = (!sc.image_uris && f && f[1] && f[1].image_uris && f[1].image_uris.normal) || null;
   const f0 = (f && f[0]) || {};
-  const num = v => { const n = parseInt(v, 10); return Number.isFinite(n) ? n : 0; };
+  const num = v => /^-?\d+$/.test(String(v).trim()) ? parseInt(v, 10) : null; // */*, 1+* usw. → unbekannt
   const pw = sc.power != null ? sc.power : f0.power, tg = sc.toughness != null ? sc.toughness : f0.toughness;
   return {n: sc.name, img, back, type: sc.type_line || f0.type_line || "",
     cmc: Number(sc.cmc) || 0, pw: pw != null ? num(pw) : null, tg: tg != null ? num(tg) : null,
@@ -1148,7 +1153,7 @@ function setStatus(t){ $("#status").textContent = t; }
 function pub(){
   const strip = c => {
     const base = {u:c.u, tap:c.tap, c:c.c, type:c.type, x:c.x, y:c.y, ow: c.ow ? c.ow.name : undefined};
-    return c.fd ? {...base, fd:true} : {...base, n:c.n, img:c.img, back:c.back, flip:c.flip, tok:c.tok, pw:c.pw, tg:c.tg, kw:(c.kw || []).slice(0, 8)};
+    return c.fd ? {...base, fd:true} : {...base, n:c.n, img:c.img, back:c.back, flip:c.flip, tok:c.tok, pw:c.pwO ?? c.pw, tg:c.tgO ?? c.tg, pto: c.pwO != null, kw:(c.kw || []).slice(0, 8)};
   };
   const m = S.match || {w:0, l:0};
   return {name: me.name, life:S.life, poison:S.poison, turn:S.turn, handN:S.hand.length, libN:S.library.length,
@@ -1359,6 +1364,26 @@ function showCode(){
   LS.set("kt-last", {role:net.role, code:net.code});
 }
 
+
+// Stärke/Widerstand von Hand setzen (für Kreaturen mit Stern-Werten oder Pump-Effekte)
+function ptInputs(c){
+  const w = document.createElement("div"); w.className = "ptin";
+  const mk = (v, set) => { const i = document.createElement("input"); i.type = "number"; i.min = "-20"; i.max = "99"; i.value = v; i.onchange = () => { set(parseInt(i.value, 10)); commit(); }; return i; };
+  w.append("S/W", mk(c.pwO ?? c.pw ?? 0, v => c.pwO = Number.isFinite(v) ? v : null), "/", mk(c.tgO ?? c.tg ?? 0, v => c.tgO = Number.isFinite(v) ? v : null));
+  return w;
+}
+function openPtDialog(c){
+  modalState = {kind:"ask"}; $("#modal").hidden = false;
+  const box = $("#modalBox"); box.innerHTML = "";
+  box.append(head(`${c.n}: Stärke/Widerstand`));
+  box.append(Object.assign(document.createElement("p"), {className:"muted", textContent:"Für Kreaturen mit */* (zum Beispiel Territorial Kavu oder Tarmogoyf) oder für Pump-Effekte bis Zugende. Marken (+1/+1) zählt die App zusätzlich dazu."}));
+  box.append(ptInputs(c));
+  const row = document.createElement("div"); row.className = "row";
+  row.append(btn("Fertig", () => { closeModal(); act(`setzt ${c.n} auf ${power(c)}/${tough(c)}`); commit(); }, "primary"),
+             btn("Auf Kartenwert zurücksetzen", () => { c.pwO = null; c.tgO = null; closeModal(); commit(); }));
+  box.append(row);
+}
+
 /* ---------- Stapel und Priorität ---------- */
 // Ein Zauber liegt auf dem Stapel, bis alle anderen «OK» gegeben haben. Wer antwortet, legt seinen Zauber oben drauf.
 const usesStack = () => net.role !== "solo";
@@ -1501,8 +1526,10 @@ const isCreature = c => /\bCreature\b/.test(c.type || "");
 const isPermanentType = c => /\b(Creature|Artifact|Enchantment|Planeswalker|Battle|Land)\b/.test(c.type || "");
 const isInstant = c => /\bInstant\b/.test(c.type || "") || /\bFlash\b/i.test((c.o || "").split("\n")[0]);
 const kwHas = (c, k) => (c.kw || []).some(x => x.toLowerCase() === k) || new RegExp("^[^.]*\\b" + k + "\\b", "i").test((c.o || "").split("\n")[0] || "");
-const power = c => (c.pw ?? 0) + (c.c || 0);
-const tough = c => (c.tg ?? 0) + (c.c || 0);
+// Variable Werte (*/*) sind unbekannt, bis man sie setzt; alte Ladungen hatten dafür 0/0 gespeichert
+const ptUnknown = c => isCreature(c) && c.pwO == null && (c.pw == null || (c.pw === 0 && c.tg === 0));
+const power = c => (c.pwO ?? c.pw ?? 0) + (c.c || 0);
+const tough = c => (c.tgO ?? c.tg ?? 0) + (c.c || 0);
 function botLog(text){ sendLog({from:"KI", text, sys:true}); }
 function botSay(text){ if(text && String(text).trim()) sendLog({from:"KI", text:String(text).trim().slice(0, 200), sys:false}); }
 function botPub(){
@@ -2003,7 +2030,7 @@ function resolveCombat(attackers, blocks, attackerIsBot){
   if(BOT.life <= 0) botLog(`verliert das Spiel (Leben ${BOT.life})`);
   commit(); botChanged();
 }
-function combatInfo(c){ return {u:c.u, n:c.n, img:c.img, type:c.type, pw:c.pw ?? null, tg:c.tg ?? null, c:c.c || 0, kw:(c.kw || []).slice(0, 8), o:((c.o || "").split("\n")[0] || "").slice(0, 200), cmdr:!!c.cmdr}; }
+function combatInfo(c){ return {u:c.u, n:c.n, img:c.img, type:c.type, pw:c.pwO ?? c.pw ?? null, tg:c.tgO ?? c.tg ?? null, c:c.c || 0, kw:(c.kw || []).slice(0, 8), o:((c.o || "").split("\n")[0] || "").slice(0, 200), cmdr:!!c.cmdr}; }
 function cleanInfo(x){
   if(!x || typeof x !== "object") return null;
   const num = v => Number.isFinite(+v) && v !== null ? Math.max(-99, Math.min(99, +v)) : null;
@@ -2029,11 +2056,12 @@ function nextBlock(){
     const r = document.createElement("div"); r.className = "row";
     const el = cardEl(a, false, "bf"); el.style.setProperty("--w", "80px"); el.addEventListener("click", () => showPreview(a, false));
     const info = document.createElement("div"); info.style.minWidth = "0"; info.style.flex = "1";
-    info.innerHTML = `<b>${esc(a.n)}</b><div class="stat">${power(a)}/${tough(a)}${(a.kw || []).length ? " · " + esc(a.kw.join(", ")) : ""}</div>`;
+    info.innerHTML = `<b>${esc(a.n)}</b><div class="stat">${ptUnknown(a) ? "?/?" : power(a) + "/" + tough(a)}${(a.kw || []).length ? " · " + esc(a.kw.join(", ")) : ""}</div>`;
     const s = document.createElement("select"); s.dataset.a = a.u; s.append(new Option("Nicht blocken", ""));
-    mine.filter(b => canBlock(b, a)).forEach(b => s.append(new Option(`${b.n} (${power(b)}/${tough(b)})`, b.u)));
+    mine.filter(b => canBlock(b, a)).forEach(b => s.append(new Option(`${b.n} (${ptUnknown(b) ? "?/?" : power(b) + "/" + tough(b)})`, b.u)));
     selects.push(s); r.append(el, info, s); box.append(r);
   });
+  if(mine.some(ptUnknown)) box.append(Object.assign(document.createElement("p"), {className:"stat", textContent:"Kreaturen mit ?/? haben variable Werte. Setze sie vor dem Bestätigen über das Kartenmenü («Stärke/Widerstand setzen»)."}));
   if(!mine.length) box.append(Object.assign(document.createElement("p"), {className:"muted", textContent:"Du hast keine ungetappten Kreaturen zum Blocken."}));
   box.append(Object.assign(document.createElement("p"), {className:"stat", textContent:"Jeder Blocker blockt höchstens einen Angreifer. Kampftricks oder Removal setzt du vorher um (Spontanzauber wirken, Effekte über das Kartenmenü), danach hier bestätigen."}));
   const err = document.createElement("p"); err.className = "err";
@@ -2060,7 +2088,7 @@ function openAttackDialog(preTarget){
   const box = $("#modalBox"); box.innerHTML = "";
   box.append(head("Angreifen"));
   const targets = attackTargets();
-  const mine = myCreatures().filter(c => !c.tap && power(c) > 0);
+  const mine = myCreatures().filter(c => !c.tap);
   if(!targets.length){ box.append(Object.assign(document.createElement("p"), {className:"muted", textContent:"Am Tisch sitzt noch kein Gegner. Lade Freunde ein oder starte einen KI-Gegner."})); return; }
   if(!mine.length){ box.append(Object.assign(document.createElement("p"), {className:"muted", textContent:"Du hast keine ungetappten Kreaturen zum Angreifen."})); return; }
   const def = targets.includes(preTarget) ? preTarget : targets[0];
@@ -2071,7 +2099,7 @@ function openAttackDialog(preTarget){
     const el = cardEl(c, true, "bf"); el.style.setProperty("--w", "110px");
     const lab = document.createElement("label"); lab.className = "stat"; lab.style.cursor = "pointer";
     const cb = document.createElement("input"); cb.type = "checkbox";
-    lab.append(cb, document.createTextNode(` ${power(c)}/${tough(c)} greift an`));
+    lab.append(cb, document.createTextNode(ptUnknown(c) ? " greift an" : ` ${power(c)}/${tough(c)} greift an`));
     let sel = null;
     if(targets.length > 1){
       sel = document.createElement("select");
@@ -2080,7 +2108,9 @@ function openAttackDialog(preTarget){
     }
     cb.onchange = () => cb.checked ? chosen.set(c.u, sel ? sel.value : def) : chosen.delete(c.u);
     el.addEventListener("click", () => { cb.checked = !cb.checked; cb.onchange(); });
-    w.append(el, lab); if(sel) w.append(sel); g.append(w);
+    w.append(el, lab); if(sel) w.append(sel);
+    if(ptUnknown(c) || c.pwO != null) w.append(ptInputs(c));
+    g.append(w);
   });
   box.append(targets.length === 1 ? Object.assign(document.createElement("p"), {className:"muted", textContent:`Ziel: ${def === "bot" ? "die KI" : displayName(def)}`}) : "", g);
   box.append(Object.assign(document.createElement("p"), {className:"stat", textContent:"Kreaturen, die erst diesen Zug ins Spiel kamen, dürfen nicht angreifen (ausser mit Eile). Angreifer werden getappt, ausser mit Wachsamkeit."}));
@@ -2540,7 +2570,7 @@ function renderTurn(){
 /* ---------- Automatische Updates ---------- */
 // Liegt die App im Web, prüft sie regelmässig version.json im selben Ordner und lädt sich bei einer neuen Version neu.
 // Alles Wichtige (Spielstand, Deck, Tisch) liegt im Browser-Speicher und ist nach dem Neuladen wieder da.
-const APP_VERSION = "2026.11.03-1";
+const APP_VERSION = "2026.11.03-2";
 const ONLINE = /^https?:$/.test(location.protocol);
 let updPending = null, updTimer = null, updSnoozeUntil = 0;
 function busyForUpdate(){ return botBusy || (!$("#modal").hidden && modalState && ["block","deck"].includes(modalState.kind)); }
