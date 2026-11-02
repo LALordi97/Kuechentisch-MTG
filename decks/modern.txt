@@ -1,0 +1,391 @@
+### Rakdos Delirium | 14% | MTGO Challenge 32, 1. Platz, 01.11.26
+2 Verdant Catacombs
+2 Troll of Khazad-dum
+4 Thoughtseize
+4 Dark Matter Manipulator
+4 Detective's Phoenix
+2 Swamp
+4 Fear of Missing Out
+4 Street Wraith
+1 Polluted Delta
+1 Nihil Spellbomb
+1 Mountain
+4 Nethergoyf
+4 Mishra's Bauble
+1 Ob Nixilis, the Adversary
+1 Marsh Flats
+2 Raucous Theater
+4 Lightning Bolt
+1 Fatal Push
+4 Bloodstained Mire
+3 Blood Crypt
+2 Unholy Heat
+1 Arid Mesa
+4 Moonshadow
+### Broodscale Bloodchief | 13% | MTGO Challenge 32, 1. Platz, 02.11.26
+4 Basking Broodscale
+3 Dismember
+1 Ba Sing Se
+2 Devourer of Destiny
+4 Eldrazi Temple
+4 Ancient Stirrings
+1 Gemstone Caverns
+1 Haywire Mite
+4 Kozilek's Command
+4 Malevolent Rumble
+1 Soul-Guide Lantern
+4 Sowing Mycospawn
+1 Springleaf Drum
+4 Ugin's Labyrinth
+4 Urza's Saga
+1 Vexing Bauble
+1 Talisman of Resilience
+2 Blade of the Bloodchief
+2 Boseiju, Who Endures
+2 Sire of Seven Deaths
+4 Emrakul, the Promised End
+6 Forest
+### Pinnacle Affinity | 7% | MTGO Challenge 16, 2. Platz, 31.10.26
+4 Kappa Cannoneer
+4 Metallic Rebuke
+4 Tormod's Crypt
+4 Mox Opal
+4 Mishra's Bauble
+2 Welding Jar
+4 Engineered Explosives
+4 Urza's Saga
+4 Pinnacle Emissary
+2 Basim Ibn Ishaq
+1 Skateboard
+1 Shadowspear
+1 Watery Grave
+2 Island
+4 Polluted Delta
+2 Preordain
+1 Scalding Tarn
+4 Emry, Lurker of the Loch
+1 Steam Vents
+1 Pithing Needle
+2 Mox Amber
+4 Darkslick Shores
+### UW Control (Scepter Chant) | 7% | Regional Championship MIT, 2. Platz, 01.11.26
+4 Solitude
+1 Isochron Scepter
+1 The Mind Stone
+4 Orim's Chant
+3 Silence
+2 Erode
+1 Razorgrass Ambush
+1 Sink into Stupor
+1 Spell Snare
+2 Prismatic Ending
+4 Narset, Parter of Veils
+4 Teferi, Time Raveler
+4 Flooded Strand
+3 Arid Mesa
+2 Island
+2 Meticulous Archive
+2 Plains
+1 Geier Reach Sanitarium
+1 Misty Rainforest
+1 Otawara, Soaring City
+4 Day's Undoing
+3 Preordain
+2 Hallowed Fountain
+1 Celestial Colonnade
+1 Monumental Henge
+1 Polluted Delta
+1 Thundering Falls
+3 Wrath of the Skies
+### Boros Aggro | 6% | MTGO Challenge 32, 2. Platz, 28.10.26
+4 Ajani, Nacatl Pariah
+2 Plains
+4 Inspiring Vantage
+1 Dalkovan Encampment
+2 Elegant Parlor
+3 Sacred Foundry
+4 Galvanic Discharge
+4 Marsh Flats
+4 Guide of Souls
+2 Lightning Bolt
+3 Goblin Bombardment
+4 Ocelot Pride
+4 Ragavan, Nimble Pilferer
+1 Mountain
+1 Flooded Strand
+4 Seasoned Pyromancer
+1 Blood Moon
+4 Arid Mesa
+1 Sunbaked Canyon
+2 Thraben Charm
+2 Voice of Victory
+3 Sanctifier en-Vec
+### Amulet Titan | 6% | MTGO League 5-0, 22.10.26
+2 Summoner's Pact
+4 Gruul Turf
+4 Crumbling Vestige
+3 Boseiju, Who Endures
+4 Primeval Titan
+1 Cultivator Colossus
+4 Scapeshift
+4 Arboreal Grazer
+1 Hanweir Battlements
+3 Malevolent Rumble
+1 Mirrorpool
+1 Otawara, Soaring City
+2 Roiling Canopy
+1 Echoing Deeps
+1 Dryad Arbor
+4 Spelunking
+2 Forest
+4 Amulet of Vigor
+4 Urza's Saga
+1 Yavimaya, Cradle of Growth
+1 Tolaria West
+4 Simic Growth Chamber
+1 Azusa, Lost but Seeking
+3 Green Sun's Zenith
+### UR Cutter Prowess | 5% | MTGO Challenge 32, Top 4, 01.11.26
+4 Cori-Steel Cutter
+3 Bloodstained Mire
+3 Boomerang Basics
+4 Lightning Bolt
+4 Dragon's Rage Channeler
+2 Expressive Iteration
+2 Fiery Islet
+4 Lava Dart
+4 Mishra's Bauble
+2 Mutagenic Growth
+4 Monastery Swiftspear
+3 Mountain
+4 Preordain
+2 Scalding Tarn
+4 Slickshot Show-Off
+3 Steam Vents
+1 Thundering Falls
+1 Tormod's Crypt
+2 Violent Urge
+2 Wooded Foothills
+2 Arid Mesa
+### Domain Zoo (4/5c Aggro) | 4% | LDXPSAC26 ReCQ, 2. Platz, 25.10.26
+4 Quantum Riddler
+4 Ragavan, Nimble Pilferer
+4 Scion of Draco
+4 Territorial Kavu
+3 Phelia, Exuberant Shepherd
+4 Lightning Bolt
+3 Stubborn Denial
+2 Consign to Memory
+1 Pest Control
+4 Leyline Binding
+4 Leyline of the Guildpact
+4 Arid Mesa
+4 Flooded Strand
+4 Wooded Foothills
+2 Arena of Glory
+2 Steam Vents
+1 Blood Crypt
+1 Indatha Triome
+1 Lush Portico
+1 Mountain
+1 Plains
+1 Temple Garden
+1 Thundering Falls
+### Tron | 4% | MTGO Challenge 32, Top 4, 27.10.26
+4 Ugin, Eye of the Storms
+4 Ugin's Labyrinth
+4 Urza's Mine
+3 Disruptor Flute
+3 Eldrazi Temple
+1 All Is Dust
+1 Abstergo Entertainment
+4 Dismember
+4 Talisman of Dominance
+2 Island
+1 Talisman of Curiosity
+4 Karn, the Great Creator
+3 Devourer of Destiny
+4 Kozilek's Command
+4 Expedition Map
+4 Urza's Tower
+4 Urza's Power Plant
+2 Emrakul, the Promised End
+4 Portent of Calamity
+### Devoted Combo | 3% | 14ª Liga Lleida, Top 4, 01.11.26
+4 Badgermole Cub
+4 Delighted Halfling
+4 Devoted Druid
+2 Birds of Paradise
+1 Craterhoof Behemoth
+1 Shang-Chi, Master of Kung Fu
+1 Duskwatch Recruiter
+2 Fiend Artisan
+1 Vizier of Remedies
+1 Tyvar, the Pummeler
+4 Green Sun's Zenith
+4 Nature's Rhythm
+2 Thoughtseize
+4 Leyline of Abundance
+4 Tyvar, Jubilant Brawler
+4 Verdant Catacombs
+3 Misty Rainforest
+2 Dryad Arbor
+2 Boseiju, Who Endures
+2 Forest
+2 Overgrown Tomb
+1 Gemstone Caverns
+1 Horizon Canopy
+1 Temple Garden
+1 Underground Mortuary
+2 Wooded Foothills
+### Ruby Storm | 3% | MTGO Challenge 32, 1. Platz, 29.10.26
+3 Arid Mesa
+1 Artist's Talent
+3 Mountain
+4 Manamorphose
+1 Elegant Parlor
+4 Hex Magic
+3 Past in Flames
+4 Desperate Ritual
+4 Pyretic Ritual
+4 Ral, Monsoon Mage
+1 Raucous Theater
+4 Reckless Impulse
+4 Ruby Medallion
+1 Blood Crypt
+2 Twinned Vision
+2 Valakut Awakening
+2 Wish
+4 Wrenn's Resolve
+1 Sacred Foundry
+3 Bloodstained Mire
+2 Scalding Tarn
+3 Wooded Foothills
+### Living End | 3% | MTGO Challenge 64, Top 8, 05.10.26
+4 Street Wraith
+4 Oliphaunt
+4 Wistfulness
+1 Stomping Ground
+1 Thundering Falls
+1 Steam Vents
+1 Hedge Maze
+4 Shardless Agent
+1 Sink into Stupor
+4 Misty Rainforest
+3 Living End
+4 Subtlety
+4 Endurance
+4 Generous Ent
+4 Force of Negation
+4 Violent Outburst
+1 Brazen Borrower
+1 Island
+1 Forest
+1 Breeding Pool
+1 Flooded Grove
+1 Colossal Skyturtle
+1 Sacred Foundry
+1 Waker of Waves
+1 Temple Garden
+1 Commercial District
+2 Striped Riverwinder
+### Esper Blink | 2% | MTGO Challenge 32, 1. Platz, 26.10.26
+1 Ephemerate
+1 Consign to Memory
+2 Teferi, Time Raveler
+2 Pest Control
+4 Thoughtseize
+4 Fatal Push
+1 Boggart Trawler
+3 Flickerwisp
+3 Emperor of Bones
+4 Solitude
+4 Overlord of the Balemurk
+4 Phelia, Exuberant Shepherd
+4 Quantum Riddler
+4 Witch Enchanter
+1 Swamp
+1 Godless Shrine
+1 Meticulous Archive
+1 Hallowed Fountain
+1 Polluted Delta
+1 Shadowy Backstreet
+1 Watery Grave
+1 Undercity Sewers
+1 Bleachbone Verge
+2 Plains
+4 Marsh Flats
+4 Flooded Strand
+### Dimir Control | 2% | 14ª Liga Lleida, 2. Platz, 17.10.26
+4 Island
+4 Polluted Delta
+4 Field of Ruin
+3 Watery Grave
+3 Flooded Strand
+2 Undercity Sewers
+1 Verdant Catacombs
+1 Swamp
+1 Scalding Tarn
+1 Gloomlake Verge
+4 Wan Shi Tong, Librarian
+4 Subtlety
+3 Orcish Bowmasters
+1 Snapcaster Mage
+4 Fatal Push
+4 Counterspell
+4 Consult the Star Charts
+3 Sheoldred's Edict
+3 Cling to Dust
+2 Surgical Extraction
+2 Spell Snare
+2 Spell Pierce
+### Goryo's Vengeance (Instant Reanimator) | 2% | MTGO Challenge 32, 01.11.26
+4 Ephemerate
+4 Faithful Mending
+1 Swamp
+4 Solitude
+1 Godless Shrine
+1 Shadowy Backstreet
+4 Psychic Frog
+1 Breeding Pool
+1 Plains
+1 Meticulous Archive
+3 Marsh Flats
+1 Island
+4 Polluted Delta
+1 Hallowed Fountain
+1 Griselbrand
+4 Goryo's Vengeance
+2 Force of Negation
+4 Flooded Strand
+4 Atraxa, Grand Unifier
+3 Thoughtseize
+1 Undercity Sewers
+1 Watery Grave
+4 Quantum Riddler
+3 Prismatic Ending
+1 Superior Spider-Man
+1 Pest Control
+### Dimir Reanimator (Persist) | 1% | Regional Championship MIT, Top 4, 01.11.26
+4 Archon of Cruelty
+4 Gran-Gran
+4 Psychic Frog
+2 Abhorrent Oculus
+2 Emperor of Bones
+2 Fallaji Archaeologist
+2 Seasoned Cryomancer
+4 Fatal Push
+4 Flare of Denial
+2 Bitter Triumph
+4 Persist
+2 Unearth
+4 Polluted Delta
+3 Undercity Sewers
+3 Watery Grave
+2 Bloodstained Mire
+2 Cephalid Coliseum
+2 Marsh Flats
+2 Swamp
+1 Island
+1 Otawara, Soaring City
+4 Thoughtseize

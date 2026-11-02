@@ -1,0 +1,380 @@
+### Hogaak | 8% | STHLM Weekly, 1. Platz, 29.10.26
+2 Bayou
+1 Bojuka Bog
+2 Boseiju, Who Endures
+4 Dark Matter Manipulator
+1 Dryad Arbor
+2 Eumidian Hatchery
+3 Fatal Push
+1 Forest
+4 Hogaak, Arisen Necropolis
+1 Misty Rainforest
+4 Moonshadow
+3 Once Upon a Time
+4 Orcish Bowmasters
+1 Scythecat Cub
+4 Stitcher's Supplier
+1 Swamp
+3 Sylvan Safekeeper
+1 Talon Gates of Madara
+4 Thoughtseize
+1 Underground Mortuary
+4 Verdant Catacombs
+4 Wasteland
+4 Wight of the Reliquary
+1 Wooded Foothills
+### UWx Control | 7% | 11 Etapa Sul de Minas, 1. Platz, 31.10.26
+1 Consign to Memory
+2 Force of Negation
+2 Prismatic Ending
+4 Ponder
+4 Brainstorm
+4 Force of Will
+4 Stifle
+4 Swords to Plowshares
+3 Murktide Regent
+4 Quantum Riddler
+4 Tamiyo, Inquisitive Student
+4 Phelia, Exuberant Shepherd
+1 Island
+1 Karakas
+1 Meticulous Archive
+1 Plains
+1 Volcanic Island
+2 Tundra
+2 Arid Mesa
+3 Polluted Delta
+4 Wasteland
+4 Flooded Strand
+### Dimir Tempo | 6% | 159º Alpha RJ, 3. Platz, 31.10.26
+2 Bloodstained Mire
+4 Brainstorm
+1 Brazen Borrower
+2 Daze
+4 Fatal Push
+2 Flooded Strand
+3 Flow State
+4 Force of Will
+1 Island
+2 Kaito, Bane of Nightmares
+2 Murktide Regent
+3 Nethergoyf
+3 Orcish Bowmasters
+4 Polluted Delta
+4 Ponder
+1 Snuff Out
+1 Swamp
+4 Tamiyo, Inquisitive Student
+4 Thoughtseize
+1 Undercity Sewers
+4 Underground Sea
+4 Wasteland
+### Boros Energy | 6% | God of Legacy Trial, 1. Platz, 25.10.26
+4 Sand Scout
+4 Guide of Souls
+4 Ocelot Pride
+4 Amped Raptor
+4 Ajani, Nacatl Pariah
+4 Voice of Victory
+1 Hexing Squelcher
+4 Swords to Plowshares
+1 Galvanic Discharge
+1 Forth Eorlingas!
+3 Goblin Bombardment
+2 Static Prison
+2 Plains
+1 Mountain
+2 Sacred Foundry
+2 Flooded Strand
+2 Windswept Heath
+2 Karakas
+4 Arid Mesa
+4 Wasteland
+2 Sunbaked Canyon
+1 Elegant Parlor
+2 Lazotep Quarry
+### Doomsday | 6% | MTGO League, 01.11.26
+4 Polluted Delta
+3 Daze
+4 Underground Sea
+1 Flooded Strand
+1 Verdant Catacombs
+1 Swamp
+1 Island
+1 Undercity Sewers
+4 Force of Will
+4 Ponder
+4 Brainstorm
+1 Quantum Riddler
+3 Street Wraith
+1 Edge of Autumn
+2 Flow State
+4 Dark Ritual
+3 Personal Tutor
+4 Lotus Petal
+1 Cavern of Souls
+4 Doomsday
+2 Thassa's Oracle
+1 Lion's Eye Diamond
+1 Misty Rainforest
+1 Scalding Tarn
+1 Consider
+3 Thoughtseize
+### UR Tempo | 5% | Lega Lair #1, 2. Platz, 25.10.26
+4 Brainstorm
+1 Brazen Borrower
+3 Cori-Steel Cutter
+3 Daze
+3 Delver of Secrets
+4 Dragon's Rage Channeler
+2 Flooded Strand
+3 Flow State
+4 Force of Will
+1 Island
+4 Lightning Bolt
+4 Mishra's Bauble
+2 Misty Rainforest
+2 Polluted Delta
+4 Ponder
+1 Preordain
+1 Prismari Charm
+2 Scalding Tarn
+2 Stifle
+1 Thundering Falls
+1 Unholy Heat
+4 Volcanic Island
+4 Wasteland
+### Sneak and Show | 5% | MTGO Showcase Challenge, Top 4, 25.10.26
+1 Mountain
+4 Ponder
+4 Brainstorm
+2 Flusterstorm
+2 Volcanic Island
+3 Emrakul, the Aeons Torn
+3 Ancient Tomb
+4 Show and Tell
+4 Scalding Tarn
+4 Sneak Attack
+4 Lotus Petal
+1 Thundering Falls
+4 Force of Will
+2 City of Traitors
+4 Stock Up
+1 Mistrise Village
+1 Polluted Delta
+2 Island
+4 Atraxa, Grand Unifier
+2 Misty Rainforest
+1 Spell Pierce
+1 Sink into Stupor
+2 Omniscience
+### Eldrazi Stompy | 4% | Monthly, 1. Platz, 02.10.26
+4 Abundant Countryside
+4 Ancient Tomb
+4 Cavern of Souls
+4 Chalice of the Void
+1 City of Traitors
+4 Eldrazi Linebreaker
+4 Eldrazi Temple
+3 Eye of Ugin
+4 Glaring Fleshraker
+3 It That Heralds the End
+4 Kozilek's Command
+4 Lotus Petal
+4 Reality Smasher
+1 Sire of Seven Deaths
+4 Thought-Knot Seer
+4 Wasteland
+4 Wastescape Battlemage
+### Death & Taxes (BW) | 4% | Mont Weekly Event, 1. Platz, 30.10.26
+4 Overlord of the Balemurk
+4 Phelia, Exuberant Shepherd
+4 Recruiter of the Guard
+4 Solitude
+4 Stoneforge Mystic
+3 White Orchid Phantom
+2 Orcish Bowmasters
+2 Skyclave Apparition
+2 Witch Enchanter
+1 Cloak and Dagger, Entwined
+1 Emperor of Bones
+1 Flickerwisp
+1 Lion Sash
+1 Loran of the Third Path
+4 Aether Vial
+1 Lich's Relic
+1 Meteor Sword
+1 Pre-War Formalwear
+4 Swords to Plowshares
+4 Thoughtseize
+4 Karakas
+4 Marsh Flats
+4 Plains
+4 Prismatic Vista
+4 Wasteland
+4 Windswept Heath
+3 Scrubland
+2 Shadowy Backstreet
+1 Flooded Strand
+1 Swamp
+### Ux Tron | 4% | MTGO Challenge 32, 2. Platz, 28.10.26
+2 Eldrazi Confluence
+4 Urza's Power Plant
+4 Urza's Mine
+2 Thundertrap Trainer
+2 Giant's Boulder
+4 Grim Monolith
+3 The One Ring
+4 Karn, the Great Creator
+4 Kozilek's Command
+4 Petrified Hamlet
+4 Planar Nexus
+2 Sink into Stupor
+4 Stock Up
+1 Island
+4 Force of Will
+4 Ugin, Eye of the Storms
+2 Force of Negation
+2 Expedition Map
+4 Urza's Tower
+### Lands | 4% | LawLeague #1, 1. Platz, 13.09.26
+1 Bedeck/Bedazzle
+4 Yavimaya, Cradle of Growth
+2 Ancient Tomb
+1 Otawara, Soaring City
+1 Blast Zone
+3 Dark Depths
+4 Wasteland
+4 Sphere of Resistance
+2 Ghost Quarter
+4 Crop Rotation
+1 Grafdigger's Cage
+4 Life from the Loam
+4 Malevolent Rumble
+1 Maze of Ith
+1 Pithing Needle
+1 Forest
+1 The Tabernacle at Pendrell Vale
+1 Karakas
+4 Urza's Saga
+3 Thespian's Stage
+4 Exploration
+3 Boseiju, Who Endures
+1 Skateboard
+1 Bojuka Bog
+4 Mox Diamond
+1 Expedition Map
+### Bant Control | 4% | MTGO Challenge 32, 1. Platz, 14.10.26
+1 Lorien Revealed
+1 Terminus
+1 Force of Negation
+2 Leyline Binding
+2 Daze
+3 Stifle
+4 Brainstorm
+4 Ponder
+4 Up the Beanstalk
+4 Swords to Plowshares
+4 Force of Will
+2 Phelia, Exuberant Shepherd
+2 Tamiyo, Inquisitive Student
+3 Quantum Riddler
+3 Murktide Regent
+1 Plains
+1 Island
+1 Savannah
+1 Meticulous Archive
+1 Underground Sea
+2 Tropical Island
+2 Tundra
+3 Wasteland
+4 Flooded Strand
+4 Misty Rainforest
+### Aluren | 4% | Oslo Open 2026, 1. Platz, 24.10.26
+4 Acererak the Archlich
+4 Atraxa, Grand Unifier
+4 Lotus Petal
+4 Brainstorm
+4 Force of Will
+2 Veil of Summer
+4 Ponder
+4 Show and Tell
+4 Stock Up
+4 Aluren
+2 Omniscience
+4 Ancient Tomb
+4 Misty Rainforest
+2 Hedge Maze
+2 Island
+2 Tropical Island
+1 Boseiju, Who Endures
+1 City of Traitors
+1 Flooded Strand
+1 Forest
+1 Polluted Delta
+1 Scalding Tarn
+### Welder Cam | 4% | MTGO Challenge 32, 1. Platz, 11.09.26
+1 Legion Extruder
+4 Emry, Lurker of the Loch
+1 Phyrexian Dragon Engine
+4 Sewer-veillance Cam
+4 Goblin Engineer
+1 Agatha's Soul Cauldron
+4 Goblin Welder
+1 Skateboard
+4 Lotus Petal
+4 Mox Opal
+4 Mishra's Bauble
+3 Urza's Bauble
+1 Bloodstained Mire
+4 Scalding Tarn
+1 Great Furnace
+1 Plateau
+4 Volcanic Island
+1 Mountain
+4 Urza's Saga
+1 Chromatic Star
+1 Arena of Glory
+1 Loki, God of Mischief
+1 Seat of the Synod
+4 Pinnacle Emissary
+1 Lion's Eye Diamond
+### Karn Forge | 3% | Best Event each Month, 1. Platz, 25.10.26
+4 Urza's Workshop
+4 Glaring Fleshraker
+2 Mystic Forge
+4 Planar Nexus
+4 The One Ring
+1 Voltaic Key
+1 Basalt Monolith
+4 Lotus Petal
+4 Ancient Tomb
+4 Grim Monolith
+1 Paradox Engine
+4 Karn, the Great Creator
+4 Manifold Key
+4 Urza's Saga
+1 Portable Hole
+1 Mishra's Research Desk
+1 Mox Opal
+1 Pithing Needle
+4 Urza's Tower
+4 Kozilek's Command
+3 Tezzeret, Cruel Captain
+### Dragon Stompy | 2% | MTGO Challenge 32, Top 4, 22.09.26
+4 Simian Spirit Guide
+4 Fury
+2 Pyrogoyf
+4 The One Ring
+4 Shatterskull Smashing
+4 Fable of the Mirror-Breaker
+4 Chrome Mox
+2 Magus of the Moon
+4 Chalice of the Void
+4 Ancient Tomb
+4 Sundering Eruption
+4 City of Traitors
+4 Mountain
+4 Karn, the Great Creator
+4 Broadside Bombardiers
+4 Blood Moon
