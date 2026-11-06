@@ -223,6 +223,10 @@ table.stats th{color:var(--muted);font-weight:500;font-size:12px;text-transform:
 .pool-empty{font-size:13px}
 .autopay.on{border-color:var(--green);color:var(--green)}
 .menu .ms{font-size:17px}
+.marks{display:contents}
+.mark .micon{margin-right:3px;font-size:1.05em}
+.mark-E .micon{color:#e9c547}.mark-XP .micon{color:#9cc8f2}.mark-RAD .micon{color:#93d36b}
+.mnum{cursor:pointer;text-decoration:underline dotted;text-underline-offset:3px}
 .update-bar{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom, 0px));z-index:80;display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:center;background:var(--panel);border:1px solid var(--brass);border-radius:10px;padding:10px 14px;box-shadow:0 10px 30px rgba(0,0,0,.5);max-width:calc(100% - 32px)}
 .mybar{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center}
 .zones{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;margin-top:8px}
@@ -307,6 +311,7 @@ textarea{width:100%;min-height:240px;resize:vertical;font-size:14px}
         </div>
         <span class="stat poison">Gift <b class="num" id="myPoison">0</b>
           <button class="small" id="poiM">−</button><button class="small" id="poiP">+</button></span>
+        <span class="marks" id="myMarks"></span>
         <span class="stat">Zug <b class="num" id="myTurn">0</b></span>
         <button class="small primary" id="bAttack">Angreifen</button>
         <span class="stat">Match <b class="num" id="myMatch">0–0</b>
@@ -415,7 +420,7 @@ const okImg = u => typeof u === "string" && /^https:\/\/[a-z0-9.-]*scryfall\.(io
 function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
 
 /* ---------- Zustand ---------- */
-function freshState(){ return {life:20, poison:0, cmd:{}, turn:0, deck:[], deckText:"", cmdText:"", library:[], hand:[], bf:[], gy:[], ex:[], cz:[], st:[], match:{w:0, l:0}, pool:{W:0, U:0, B:0, R:0, G:0, C:0}}; }
+function freshState(){ return {life:20, poison:0, cmd:{}, turn:0, deck:[], deckText:"", cmdText:"", library:[], hand:[], bf:[], gy:[], ex:[], cz:[], st:[], match:{w:0, l:0}, pool:{W:0, U:0, B:0, R:0, G:0, C:0}, marks:{E:0, XP:0, RAD:0}}; }
 let me = LS.get("kt-me", null) || {id:"p"+uid(), name:""};
 let S = Object.assign(freshState(), LS.get("kt-state", {}));
 let others = {};          // pid -> öffentlicher Zustand
@@ -446,6 +451,13 @@ function say(text){ sendLog({from:me.name, text, sys:false}); }
 function findCard(u){ for(const z of ["library","hand","bf","gy","ex","cz","st"]){ const i = S[z].findIndex(c=>c.u===u); if(i>=0) return {z, i, c:S[z][i]}; } return null; }
 
 function moveCard(u, to, where){
+  // Hülle: nach dem Bewegen prüfen, ob Karten Marken auslösen (Eintreten, Sterben)
+  const f = findCard(u); if(!f) return;
+  const c = f.c, from = f.z, wasFd = c.fd;
+  moveCardRaw(u, to, where);
+  markOnMove(c, from, to, wasFd);
+}
+function moveCardRaw(u, to, where){
   const f = findCard(u); if(!f) return;
   const from = f.z, c = f.c;
   S[from].splice(f.i, 1);
@@ -475,6 +487,7 @@ async function play(u, faceDown){
   if(faceDown){ f.c.fd = true; moveCard(u, "bf"); return; }
   if((f.z === "hand" || f.z === "cz") && !isLand(f.c)){
     if(!(await payFor(f.c))) return;
+    markOnCast(f.c);
     if(usesStack()) return putOnStack(f.c, "bf");
     if(typeof botRespond === "function" && await botRespond(f.c)){ const g = findCard(u); if(g){ act(`${g.c.n} wurde gekontert`); moveCard(u, "gy"); } return; }
   }
@@ -482,10 +495,12 @@ async function play(u, faceDown){
 }
 async function castSpell(u){
   const f = findCard(u); if(!f) return;
-  if(f.z === "hand" || f.z === "cz"){ if(!(await payFor(f.c))) return; }
+  if(f.z === "hand" || f.z === "cz"){ if(!(await payFor(f.c))) return; markOnCast(f.c); }
   if(usesStack()){ const target = STACK.length ? await stackTargetDialog(f.c) : null; return putOnStack(f.c, "gy", target); }
   act(`wirkt ${f.c.n}`);
+  const card = f.c;
   if(typeof botRespond === "function" && await botRespond(f.c)){ act(`${f.c.n} wurde gekontert`); }
+  else markOnResolve(card);
   moveCard(u, "gy");
 }
 function draw(n=1){
@@ -497,7 +512,7 @@ function draw(n=1){
 function startGame(){
   const lib = [], cz = [];
   S.deck.forEach(t => { if(t.sb) return; (t.cmdr ? cz : lib).push(newCard(t)); });
-  Object.assign(S, {library:shuffle(lib), hand:[], bf:[], gy:[], ex:[], cz, st:[], poison:0, cmd:{}, turn:0, life: cz.length ? 40 : 20, pool:emptyPoolObj()});
+  Object.assign(S, {library:shuffle(lib), hand:[], bf:[], gy:[], ex:[], cz, st:[], poison:0, cmd:{}, turn:0, life: cz.length ? 40 : 20, pool:emptyPoolObj(), marks:{E:0, XP:0, RAD:0}});
   lifeLogReset();
   const sbN = S.deck.filter(t => t.sb).length;
   act(`startet ein neues Spiel (${lib.length} Karten${sbN ? `, Sideboard ${sbN}` : ""}${cz.length ? ", Commander: " + cz.map(c=>c.n).join(" & ") : ""})`);
@@ -567,7 +582,7 @@ function receiveGive(m){
 
 function cloneToken(u){
   const f = findCard(u); if(!f) return;
-  const t = newCard({...f.c, tok:true}); t.x = (f.c.x || 0) + 22; t.y = (f.c.y || 0) + 22; S.bf.push(t);
+  const t = newCard({...f.c, tok:true}); t.x = (f.c.x || 0) + 22; t.y = (f.c.y || 0) + 22; S.bf.push(t); markOnMove(t, null, "bf");
   act(`erstellt eine Kopie von ${f.c.n}`); commit();
 }
 
@@ -679,6 +694,7 @@ function renderMine(){
   $("#myPoison").textContent = S.poison;
   $("#myTurn").textContent = S.turn;
   renderPool();
+  renderMarks();
   const mt = S.match || {w:0, l:0}; $("#myMatch").textContent = `${mt.w}–${mt.l}`;
   $("#bSide").hidden = !S.deck.some(t => t.sb) && !S.deck.length;
   $("#nLib").textContent = S.library.length;
@@ -737,6 +753,7 @@ function renderOpps(){
       ${avatarEl(o.avatar, o.name)}<span class="pname">${esc(o.name)}${o.off ? " (weg)" : ""}</span>${id === TURN.active ? '<span class="turnflag">am Zug</span>' : ""}
       <span class="lifebox-opp row" style="gap:8px"><span class="life num">${Number(o.life)||0}</span></span>
       ${o.poison ? `<span class="stat poison">Gift <b class="num">${Number(o.poison)}</b></span>` : ""}
+      ${oppMarksHtml(o.marks)}
       <span class="stat">Hand <b class="num">${Number(o.handN)||0}</b></span>
       <span class="stat">Bib <b class="num">${Number(o.libN)||0}</b></span>
       ${typeof o.pool === "string" && /^[WUBRGC]{1,60}$/.test(o.pool) ? `<span class="stat">Pool ${manaHtml(o.pool.split("").map(s => "{" + s + "}").join(""))}</span>` : ""}
@@ -801,6 +818,7 @@ function cardMenu(c, zone){
     if(isCreature(c)) items.push({l: c.pwO != null ? `Stärke/Widerstand ändern (${power(c)}/${tough(c)})` : "Stärke/Widerstand setzen …", f:() => openPtDialog(c)});
     items.push({l:"Kopie als Token", f:() => cloneToken(c.u)});
     (c.tk || []).forEach(t => items.push({l:`Token erzeugen: ${t.n}`, f:() => createTokenFromId(t.id, t.n, 1, c)}));
+    if(!c.fd) markMenuItems(c).forEach(it => items.push(it));
     const opp = order.filter(id => id !== me.id && id !== "bot" && others[id] && !others[id].off);
     if(c.ow && opp.includes(c.ow.id)) items.push({l:`Kontrolle zurück an ${c.ow.name}`, f:() => giveControl(c.u, c.ow.id)});
     opp.filter(id => !(c.ow && c.ow.id === id)).forEach(id => items.push({l:`Kontrolle geben an ${others[id].name}`, f:() => giveControl(c.u, id)}));
@@ -813,6 +831,7 @@ function cardMenu(c, zone){
     items.push({l:"Zeigen", f:() => act(`zeigt ${c.n}`)});
     items.push("-");
   } else if(zone !== "bf"){
+    if(zone === "gy" && /\b(Instant|Sorcery)\b/.test(c.type || "")) markMenuItems(c).forEach(it => items.push(it));
     items.push({l:"Aufs Spielfeld", f:mv("bf")});
   }
   if(zone !== "hand") items.push({l:"Auf die Hand", f:mv("hand")});
@@ -1189,7 +1208,7 @@ async function createTokenFromId(id, name, qty = 1, near){
   for(let i = 0; i < qty; i++){
     const c = newCard({...t, tok:true});
     if(near && near.x != null){ c.x = near.x + 22 * (i + 1); c.y = Math.min(near.y + 22 * (i + 1), FIELD_H - 140); }
-    S.bf.push(c);
+    S.bf.push(c); markOnMove(c, null, "bf");
   }
   act(`erstellt ${qty}× ${t.n}-Token`);
   commit();
@@ -1222,7 +1241,7 @@ function openTokenDialog(){
   ["Treasure","Clue","Food","Blood","Zombie","Goblin","Soldier","Spirit","Saproling","Elemental"].forEach(n => quick.append(btn(n, () => { $("#tName").value = n; find(); }, "small")));
   const make = (t) => {
     const q = Math.max(1, Math.min(50, parseInt($("#tQty").value,10) || 1));
-    for(let i=0;i<q;i++) S.bf.push(newCard({...t, tok:true}));
+    for(let i=0;i<q;i++){ const tk = newCard({...t, tok:true}); S.bf.push(tk); markOnMove(tk, null, "bf"); }
     act(`erstellt ${q}× ${t.n}-Token`); commit();
     $("#tMsg").textContent = `${q}× ${t.n} erstellt.`;
   };
@@ -1258,7 +1277,7 @@ function pub(){
   const m = S.match || {w:0, l:0};
   return {name: me.name, life:S.life, poison:S.poison, turn:S.turn, handN:S.hand.length, libN:S.library.length,
     bf:S.bf.map(strip), gy:S.gy.map(strip), ex:S.ex.map(strip), cz:S.cz.map(strip), match: (m.w || m.l) ? `${m.w}–${m.l}` : "",
-    pool: poolStr(poolOf()), mat: LOOK.mat, sleeve: okColor(LOOK.sleeve) ? LOOK.sleeve : "", avatar: okImg(LOOK.avatar) ? LOOK.avatar : "", deckName: String(S.deckName || "").slice(0, 40)};
+    pool: poolStr(poolOf()), marks: marksPub(), mat: LOOK.mat, sleeve: okColor(LOOK.sleeve) ? LOOK.sleeve : "", avatar: okImg(LOOK.avatar) ? LOOK.avatar : "", deckName: String(S.deckName || "").slice(0, 40)};
 }
 let pushTimer = null;
 function schedulePush(){ clearTimeout(pushTimer); pushTimer = setTimeout(pushState, 120); }
@@ -1555,6 +1574,7 @@ function stackResolveMine(m){
   const c = S.st[i];
   if(m.cancelled){ S.st.splice(i, 1); S.hand.push(c); act(`nimmt ${c.n} zurück auf die Hand`); commit(); return; }
   if(it.countered){ moveCard(c.u, "gy"); return; }
+  if(it.dest !== "bf") markOnResolve(c);
   moveCard(c.u, it.dest === "bf" ? "bf" : "gy");
 }
 async function botStackReact(it){
@@ -2227,6 +2247,7 @@ function openAttackDialog(preTarget){
     const attackers = S.bf.filter(c => chosen.has(c.u)); if(!attackers.length) return;
     attackers.forEach(c => { if(!kwHas(c, "vigilance")) c.tap = true; });
     closeModal();
+    markOnAttack(attackers);
     if(TURN.active === me.id && TURN.phase !== 3) setPhase(3);
     const groups = {};
     attackers.forEach(c => { const t = chosen.get(c.u); (groups[t] = groups[t] || []).push(c); });
@@ -2874,6 +2895,282 @@ function renderPool(){
   box.append(at);
 }
 
+/* ---------- Spielermarken: Energie, Erfahrung, Strahlung ---------- */
+// Die App liest «you get {E}{E}» oder «you get an experience counter» aus dem Kartentext und zählt mit:
+// beim Eintreten ins Spiel, beim Sterben, beim Wirken, beim Angreifen und wenn ein Spontanzauber oder eine Hexerei verrechnet wird.
+// Was sie nicht sicher erkennt (z. B. «deals combat damage to a player»), steht als Knopf im Kartenmenü.
+const MARKS = {
+  E:   {name:"Energie",   icon:"⚡", uses:/\{E\}|energy counter/i},
+  XP:  {name:"Erfahrung", icon:"★", uses:/experience counter/i},
+  RAD: {name:"Strahlung", icon:"☢", uses:/\brad counter/i}
+};
+const MARK_ORDER = ["E", "XP", "RAD"];
+const NUMW = {a:1, an:1, one:1, two:2, three:3, four:4, five:5, six:6, seven:7, eight:8, nine:9, ten:10};
+const COLW = {white:"W", blue:"U", black:"B", red:"R", green:"G"};
+const reEscM = s => String(s).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+function marksOf(){
+  if(!S.marks || typeof S.marks !== "object") S.marks = {};
+  MARK_ORDER.forEach(k => { S.marks[k] = Math.max(0, Math.min(999, parseInt(S.marks[k], 10) || 0)); });
+  return S.marks;
+}
+function markTxt(k, n){ return `${n} ${MARKS[k].name}`; }
+/* «get {E}{E}», «get two experience counters», «get an amount of {E} equal to …» */
+function parseGain(chunk){
+  const s = String(chunk || "").trim();
+  let m = s.match(/^((?:\{E\})+)/i);
+  if(m) return {k:"E", n:(m[1].match(/\{E\}/gi) || []).length};
+  if(/^an amount of \{E\}/i.test(s)) return {k:"E", n:null};
+  m = s.match(/^(an?|one|two|three|four|five|six|seven|eight|nine|ten|\d+|x) (experience|energy|rad) counters?/i);
+  if(m){
+    const k = {experience:"XP", energy:"E", rad:"RAD"}[m[2].toLowerCase()];
+    const n = /^\d+$/.test(m[1]) ? +m[1] : (NUMW[m[1].toLowerCase()] ?? null);
+    return {k, n};
+  }
+  m = s.match(/^(experience|energy|rad) counters equal to/i);
+  if(m) return {k:{experience:"XP", energy:"E", rad:"RAD"}[m[1].toLowerCase()], n:null};
+  return null;
+}
+/* Alle Stellen im Kartentext, an denen du Marken bekommst, mit ihrem Auslöser */
+function markClauses(c){
+  if(!c || !c.o) return [];
+  if(c._mkO === c.o && c._mk) return c._mk;
+  const out = [];
+  String(c.o).split("\n").forEach(raw => {
+    const line = raw.replace(/\([^)]*\)/g, "").replace(/\s+/g, " ").trim();
+    if(!line) return;
+    const sentences = line.split(/(?<=\.)\s+(?=[A-Z])/);
+    const lineHead = line.match(/^(When|Whenever|At) ([^,]+),\s*(.*)$/i);
+    const act = line.match(/^([^:"]{1,120}):\s+(.*)$/);
+    sentences.forEach((sen, si) => {
+      const re = /\b(?:you gain \w+ life and )?(?:you )?gets? ((?:\{E\})+|an amount of \{E\}[^.,]*|(?:an?|one|two|three|four|five|six|seven|eight|nine|ten|\d+|x) (?:experience|energy|rad) counters?|(?:experience|energy|rad) counters equal to[^.,]*)/gi;
+      let m;
+      while((m = re.exec(sen))){
+        const before = sen.slice(0, m.index);
+        if(/\b(each player|each opponent|target player|that player|its controller|target opponent)\s*$/i.test(before)) continue;
+        const g = parseGain(m[1]); if(!g) continue;
+        const h = sen.match(/^(When|Whenever|At) ([^,]+),\s*(.*)$/i);
+        let cond = null, kind = "spell", clean = false;
+        if(h){
+          cond = h[2].trim(); kind = h[1].toLowerCase() === "at" ? "at" : "trig";
+          clean = /^(?:you gain \w+ life and )?(?:you )?get/i.test(h[3]);
+        } else if(si > 0 && lineHead && /^(When|Whenever)$/i.test(lineHead[1]) && !/^(If|When|Whenever|Then)\b/i.test(sen)){
+          cond = lineHead[2].trim(); kind = "trig"; clean = false;
+        } else if(act && si === 0 && !/^(When|Whenever|At)\b/i.test(line)){
+          kind = "act";
+        } else {
+          clean = !/\b(if|unless|may)\b/i.test(before);
+        }
+        out.push({...g, kind, cond, clean, text: sen.slice(0, 140)});
+      }
+    });
+  });
+  c._mkO = c.o; c._mk = out;
+  return out;
+}
+/* Energie, die eine Fähigkeit als Kosten verlangt: «Pay {E}{E}: …» */
+function energyCosts(c){
+  const out = [];
+  String(c && c.o || "").split("\n").forEach(raw => {
+    const line = raw.replace(/\([^)]*\)/g, "").trim();
+    const m = line.match(/^([^:"]{1,120}):\s+(.*)$/);
+    if(m && /pay ((?:\{E\})+)/i.test(m[1])) out.push({n:(m[1].match(/\{E\}/gi) || []).length, eff:m[2].slice(0, 60)});
+  });
+  return out;
+}
+const paysAnyEnergy = c => /pay (any amount of|an amount of|one or more|x) \{E\}|pay \{E\} any number of times/i.test(String(c && c.o || ""));
+function selfPat(src){
+  const full = String(src.n || "").split(" // ")[0].trim();
+  const names = [full, full.split(",")[0].trim()].filter(Boolean).map(reEscM);
+  return `(?:this (?:creature|artifact|enchantment|land|permanent|vehicle|card|spacecraft|planeswalker|battle)|${names.join("|")})`;
+}
+/* Prüft eine Beschreibung wie «nontoken green creature» gegen eine Karte */
+function descMatch(words, c){
+  const w = String(words || "").toLowerCase().replace(/\b(a|an|another|one or more|other)\b/g, " ").trim().split(/\s+/).filter(Boolean);
+  const type = String(c.type || "").toLowerCase();
+  return w.every(x => {
+    if(x === "token") return !!c.tok;
+    if(x === "nontoken") return !c.tok;
+    if(COLW[x]) return String(c.mc || "").toUpperCase().includes(COLW[x]);
+    if(x === "colorless") return !/[WUBRG]/.test(String(c.mc || "").toUpperCase());
+    if(x === "multicolored") return new Set((String(c.mc || "").toUpperCase().match(/[WUBRG]/g) || [])).size > 1;
+    if(x.startsWith("non")) return !type.includes(x.slice(3));
+    if(x === "permanent") return !/\b(instant|sorcery)\b/.test(type);
+    return type.includes(x.replace(/s$/, "")) || type.includes(x);
+  });
+}
+function numCond(c, stat, n, dir){
+  const v = stat === "power" ? (c.pwO ?? c.pw) : stat === "toughness" ? (c.tgO ?? c.tg) : (c.cmc || 0);
+  if(v == null || !Number.isFinite(+v)) return false;
+  return dir === "less" ? +v <= n : +v >= n;
+}
+/* Passt der Auslöser «cond» der Karte src zum Ereignis ev? */
+function condFires(cond, src, ev){
+  const SELF = selfPat(src);
+  let s = String(cond || "").trim();
+  // «this creature enters or attacks», «Aether Hub enters»
+  const self = s.match(new RegExp(`^${SELF}\\s+(.*)$`, "i"));
+  if(self && !/^or another\b/i.test(self[1])){
+    if(ev.c !== src) return false;
+    const evs = self[1].match(/\b(enters|dies|attacks|is put into a graveyard from the battlefield)\b/gi) || [];
+    if(!/^(enters|dies|attacks|blocks|is put into|or|and)/i.test(self[1])) return false;
+    const map = {enters:"enter", dies:"die", attacks:"attack"};
+    return evs.some(e => (map[e.toLowerCase()] || "die") === ev.kind);
+  }
+  let selfToo = false;
+  if(self){ selfToo = true; s = self[1].replace(/^or another\s+/i, "a "); }
+  const anotherOnly = /^another\b/i.test(s) && !selfToo;
+  if(anotherOnly && ev.c === src) return false;
+  let m;
+  if(ev.kind === "die"){
+    m = s.match(/^(?:another|a|an|one or more)\s+(.*?)\s*(creature|permanent|artifact|enchantment)s?(?:\s+you control)?\s+(?:dies|die|is put into a graveyard from the battlefield|are put into a graveyard from the battlefield)$/i);
+    if(!m) return false;
+    return descMatch(m[1] + " " + m[2], ev.c);
+  }
+  if(ev.kind === "enter"){
+    m = s.match(/^(?:another|a|an|one or more)\s+(.*?)\s*(creature|artifact|enchantment|land|permanent|planeswalker)s?(?:\s+(?:card|token)s?)?(?:\s+you control)?(?:\s+with\s+(power|toughness|mana value)\s+(\d+)\s+or\s+(less|greater))?(?:\s+you control)?\s+enters?(?:\s+the battlefield)?(?:\s+under your control)?$/i);
+    if(!m) return false;
+    if(!descMatch(m[1] + " " + m[2], ev.c)) return false;
+    return m[3] ? numCond(ev.c, m[3].toLowerCase(), +m[4], m[5].toLowerCase()) : true;
+  }
+  if(ev.kind === "cast"){
+    m = s.match(/^you cast (?:a|an)\s+(.*?)\s*spell(?:\s+with mana value (\d+) or (greater|less)|\s+with mana value greater than the number of experience counters you have)?$/i);
+    if(!m) return false;
+    if(/\bfirst\b|\bsecond\b/i.test(m[1])) return false;
+    const kinds = String(m[1] || "").split(/\s+or\s+|,\s*/).map(x => x.trim()).filter(Boolean);
+    if(kinds.length && !kinds.some(k => descMatch(k, ev.c))) return false;
+    if(m[2]) return numCond(ev.c, "mv", +m[2], m[3].toLowerCase());
+    if(/greater than the number of experience/i.test(s)) return (ev.c.cmc || 0) > marksOf().XP;
+    return true;
+  }
+  if(ev.kind === "attack"){
+    if(/^you attack$/i.test(s)) return ev.first;
+    m = s.match(/^(?:a|another|one or more)\s+(.*?)\s*creatures? you control attacks?$/i);
+    if(!m) return false;
+    if(/^one or more/i.test(s)) return ev.first;
+    return descMatch(m[1], ev.c);
+  }
+  return false;
+}
+/* Marken gutschreiben, mit Rückgängig-Knopf */
+let MARK_UNDO = [];
+async function gainMarks(list){
+  // list: [{k, n, src}]
+  const done = [];
+  for(const g of list){
+    let n = g.n;
+    if(n == null){
+      n = await askNumber(`${g.src.n}: ${MARKS[g.k].name}`, `Wie viele ${MARKS[g.k].name}smarken bekommst du? (Die Menge hängt vom Spiel ab.)`);
+      if(!n) continue;
+    }
+    marksOf()[g.k] += n;
+    done.push({k:g.k, n, src:g.src});
+  }
+  if(!done.length) return;
+  MARK_UNDO = done;
+  const txt = done.map(d => `${d.src.n}: +${markTxt(d.k, d.n)}`).join(", ");
+  const now = MARK_ORDER.filter(k => done.some(d => d.k === k)).map(k => `${MARKS[k].name} ${marksOf()[k]}`).join(", ");
+  act(`${txt} (jetzt ${now})`);
+  toast(`<b>${esc(txt)}</b> · jetzt ${esc(now)} <button class="small" id="markUndo">Rückgängig</button>`, 6000);
+  const u = document.getElementById("markUndo");
+  if(u) u.onclick = () => { MARK_UNDO.forEach(d => { marksOf()[d.k] = Math.max(0, marksOf()[d.k] - d.n); }); act(`nimmt ${MARK_UNDO.map(d => markTxt(d.k, d.n)).join(", ")} zurück`); MARK_UNDO = []; $("#toast").hidden = true; commit(); };
+  commit();
+}
+function markAutoOn(){ return LOOK.autoMarks !== false; }
+/* Ereignis an alle eigenen Karten im Spiel melden */
+function markEvent(ev, extraSources){
+  if(!markAutoOn()) return;
+  const srcs = [...S.bf.filter(c => !c.fd), ...(extraSources || [])];
+  const gains = [];
+  srcs.forEach(src => markClauses(src).forEach(cl => {
+    if(cl.kind !== "trig" || !cl.clean) return;
+    if(condFires(cl.cond, src, ev)) gains.push({k:cl.k, n:cl.n, src});
+  }));
+  if(gains.length) gainMarks(gains);
+}
+function markOnMove(c, from, to, wasFd){
+  if(!c || !markAutoOn()) return;
+  if(to === "bf" && from !== "bf" && !c.fd) markEvent({kind:"enter", c});
+  else if(from === "bf" && to === "gy" && !wasFd) markEvent({kind:"die", c}, [c]);
+}
+function markOnCast(c){ if(c && !isLand(c)) markEvent({kind:"cast", c}); }
+function markOnAttack(attackers){ attackers.forEach((c, i) => markEvent({kind:"attack", c, first: i === 0})); }
+/* Spontanzauber und Hexereien: «You get {E}{E}{E}» beim Verrechnen */
+async function markOnResolve(c){
+  if(!c || !markAutoOn() || !/\b(Instant|Sorcery)\b/.test(c.type || "")) return;
+  const gains = markClauses(c).filter(cl => cl.kind === "spell" && cl.clean).map(cl => ({k:cl.k, n:cl.n, src:c}));
+  if(gains.length) await gainMarks(gains);
+  if(paysAnyEnergy(c) && marksOf().E > 0) payEnergyDialog(c);
+}
+async function payEnergyDialog(c, fixed){
+  const have = marksOf().E;
+  let n = fixed;
+  if(n == null){
+    const p = askNumber(`${c.n}: Energie bezahlen`, `Du hast ${have} Energie. Wie viel bezahlst du?`);
+    const inp = document.getElementById("askN"); if(inp){ inp.max = String(have); inp.value = String(have); inp.select(); }
+    n = await p;
+    if(n == null) return;
+  }
+  if(n > have){ toast(`Zu wenig Energie: ${c.n} braucht ${n}, du hast ${have}.`); return; }
+  if(!n) return;
+  marksOf().E -= n;
+  act(`bezahlt ${n} Energie für ${c.n} (jetzt ${marksOf().E})`);
+  commit();
+}
+/* Kartenmenü: Marken von Hand auslösen oder Energie bezahlen */
+function markMenuItems(c){
+  const items = [];
+  markClauses(c).forEach(cl => {
+    const amt = cl.n == null ? "…" : `+${cl.n}`;
+    const why = cl.kind === "act" ? "Fähigkeit" : cl.kind === "spell" ? "Effekt" : "Auslöser";
+    items.push({h:`${why}: ${amt} ${MARKS[cl.k].icon} ${MARKS[cl.k].name}`, f:() => gainMarks([{k:cl.k, n:cl.n, src:c}])});
+  });
+  energyCosts(c).forEach(ec => items.push({h:`Bezahle ${ec.n} ⚡: ${esc(ec.eff)}`, f:() => payEnergyDialog(c, ec.n)}));
+  if(paysAnyEnergy(c)) items.push({l:"Energie bezahlen …", f:() => payEnergyDialog(c)});
+  return items;
+}
+/* Anzeige in der eigenen Kopfzeile */
+let markUsesKey = "", markUsesVal = {};
+function deckUsesMarks(){
+  const pool = [...S.deck, ...S.bf, ...S.hand, ...S.cz];
+  const key = pool.length + ":" + (S.deckName || "");
+  if(key === markUsesKey) return markUsesVal;
+  const v = {};
+  MARK_ORDER.forEach(k => { v[k] = pool.some(c => MARKS[k].uses.test(String(c.o || ""))); });
+  markUsesKey = key; markUsesVal = v;
+  return v;
+}
+function renderMarks(){
+  const box = document.getElementById("myMarks"); if(!box) return;
+  const mk = marksOf(), uses = deckUsesMarks();
+  S.markShow = Array.isArray(S.markShow) ? S.markShow.filter(k => MARKS[k]) : [];
+  const shown = MARK_ORDER.filter(k => mk[k] > 0 || uses[k] || S.markShow.includes(k));
+  box.innerHTML = "";
+  shown.forEach(k => {
+    const s = document.createElement("span"); s.className = `stat mark mark-${k}`;
+    s.title = `${MARKS[k].name}: Zahl anklicken, um sie direkt einzutragen`;
+    s.innerHTML = `<span class="micon" aria-hidden="true">${MARKS[k].icon}</span>${MARKS[k].name} `;
+    const b = document.createElement("b"); b.className = "num mnum"; b.textContent = mk[k]; b.tabIndex = 0; b.setAttribute("role", "button");
+    const setN = async () => { const p = askNumber(MARKS[k].name, `Wie viele ${MARKS[k].name}smarken hast du?`); const i = document.getElementById("askN"); if(i){ i.value = String(mk[k]); i.select(); } const v = await p; if(v == null) return; mk[k] = v; act(`${MARKS[k].name} → ${v}`); commit(); };
+    b.onclick = setN; b.onkeydown = e => { if(e.key === "Enter") setN(); };
+    const minus = btn("−", () => { mk[k] = Math.max(0, mk[k] - 1); act(`${MARKS[k].name} → ${mk[k]}`); commit(); }, "small");
+    const plus = btn("+", () => { mk[k]++; act(`${MARKS[k].name} → ${mk[k]}`); commit(); }, "small");
+    minus.setAttribute("aria-label", `${MARKS[k].name} −1`); plus.setAttribute("aria-label", `${MARKS[k].name} +1`);
+    s.append(b, minus, plus);
+    box.append(s);
+  });
+  const hidden = MARK_ORDER.filter(k => !shown.includes(k));
+  if(hidden.length){
+    const add = btn("+ Marke", e => openMenu(e, [{t:"Spielermarke anzeigen"}, ...hidden.map(k => ({l:`${MARKS[k].icon} ${MARKS[k].name}`, f:() => { S.markShow.push(k); commit(); }}))]), "small");
+    add.title = "Energie, Erfahrung oder Strahlung anzeigen";
+    box.append(add);
+  }
+}
+function marksPub(){ const mk = marksOf(), o = {}; MARK_ORDER.forEach(k => { if(mk[k]) o[k] = mk[k]; }); return o; }
+function oppMarksHtml(m){
+  if(!m || typeof m !== "object") return "";
+  return MARK_ORDER.filter(k => Number.isFinite(+m[k]) && +m[k] > 0).map(k => `<span class="stat mark mark-${k}" title="${MARKS[k].name}"><span class="micon" aria-hidden="true">${MARKS[k].icon}</span>${MARKS[k].name} <b class="num">${Math.min(999, Math.floor(+m[k]))}</b></span>`).join("");
+}
+
 /* ---------- Grafik: Animationen, Pfeile, Effekte ---------- */
 const SVGNS = "http://www.w3.org/2000/svg";
 const cssEsc = s => (window.CSS && CSS.escape) ? CSS.escape(String(s)) : String(s).replace(/[^a-zA-Z0-9_-]/g, ch => "\\" + ch);
@@ -3057,7 +3354,7 @@ const MATS = {
   blau:  {name:"Ozean", bg:"radial-gradient(120% 90% at 50% 0%, #1f4a5e 0%, #12293a 75%)"}
 };
 const SLEEVES = ["#7a5230", "#2f5d8a", "#8a2f3c", "#2f7a52", "#5b3f8a", "#b8892f", "#2b2b2b", "#d9d4c5"];
-let LOOK = Object.assign({mat:"filz", sleeve:"#7a5230", avatar:"", avatarName:"", sound:false, table:"auto", autoPool:true, autoPay:true}, LS.get("kt-look", {}));
+let LOOK = Object.assign({mat:"filz", sleeve:"#7a5230", avatar:"", avatarName:"", sound:false, table:"auto", autoPool:true, autoPay:true, autoMarks:true}, LS.get("kt-look", {}));
 function saveLook(){ LS.set("kt-look", LOOK); }
 const okColor = c => typeof c === "string" && /^#[0-9a-f]{6}$/i.test(c);
 const matBg = key => (MATS[key] || MATS.filz).bg;
@@ -3112,7 +3409,10 @@ function openLookDialog(){
     <label class="row stat"><input type="checkbox" id="soundPick"> Geräusche (Zugbeginn, Würfel, Ausspielen, Schaden)</label>
     <h3>Mana</h3>
     <label class="row stat"><input type="checkbox" id="autoPoolPick"> Beim Tappen einer Manaquelle das Mana in den Pool legen</label>
-    <label class="row stat"><input type="checkbox" id="autoPayPick"> Beim Wirken automatisch bezahlen und fehlendes Mana selbst tappen</label>`);
+    <label class="row stat"><input type="checkbox" id="autoPayPick"> Beim Wirken automatisch bezahlen und fehlendes Mana selbst tappen</label>
+    <h3>Spielermarken</h3>
+    <label class="row stat"><input type="checkbox" id="autoMarksPick"> Energie, Erfahrung und Strahlung aus dem Kartentext automatisch zählen</label>`);
+  $("#autoMarksPick").checked = LOOK.autoMarks !== false; $("#autoMarksPick").onchange = () => { LOOK.autoMarks = $("#autoMarksPick").checked; saveLook(); };
   $("#autoPoolPick").checked = LOOK.autoPool !== false; $("#autoPoolPick").onchange = () => { LOOK.autoPool = $("#autoPoolPick").checked; saveLook(); };
   $("#autoPayPick").checked = LOOK.autoPay !== false; $("#autoPayPick").onchange = () => { LOOK.autoPay = $("#autoPayPick").checked; saveLook(); renderPool(); };
   const mp = $("#matPick");
@@ -3293,7 +3593,7 @@ function historyAdd(win){
 /* ---------- Automatische Updates ---------- */
 // Liegt die App im Web, prüft sie regelmässig version.json im selben Ordner und lädt sich bei einer neuen Version neu.
 // Alles Wichtige (Spielstand, Deck, Tisch) liegt im Browser-Speicher und ist nach dem Neuladen wieder da.
-const APP_VERSION = "2026.11.06-1";
+const APP_VERSION = "2026.11.06-2";
 const ONLINE = /^https?:$/.test(location.protocol);
 let updPending = null, updTimer = null, updSnoozeUntil = 0;
 function busyForUpdate(){ return botBusy || (!$("#modal").hidden && modalState && ["block","deck"].includes(modalState.kind)); }
