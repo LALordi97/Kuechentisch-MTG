@@ -190,7 +190,11 @@ main{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:14px;padding:12p
 #tableArea.roundtable .handwrap{grid-area:hand;margin-top:0}
 #tableArea.roundtable .z-opp{--w:50px}
 /* Auswertungen */
-.ms{width:16px;height:16px;vertical-align:-3px;margin-left:1px}
+:root{--mW:#f4eccc;--mU:#5aa3dc;--mB:#a69aa8;--mR:#e3725b;--mG:#5fb173;--mC:#c9c4ba;--mN:#c9c4ba}
+.ms{display:inline-grid;place-items:center;width:1.25em;height:1.25em;border-radius:50%;font:700 .78em/1 var(--f-body);color:#1a1712;vertical-align:-.2em;margin-left:1px;box-shadow:inset 0 -1px 0 rgba(0,0,0,.25),0 1px 1px rgba(0,0,0,.35);background:var(--mN)}
+.ms-W{background:var(--mW)}.ms-U{background:var(--mU)}.ms-B{background:var(--mB)}.ms-R{background:var(--mR)}.ms-G{background:var(--mG)}.ms-C{background:var(--mC)}
+.ms-hyb{background:linear-gradient(135deg,var(--a) 50%,var(--b) 50%)}
+.ms-phy{box-shadow:inset 0 0 0 2px rgba(0,0,0,.45),0 1px 1px rgba(0,0,0,.35)}
 .tabs button.on{border-color:var(--brass);background:var(--felt);color:var(--brass)}
 .statrow{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px}
 .statcard{background:var(--felt);border:1px solid var(--line);border-radius:8px;padding:8px 10px;display:flex;flex-direction:column}
@@ -212,6 +216,13 @@ table.stats th{color:var(--muted);font-weight:500;font-size:12px;text-transform:
 .ratebar i{display:block;height:100%;background:var(--green)}
 .win{color:var(--green);font-weight:700}
 .loss{color:var(--red);font-weight:700}
+.poolbar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:6px;padding:6px 8px;border-radius:8px;background:var(--felt);border:1px solid var(--line)}
+.manachip{display:inline-flex;align-items:center;gap:4px;padding:2px 8px 2px 4px;border-radius:999px}
+.manachip .ms{font-size:18px;vertical-align:0;margin:0}
+.manachip b{font-family:var(--f-display);font-size:16px}
+.pool-empty{font-size:13px}
+.autopay.on{border-color:var(--green);color:var(--green)}
+.menu .ms{font-size:17px}
 .update-bar{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom, 0px));z-index:80;display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:center;background:var(--panel);border:1px solid var(--brass);border-radius:10px;padding:10px 14px;box-shadow:0 10px 30px rgba(0,0,0,.5);max-width:calc(100% - 32px)}
 .mybar{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center}
 .zones{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;margin-top:8px}
@@ -301,6 +312,7 @@ textarea{width:100%;min-height:240px;resize:vertical;font-size:14px}
         <span class="stat">Match <b class="num" id="myMatch">0–0</b>
           <button class="small" id="bWin" title="Dieses Spiel gewonnen">Sieg</button><button class="small" id="bLoss" title="Dieses Spiel verloren">Niederlage</button><button class="small" id="bMatchReset" title="Match zurücksetzen">↺</button></span>
       </div>
+      <div class="poolbar" id="myPool"></div>
       <div class="cmdrow" id="cmdRow"></div>
       <div class="zones">
         <div style="min-width:0">
@@ -403,7 +415,7 @@ const okImg = u => typeof u === "string" && /^https:\/\/[a-z0-9.-]*scryfall\.(io
 function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
 
 /* ---------- Zustand ---------- */
-function freshState(){ return {life:20, poison:0, cmd:{}, turn:0, deck:[], deckText:"", cmdText:"", library:[], hand:[], bf:[], gy:[], ex:[], cz:[], st:[], match:{w:0, l:0}}; }
+function freshState(){ return {life:20, poison:0, cmd:{}, turn:0, deck:[], deckText:"", cmdText:"", library:[], hand:[], bf:[], gy:[], ex:[], cz:[], st:[], match:{w:0, l:0}, pool:{W:0, U:0, B:0, R:0, G:0, C:0}}; }
 let me = LS.get("kt-me", null) || {id:"p"+uid(), name:""};
 let S = Object.assign(freshState(), LS.get("kt-state", {}));
 let others = {};          // pid -> öffentlicher Zustand
@@ -438,7 +450,7 @@ function moveCard(u, to, where){
   const from = f.z, c = f.c;
   S[from].splice(f.i, 1);
   const wasFd = c.fd;
-  if(from === "bf" && to !== "bf"){ c.tap=false; c.c=0; c.flip=false; delete c.x; delete c.y; c.pwO = null; c.tgO = null; }
+  if(from === "bf" && to !== "bf"){ c.tap=false; c.c=0; c.flip=false; delete c.x; delete c.y; c.pwO = null; c.tgO = null; c.mtap = null; }
   if(to !== "bf" && to !== "ex") c.fd = false;
   if(c.tok && to !== "bf"){ act(`entfernt Token ${c.n}`); commit(); return; }
   if(c.ow && to !== "bf"){
@@ -462,6 +474,7 @@ async function play(u, faceDown){
   const f = findCard(u); if(!f) return;
   if(faceDown){ f.c.fd = true; moveCard(u, "bf"); return; }
   if((f.z === "hand" || f.z === "cz") && !isLand(f.c)){
+    if(!(await payFor(f.c))) return;
     if(usesStack()) return putOnStack(f.c, "bf");
     if(typeof botRespond === "function" && await botRespond(f.c)){ const g = findCard(u); if(g){ act(`${g.c.n} wurde gekontert`); moveCard(u, "gy"); } return; }
   }
@@ -469,6 +482,7 @@ async function play(u, faceDown){
 }
 async function castSpell(u){
   const f = findCard(u); if(!f) return;
+  if(f.z === "hand" || f.z === "cz"){ if(!(await payFor(f.c))) return; }
   if(usesStack()){ const target = STACK.length ? await stackTargetDialog(f.c) : null; return putOnStack(f.c, "gy", target); }
   act(`wirkt ${f.c.n}`);
   if(typeof botRespond === "function" && await botRespond(f.c)){ act(`${f.c.n} wurde gekontert`); }
@@ -483,7 +497,7 @@ function draw(n=1){
 function startGame(){
   const lib = [], cz = [];
   S.deck.forEach(t => { if(t.sb) return; (t.cmdr ? cz : lib).push(newCard(t)); });
-  Object.assign(S, {library:shuffle(lib), hand:[], bf:[], gy:[], ex:[], cz, st:[], poison:0, cmd:{}, turn:0, life: cz.length ? 40 : 20});
+  Object.assign(S, {library:shuffle(lib), hand:[], bf:[], gy:[], ex:[], cz, st:[], poison:0, cmd:{}, turn:0, life: cz.length ? 40 : 20, pool:emptyPoolObj()});
   lifeLogReset();
   const sbN = S.deck.filter(t => t.sb).length;
   act(`startet ein neues Spiel (${lib.length} Karten${sbN ? `, Sideboard ${sbN}` : ""}${cz.length ? ", Commander: " + cz.map(c=>c.n).join(" & ") : ""})`);
@@ -664,6 +678,7 @@ function renderMine(){
   $("#myLife").textContent = S.life;
   $("#myPoison").textContent = S.poison;
   $("#myTurn").textContent = S.turn;
+  renderPool();
   const mt = S.match || {w:0, l:0}; $("#myMatch").textContent = `${mt.w}–${mt.l}`;
   $("#bSide").hidden = !S.deck.some(t => t.sb) && !S.deck.length;
   $("#nLib").textContent = S.library.length;
@@ -680,7 +695,7 @@ function renderMine(){
     const el = cardEl(c, true, "bf");
     el.style.left = Math.max(0, Math.min(c.x, W - w)) + "px";
     el.style.top = Math.max(0, Math.min(c.y, FIELD_H - h)) + "px";
-    bindCard(el, () => { c.tap = !c.tap; commit(); }, e => openMenu(e, cardMenu(c, "bf")));
+    bindCard(el, e => toggleTap(c, e), e => openMenu(e, cardMenu(c, "bf")));
     makeDraggable(el, c, "bf");
     field.append(el);
   });
@@ -724,6 +739,7 @@ function renderOpps(){
       ${o.poison ? `<span class="stat poison">Gift <b class="num">${Number(o.poison)}</b></span>` : ""}
       <span class="stat">Hand <b class="num">${Number(o.handN)||0}</b></span>
       <span class="stat">Bib <b class="num">${Number(o.libN)||0}</b></span>
+      ${typeof o.pool === "string" && /^[WUBRGC]{1,60}$/.test(o.pool) ? `<span class="stat">Pool ${manaHtml(o.pool.split("").map(s => "{" + s + "}").join(""))}</span>` : ""}
       ${o.match ? `<span class="stat">Match <b class="num">${esc(o.match)}</b></span>` : ""}
       <span class="stat">Zug <b class="num">${Number(o.turn)||0}</b></span>
       <span class="piles"></span></div>`;
@@ -776,7 +792,8 @@ function cardMenu(c, zone){
   items.push({t: c.n});
   items.push({l:"Gross ansehen", f:() => bigView(c, true)});
   if(zone === "bf"){
-    items.push({l: c.tap ? "Enttappen" : "Tappen", f:() => { c.tap=!c.tap; commit(); }});
+    items.push({l: c.tap ? "Enttappen" : "Tappen", f:() => toggleTap(c)});
+    if(!c.tap && (manaChoices(c) || []).length > 1) (manaChoices(c) || []).forEach(o => items.push({h:`Tappen für ${optHtml(o)}`, f:() => tapForMana(c, o)}));
     if(c.back) items.push({l:"Auf andere Seite drehen", f:() => { c.flip=!c.flip; act(`dreht ${c.n} um`); commit(); }});
     items.push({l: c.fd ? "Aufdecken" : "Verdecken", f:() => { c.fd=!c.fd; act(c.fd ? "verdeckt eine Karte" : `deckt ${c.n} auf`); commit(); }});
     items.push({l:"Marke +1", f:() => { c.c++; commit(); }});
@@ -811,7 +828,7 @@ function openMenu(e, items){
   items.forEach(it => {
     if(it === "-"){ m.append(document.createElement("hr")); return; }
     if(it.t){ const d = document.createElement("div"); d.className="mt"; d.textContent = it.t; m.append(d); return; }
-    const b = document.createElement("button"); b.textContent = it.l;
+    const b = document.createElement("button"); if(it.h) b.innerHTML = it.h; else b.textContent = it.l;
     b.onclick = ev => { ev.stopPropagation(); closeMenu(); it.f(); };
     m.append(b);
   });
@@ -898,7 +915,7 @@ function bigView(c, mine){
 /* ---------- Top-Decks (eingebaut) ---------- */
 /*META_START*/
 const META_DECKS = {"cEDH":[{"n":"Kraum / Tymna","p":"7,4%","s":"MBG Commanderpalooza #3, 1. Platz, 24.10.26","l":"Commander\nKraum, Ludevic's Opus\nTymna the Weaver\n\nDeck\nEsper Sentinel\nFaerie Mastermind\nLavinia, Azorius Renegade\nLotho, Corrupt Shirriff\nMemnite\nMockingbird\nOpposition Agent\nOrcish Bowmasters\nRagavan, Nimble Pilferer\nRanger-Captain of Eos\nSimian Spirit Guide\nTataru Taru\nThassa's Oracle\nValley Floodcaller\nVoice of Victory\nAd Nauseam\nAn Offer You Can't Refuse\nBorne Upon a Wind\nBrain Freeze\nCabal Ritual\nChain of Vapor\nCommandeer\nCulling the Weak\nDark Ritual\nDeflecting Swat\nDemonic Consultation\nDispel\nEnlightened Tutor\nFierce Guardianship\nFinal Fortune\nFlusterstorm\nForce of Negation\nForce of Will\nInto the Flood Maw\nLim-Dûl's Vault\nMental Misstep\nMindbreak Trap\nMisdirection\nMystical Tutor\nOrim's Chant\nPact of Negation\nPyroblast\nRain of Filth\nRed Elemental Blast\nSilence\nSnapback\nSwan Song\nTainted Pact\nVampiric Tutor\nBeseech the Mirror\nDemonic Tutor\nDiabolic Intent\nGamble\nImperial Seal\nRite of Flame\nScheming Symmetry\nStrike It Rich\nArcane Signet\nChrome Mox\nFellwar Stone\nLion's Eye Diamond\nLotus Petal\nMana Vault\nMox Amber\nMox Diamond\nMox Opal\nSol Ring\nWishclaw Talisman\nGleaming Splendor\nMystic Remora\nNecropotence\nRhystic Study\nUnderworld Breach\nAncient Tomb\nArid Mesa\nBadlands\nBloodstained Mire\nCity of Brass\nCity of Traitors\nCommand Tower\nExotic Orchard\nFlooded Strand\nGemstone Caverns\nMana Confluence\nMarsh Flats\nMisty Rainforest\nOtawara, Soaring City\nPlateau\nPolluted Delta\nScalding Tarn\nScrubland\nStarting Town\nTarnished Citadel\nTundra\nUnderground Sea\nVerdant Catacombs\nVolcanic Island\nWindswept Heath"},{"n":"Kinnan, Bonder Prodigy","p":"6,7%","s":"cEDH UK Open Benfest III, 1. Platz, 12.09.26","l":"Commander\nKinnan, Bonder Prodigy\n\nDeck\nBirds of Paradise\nClever Impersonator\nColossal Skyturtle\nConsecrated Sphinx\nDelighted Halfling\nDrift of Phantasms\nElvish Mystic\nElvish Spirit Guide\nEndurance\nEnduring Vitality\nFaerie Mastermind\nFlesh Duplicate\nFyndhorn Elves\nGene Pollinator\nGilded Drake\nHigh Fae Trickster\nHullbreaker Horror\nInvasion of Ikoria\nLlanowar Elves\nMockingbird\nThrasios, Triton Hero\nTrophy Mage\nValley Floodcaller\nVolatile Stormdrake\nWan Shi Tong, Librarian\nAn Offer You Can't Refuse\nBorne Upon a Wind\nChain of Vapor\nChord of Calling\nCommandeer\nDispel\nDisrupting Shoal\nDizzy Spell\nDramatic Reversal\nFierce Guardianship\nFlusterstorm\nForce of Negation\nForce of Will\nMental Misstep\nMindbreak Trap\nMisdirection\nPact of Negation\nSink into Stupor\nSnapback\nSudden Substitution\nSwan Song\nTwincast\nWhir of Invention\nFinale of Devastation\nFlash Photography\nHidden Strings\nNature's Rhythm\nTransmute Artifact\nArcane Signet\nBasalt Monolith\nChrome Mox\nFellwar Stone\nGrim Monolith\nImposter Mech\nLotus Petal\nMana Vault\nMirage Mirror\nMox Amber\nMox Diamond\nMox Opal\nSol Ring\nSpringleaf Drum\nTalisman of Curiosity\nThe One Ring\nCopy Enchantment\nMirrormade\nMystic Remora\nRhystic Study\nSteal Enchantment\nSylvan Library\nAncient Tomb\nBoseiju, Who Endures\nBotanical Sanctum\nBreeding Pool\nCity of Brass\nCommand Tower\nFlooded Strand\nForest\nGemstone Caverns\nIsland\nMana Confluence\nMisty Rainforest\nOtawara, Soaring City\nPolluted Delta\nRejuvenating Springs\nScalding Tarn\nStarting Town\nTarnished Citadel\nTropical Island\nVerdant Catacombs\nWaterlogged Grove\nWindswept Heath\nWooded Foothills\nYavimaya Coast"},{"n":"Rograkh / Thrasios","p":"5,1%","s":"Pittsburgh 2026 t/cEDH, 1. Platz, 11.07.26","l":"Commander\nRograkh, Son of Rohgahh\nThrasios, Triton Hero\n\nDeck\nAllosaurus Shepherd\nBadgermole Cub\nBiomancer's Familiar\nBirds of Paradise\nClever Impersonator\nCloud of Faeries\nElvish Spirit Guide\nEnduring Vitality\nEternal Witness\nFaerie Mastermind\nFlesh Duplicate\nFormidable Speaker\nGene Pollinator\nHexing Squelcher\nInvasion of Ikoria\nMagus of the Candelabra\nMockingbird\nOboro Breezecaller\nPhantasmal Image\nShang-Chi, Master of Kung Fu\nSowing Mycospawn\nSpellseeker\nSpringheart Nantuko\nThe Cabbage Merchant\nValley Floodcaller\nVibrance\nWan Shi Tong, Librarian\nBorne Upon a Wind\nChain of Vapor\nChord of Calling\nCommandeer\nCrop Rotation\nDeflecting Swat\nDramatic Reversal\nEmerald Charm\nFierce Guardianship\nFlare of Denial\nFlare of Duplication\nFlusterstorm\nForce of Negation\nForce of Will\nLouisoix's Sacrifice\nMental Misstep\nMindbreak Trap\nMisdirection\nNoxious Revival\nPact of Negation\nSnap\nSwan Song\nVeil of Summer\nChatterstorm\nFinale of Devastation\nGamble\nGreen Sun's Zenith\nHidden Strings\nNature's Rhythm\nCandelabra of Tawnos\nChrome Mox\nExpedition Map\nLotus Petal\nMana Vault\nMox Amber\nMox Diamond\nSol Ring\nSpringleaf Drum\nCryptolith Rite\nEarthcraft\nMystic Remora\nRhystic Study\nTraining Grounds\nWild Growth\nAncient Tomb\nBoseiju, Who Endures\nBreeding Pool\nCommand Tower\nDeserted Temple\nDryad Arbor\nEmergence Zone\nFlooded Strand\nForest\nGaea's Cradle\nGemstone Caverns\nIsland\nMinamo, School at Water's Edge\nMisty Rainforest\nOtawara, Soaring City\nPolluted Delta\nPrismatic Vista\nScalding Tarn\nShifting Woodland\nTaiga\nTalon Gates of Madara\nTropical Island\nUrza's Saga\nVerdant Catacombs\nVolcanic Island\nWindswept Heath\nWooded Foothills"},{"n":"Rograkh / Silas Renn","p":"4,4%","s":"cEDH Nationals Deutschland Open, 1. Platz, 05.09.26","l":"Commander\nRograkh, Son of Rohgahh\nSilas Renn, Seeker Adept\n\nDeck\nHexing Squelcher\nPhyrexian Metamorph\nSimian Spirit Guide\nThassa's Oracle\nValley Floodcaller\nAd Nauseam\nAn Offer You Can't Refuse\nBorne Upon a Wind\nBrain Freeze\nCabal Ritual\nChain of Vapor\nCommandeer\nCulling the Weak\nDark Ritual\nDeflecting Swat\nDemonic Consultation\nDispel\nDramatic Reversal\nFierce Guardianship\nFinal Fortune\nFlare of Duplication\nFlusterstorm\nForce of Will\nMental Misstep\nMindbreak Trap\nMisdirection\nMystical Tutor\nPact of Negation\nSink into Stupor\nSnapback\nSwan Song\nTainted Pact\nVampiric Tutor\nBeseech the Mirror\nDemonic Tutor\nDiabolic Intent\nImperial Seal\nStock Up\nTimetwister\nTransmute Artifact\nArcane Signet\nBolas's Citadel\nChrome Mox\nDefense Grid\nDimir Signet\nGilded Lotus\nGrim Monolith\nImposter Mech\nLion's Eye Diamond\nLotus Petal\nMana Vault\nManifold Key\nMoonsnare Prototype\nMox Amber\nMox Diamond\nMox Opal\nRelic of Legends\nRelic of Sauron\nScroll Rack\nSensei's Divining Top\nSol Ring\nSpringleaf Drum\nThe One Ring\nVexing Bauble\nVoltaic Key\nWishclaw Talisman\nCopy Artifact\nMystic Remora\nNecrodominance\nNecropotence\nRhystic Study\nUnderworld Breach\nTezzeret, Cruel Captain\nAncient Tomb\nBadlands\nBloodstained Mire\nCity of Brass\nCity of Traitors\nCommand Tower\nDarkwater Catacombs\nEmergence Zone\nGemstone Caverns\nMana Confluence\nMarsh Flats\nMishra's Workshop\nMisty Rainforest\nOtawara, Soaring City\nPhyrexian Tower\nPolluted Delta\nScalding Tarn\nTalon Gates of Madara\nUndercity Sewers\nUnderground Sea\nUrborg, Tomb of Yawgmoth\nUrza's Saga\nVerdant Catacombs\nVolcanic Island\nWatery Grave"},{"n":"Sisay, Weatherlight Captain","p":"3,8%","s":"Nacional de cEDH 100K, 1. Platz, 29.08.26","l":"Commander\nSisay, Weatherlight Captain\n\nDeck\nBadgermole Cub\nBirds of Paradise\nBloom Tender\nColossal Skyturtle\nDeadpool, Trading Card\nDeathrite Shaman\nDelighted Halfling\nDerevi, Empyrial Tactician\nElvish Spirit Guide\nEmiel the Blessed\nEsika, God of the Tree\nEsper Sentinel\nIgnoble Hierarch\nIoreth of the Healing House\nKing T'Challa\nKinnan, Bonder Prodigy\nLavinia, Azorius Renegade\nLotho, Corrupt Shirriff\nMarvin, Murderous Mimic\nNoble Hierarch\nRagavan, Nimble Pilferer\nRanger-Captain of Eos\nSelvala, Heart of the Wilds\nShang-Chi, Master of Kung Fu\nSpellskite\nTataru Taru\nThe Cabbage Merchant\nWan Shi Tong, Librarian\nAbrupt Decay\nChord of Calling\nCrop Rotation\nCyclonic Rift\nDeflecting Swat\nEladamri's Call\nEnlightened Tutor\nFierce Guardianship\nFlusterstorm\nForce of Negation\nForce of Will\nLegolas's Quick Reflexes\nMental Misstep\nMindbreak Trap\nOrim's Chant\nPact of Negation\nSilence\nSummoner's Pact\nSwan Song\nVampiric Tutor\nDemonic Tutor\nGreen Sun's Zenith\nNature's Rhythm\nAgatha's Soul Cauldron\nArcane Signet\nChrome Mox\nImposter Mech\nLoki's Scepter\nLotus Petal\nMana Vault\nMox Amber\nMox Diamond\nMox Opal\nRelic of Legends\nSol Ring\nDeafening Silence\nMystic Remora\nRhystic Study\nSmothering Tithe\nTouch the Spirit Realm\nTeferi, Time Raveler\nTeferi, Who Slows the Sunset\nTyvar, Jubilant Brawler\nAncient Tomb\nBayou\nBoseiju, Who Endures\nCity of Brass\nCommand Tower\nExotic Orchard\nFlooded Strand\nGaea's Cradle\nGemstone Caverns\nMana Confluence\nMisty Rainforest\nMount Doom\nOtawara, Soaring City\nPlateau\nPolluted Delta\nSavannah\nScalding Tarn\nScrubland\nStarting Town\nTaiga\nTarnished Citadel\nTropical Island\nTundra\nUnderground Sea\nVerdant Catacombs\nVolcanic Island\nWindswept Heath\nWooded Foothills"},{"n":"Thrasios / Tymna","p":"2,9%","s":"Steel City Green Chile Slopper, 1. Platz, 18.10.26","l":"Commander\nThrasios, Triton Hero\nTymna the Weaver\n\nDeck\nBirds of Paradise\nClever Impersonator\nDeathrite Shaman\nDelney, Streetwise Lookout\nDevoted Druid\nElvish Spirit Guide\nEndurance\nEsper Sentinel\nFaerie Mastermind\nFlesh Duplicate\nGilded Drake\nHazel's Brewmaster\nHigh Fae Trickster\nKing T'Challa\nKinnan, Bonder Prodigy\nLotho, Corrupt Shirriff\nMockingbird\nNoble Hierarch\nOrcish Bowmasters\nRanger-Captain of Eos\nSubtlety\nTataru Taru\nTeferi, Mage of Zhalfir\nThe Cabbage Merchant\nVolatile Stormdrake\nWan Shi Tong, Librarian\nAn Offer You Can't Refuse\nBorne Upon a Wind\nChord of Calling\nCommandeer\nCrop Rotation\nDark Ritual\nDeadly Rollick\nDispel\nEnlightened Tutor\nFierce Guardianship\nFlusterstorm\nForce of Negation\nForce of Will\nLim-Dûl's Vault\nMental Misstep\nMindbreak Trap\nMisdirection\nOrim's Chant\nPact of Negation\nSilence\nSink into Stupor\nSnapback\nSwan Song\nSwords to Plowshares\nVampiric Tutor\nBeseech the Mirror\nDemonic Tutor\nEldritch Evolution\nFinale of Devastation\nFlash Photography\nGreen Sun's Zenith\nImperial Seal\nNature's Rhythm\nNeoform\nChrome Mox\nLotus Petal\nMana Vault\nMox Amber\nMox Diamond\nSol Ring\nCopy Enchantment\nGleaming Splendor\nMirrormade\nMystic Remora\nRhystic Study\nSmothering Tithe\nAncient Tomb\nBayou\nBoseiju, Who Endures\nCity of Brass\nCity of Traitors\nCommand Tower\nEmergence Zone\nExotic Orchard\nFlooded Strand\nGaea's Cradle\nGemstone Caverns\nMana Confluence\nMarsh Flats\nMisty Rainforest\nOtawara, Soaring City\nPolluted Delta\nSavannah\nScalding Tarn\nScrubland\nStarting Town\nTarnished Citadel\nTropical Island\nTundra\nUnderground Sea\nVerdant Catacombs\nWindswept Heath"},{"n":"Ishai / Rograkh","p":"2,1%","s":"The Cookout 2026, 1. Platz, 29.08.26","l":"Commander\nIshai, Ojutai Dragonspeaker\nRograkh, Son of Rohgahh\n\nDeck\nBirgi, God of Storytelling\nClever Impersonator\nDisplacer Kitten\nEsper Sentinel\nFaerie Mastermind\nHullbreaker Horror\nHydroelectric Specimen\nKing T'Challa\nMockingbird\nRagavan, Nimble Pilferer\nRanger-Captain of Eos\nSimian Spirit Guide\nStorm-Kiln Artist\nSubtlety\nTataru Taru\nThe Queen of Dale\nValley Floodcaller\nAn Offer You Can't Refuse\nBorne Upon a Wind\nBrain Freeze\nChain of Vapor\nCommandeer\nDeflecting Swat\nDisrupting Shoal\nEnlightened Tutor\nFierce Guardianship\nFirestorm\nFlare of Duplication\nFlusterstorm\nForce of Negation\nForce of Will\nGifts Ungiven\nInto the Flood Maw\nIntuition\nMental Misstep\nMindbreak Trap\nMisdirection\nMystical Tutor\nOrim's Chant\nPact of Negation\nPyroblast\nRed Elemental Blast\nRedirect Lightning\nSilence\nSink into Stupor\nSnapback\nSudden Substitution\nSwan Song\nSwords to Plowshares\nFlash Photography\nGamble\nIdyllic Tutor\nRite of Flame\nSevinne's Reclamation\nArcane Signet\nChrome Mox\nImposter Mech\nLion's Eye Diamond\nLotus Petal\nMana Vault\nMox Amber\nMox Diamond\nMox Opal\nParadise Mantle\nRelic of Legends\nSol Ring\nSpringleaf Drum\nCopy Enchantment\nCurse of Opulence\nGleaming Splendor\nMirrormade\nMystic Remora\nRhystic Study\nSmothering Tithe\nUnderworld Breach\nAncient Tomb\nArid Mesa\nBloodstained Mire\nCity of Brass\nCity of Traitors\nCommand Tower\nExotic Orchard\nFlooded Strand\nGemstone Caverns\nHallowed Fountain\nMana Confluence\nMarsh Flats\nMisty Rainforest\nOtawara, Soaring City\nPlateau\nPolluted Delta\nScalding Tarn\nStarting Town\nSteam Vents\nTarnished Citadel\nTundra\nVolcanic Island\nWindswept Heath"},{"n":"Dargo / Tymna","p":"2,0%","s":"MBG Mox Diamond Event, 1. Platz, 08.08.26","l":"Commander\nDargo, the Shipwrecker\nTymna the Weaver\n\nDeck\nAjani, Nacatl Pariah\nAltar of the Wretched\nBirgi, God of Storytelling\nDeadpool, Trading Card\nDragon's Rage Channeler\nEsper Sentinel\nGoblin Engineer\nGrand Abolisher\nGreedy Freebooter\nHexing Squelcher\nHope of Ghirapur\nImpulsive Pilferer\nInsolent Neonate\nKnuckles the Echidna\nLotho, Corrupt Shirriff\nMardu Devotee\nMarionette Apprentice\nMemnite\nOrcish Bowmasters\nRagavan, Nimble Pilferer\nRakdos, the Muscle\nRanger-Captain of Eos\nRazaketh, the Foulblooded\nRuthless Technomancer\nShambling Ghast\nSimian Spirit Guide\nTataru Taru\nThe Jolly Balloon Man\nThe Queen of Dale\nVoice of Victory\nWarren Soultrader\nAd Nauseam\nBurnt Offering\nCabal Ritual\nCulling the Weak\nDark Ritual\nDeflecting Swat\nEnlightened Tutor\nEntomb\nFinal Fortune\nSacrifice\nSilence\nTainted Pact\nVampiric Tutor\nBeseech the Mirror\nDemonic Tutor\nDiabolic Intent\nGamble\nImperial Seal\nInfernal Plunge\nLively Dirge\nReanimate\nRite of Flame\nSevinne's Reclamation\nAgatha's Soul Cauldron\nAltar of Dementia\nArcane Signet\nChrome Mox\nLion's Eye Diamond\nLotus Petal\nMana Vault\nMox Amber\nMox Diamond\nMox Opal\nPrized Statue\nRelic of Legends\nSol Ring\nVexing Bauble\nWishclaw Talisman\nGleaming Splendor\nGoblin Bombardment\nNecropotence\nStatic Prison\nUnderworld Breach\nAncient Tomb\nArid Mesa\nBadlands\nBlood Crypt\nBloodstained Mire\nCavern of Souls\nCity of Brass\nCity of Traitors\nCommand Tower\nEmergence Zone\nGemstone Caverns\nGodless Shrine\nGreat Furnace\nMana Confluence\nMarsh Flats\nPhyrexian Tower\nPlateau\nPolluted Delta\nSacred Foundry\nScrubland\nStarting Town\nVerdant Catacombs\nWindswept Heath\nWooded Foothills"},{"n":"Ral, Monsoon Mage","p":"2,0%","s":"Sunshine Showdown $10k+, 1. Platz, 10.10.26","l":"Commander\nRal, Monsoon Mage\n\nDeck\nBirgi, God of Storytelling\nElectro, Assaulting Battery\nGandalf, Goblins' Bane\nHexing Squelcher\nPinnacle Monk\nRagavan, Nimble Pilferer\nSimian Spirit Guide\nStorm-Kiln Artist\nTavern Scoundrel\nTreasonous Ogre\n_____ Goblin\nAbandon Attachments\nAn Offer You Can't Refuse\nBrain Freeze\nDeflecting Swat\nDemand Answers\nDesperate Ritual\nFierce Guardianship\nFlashback\nFlusterstorm\nFrantic Search\nGut Shot\nInvoke Calamity\nLava Dart\nLightning Bolt\nMental Misstep\nMystical Tutor\nOpera Love Song\nPact of Negation\nPyretic Ritual\nPyroblast\nRed Elemental Blast\nRedirect Lightning\nReiterate\nSeething Song\nSink into Stupor\nSnap\nThrill of Possibility\nTibalt's Trickery\nUntimely Malfunction\nVision of Love\nEcho of Eons\nFinale of Promise\nFlow State\nGamble\nGitaxian Probe\nGlimpse the Impossible\nHex Magic\nHidden Strings\nHighway Robbery\nJeska's Will\nMind's Desire\nPast in Flames\nPyroclasm\nQuiet Speculation\nReckless Impulse\nRite of Flame\nRomantic Rendezvous\nSea Gate Restoration\nShatterskull Smashing\nSolve the Equation\nStorm of Memories\nStrike It Rich\nTimetwister\nWheel of Fortune\nWheel of Misfortune\nWill of the Jeskai\nWindfall\nWitch's Mark\nWrenn's Resolve\nChrome Mox\nLion's Eye Diamond\nLotus Petal\nMana Vault\nMox Amber\nMox Diamond\nSol Ring\nSpringleaf Drum\nVexing Bauble\nMystic Remora\nUnderworld Breach\nAncient Tomb\nArid Mesa\nBloodstained Mire\nCommand Tower\nFiery Islet\nFlooded Strand\nGemstone Caverns\nGreat Furnace\nMisty Rainforest\nMountain\nPolluted Delta\nScalding Tarn\nShivan Reef\nSteam Vents\nThundering Falls\nTraining Center\nVolcanic Island\nWooded Foothills"},{"n":"Vivi Ornitier","p":"1,8%","s":"Consult The Coast Win-A-Dual, 1. Platz, 19.09.26","l":"Commander\nVivi Ornitier\n\nDeck\nDrift of Phantasms\nHullbreaker Horror\nHydroelectric Specimen\nImperial Recruiter\nNiv-Mizzet, Visionary\nPinnacle Monk\nQuicksilver Elemental\nRagavan, Nimble Pilferer\nSimian Spirit Guide\nTandem Lookout\nThor, Guardian of Midgard\nAn Offer You Can't Refuse\nBlazing Shoal\nBorne Upon a Wind\nBrain Freeze\nChain of Vapor\nCommandeer\nDaze\nDeflecting Swat\nDisrupting Shoal\nDizzy Spell\nFierce Guardianship\nFinal Fortune\nFlusterstorm\nForce of Negation\nForce of Will\nGut Shot\nIntuition\nInvert\nMental Misstep\nMindbreak Trap\nMisdirection\nMystical Tutor\nPact of Negation\nPyroblast\nPyrokinesis\nRedirect Lightning\nSecret Identity\nSink into Stupor\nSnapback\nSubmerge\nSwan Song\nVirtue of Courage\nWild Slash\nAlchemist's Gambit\nCave-In\nCommand Performance\nGamble\nGitaxian Probe\nJeska's Will\nLast Chance\nMerchant Scroll\nRite of Flame\nSea Gate Restoration\nShatterskull Smashing\nStrike It Rich\nSundering Eruption\nWarrior's Oath\nWild Ride\nChrome Mox\nGrim Monolith\nJeweled Amulet\nLion's Eye Diamond\nLotus Petal\nMana Vault\nMishra's Bauble\nMox Amber\nMox Diamond\nMox Opal\nSol Ring\nSpringleaf Drum\nUrza's Bauble\nVexing Bauble\nCuriosity\nMystic Remora\nOphidian Eye\nRhystic Study\nUnderworld Breach\nAncient Tomb\nArid Mesa\nBloodstained Mire\nCavern of Souls\nFiery Islet\nFlooded Strand\nGemstone Caverns\nMisty Rainforest\nMultiversal Passage\nPolluted Delta\nPrismatic Vista\nSandstone Needle\nSaprazzan Skerry\nScalding Tarn\nSnow-Covered Island\nSnow-Covered Mountain\nSteam Vents\nThran Portal\nThundering Falls\nVolcanic Island\nWooded Foothills"},{"n":"Etali, Primal Conqueror","p":"1,6%","s":"ISG Clash for the Cradle, 1. Platz, 26.09.26","l":"Commander\nEtali, Primal Conqueror\n\nDeck\nApex Devastator\nBirds of Paradise\nBirgi, God of Storytelling\nDelighted Halfling\nDisciple of Freyalise\nDualcaster Mage\nElvish Spirit Guide\nEmrakul, the Promised End\nEternal Witness\nFear of Missing Out\nFormidable Speaker\nFury\nHellkite Courser\nHexing Squelcher\nHunting Velociraptor\nImperial Recruiter\nJaxis, the Troublemaker\nOrcish Lumberjack\nPinnacle Monk\nRagavan, Nimble Pilferer\nRionya, Fire Dancer\nSimian Spirit Guide\nSquee, the Immortal\nTinder Wall\nTreasonous Ogre\nWandering Archaic\n_____ Goblin\nCrop Rotation\nDeflecting Swat\nDesperate Ritual\nEldrazi Confluence\nFinal Fortune\nFlare of Duplication\nLightning Bolt\nNoxious Revival\nOpen the Omenpaths\nPyretic Ritual\nPyroblast\nRed Elemental Blast\nSeething Song\nVeil of Summer\nWorldly Tutor\nEldritch Evolution\nElectroduplicate\nGamble\nGeosurge\nHeat Shimmer\nImprovisation Capstone\nInfernal Plunge\nJeska's Will\nMetamorphosis\nMolten Duplication\nRite of Flame\nTwinflame\nWheel of Fortune\nArcane Signet\nChrome Mox\nCursed Mirror\nGrim Monolith\nLion's Eye Diamond\nLotus Petal\nMana Vault\nMox Amber\nMox Diamond\nMox Opal\nSol Ring\nCream of the Crop\nFood Chain\nSylvan Library\nUnderworld Breach\nWorld War Hulk\nChandra, Flameshaper\nTezzeret, Cruel Captain\nAncient Tomb\nArid Mesa\nBloodstained Mire\nBoseiju, Who Endures\nCavern of Souls\nCity of Traitors\nCommand Tower\nCommercial District\nCrystal Vein\nEmergence Zone\nForest\nGaea's Cradle\nGemstone Caverns\nGrove of the Burnwillows\nKarplusan Forest\nMana Confluence\nMisty Rainforest\nMountain\nSandstone Needle\nShifting Woodland\nSpire Garden\nStarting Town\nStomping Ground\nTaiga\nWindswept Heath\nWooded Foothills"},{"n":"Magda, Brazen Outlaw","p":"1,6%","s":"cEDH Nationals Deutschland Invitational, 1. Platz, 05.09.26","l":"Commander\nMagda, Brazen Outlaw\n\nDeck\nBarkform Harvester\nBattered Golem\nBloodfire Dwarf\nDwarven Armorer\nDwarven Bloodboiler\nDwarven Grunt\nDwarven Mauler\nDwarven Scorcher\nDwarven Trader\nEnslaved Dwarf\nFíli and Kíli, Joyous\nGogo, Mysterious Mime\nKnuckles the Echidna\nLiberated Dwarf\nMagda, the Hoardmaster\nPinnacle Monk\nPlundering Barbarian\nProfessional Face-Breaker\nRoaming Throne\nSimian Spirit Guide\nSpark Mage\nThree Tree Mascot\nTreasonous Ogre\nTwinshot Sniper\nUniversal Automaton\nXorn\nÓin the Brave\nBottle-Cap Blast\nDeflecting Swat\nFlare of Duplication\nGalvanic Blast\nGhostfire Slice\nLightning Bolt\nPyroblast\nPyrokinesis\nRed Elemental Blast\nRedirect Lightning\nReturn the Favor\nSudden Shock\nTibalt's Trickery\nUntimely Malfunction\nJeska's Will\nMolten Duplication\nRite of Flame\nShatterskull Smashing\nSundering Eruption\nCaptain America's Motorcycle\nChrome Mox\nClock of Omens\nClown Car\nCursed Mirror\nDisruptor Flute\nFirdoch Core\nFlywheel Racer\nGrafdigger's Cage\nGreat Furnace\nGrinding Station\nHigh-Speed Hoverbike\nLifecraft Engine\nLiquimetal Torque\nLotus Petal\nMana Vault\nMaskwood Nexus\nMox Opal\nPeter Parker's Camera\nPortal to Phyrexia\nRelic of Legends\nSculpting Steel\nSol Ring\nSpringleaf Drum\nStalactite Dagger\nTorpor Orb\nTreasure Vault\nUnlicensed Hearse\nVexing Bauble\nUrza's Saga\nTezzeret, Cruel Captain\nAncient Tomb\nCavern of Souls\nCity of Traitors\nCrystal Vein\nDragon-Cursed Halls\nGemstone Caverns\nHammerheim\nHoldout Settlement\nKavaron, Memorial World\n8 Mountain\nMutavault\nShinka, the Bloodsoaked Keep\nSurvivors' Encampment\nTalon Gates of Madara\nVolatile Fault"},{"n":"Thrasios / Yoshimaru","p":"1,4%","s":"Commander Invitational Qualifier East Coast Gaming, 1. Platz, 19.09.26","l":"Commander\nThrasios, Triton Hero\nYoshimaru, Ever Faithful\n\nDeck\nAvacyn's Pilgrim\nBadgermole Cub\nBiomancer's Familiar\nBirds of Paradise\nBloom Tender\nCaptain America, Living Legend\nCloud of Faeries\nDelighted Halfling\nDerevi, Empyrial Tactician\nElvish Spirit Guide\nEmiel the Blessed\nEnduring Vitality\nEsper Sentinel\nEternal Witness\nFaerie Mastermind\nFlesh Duplicate\nFormidable Speaker\nJennifer Walters\nKing T'Challa\nKinnan, Bonder Prodigy\nMagus of the Candelabra\nMockingbird\nNoble Hierarch\nOboro Breezecaller\nShang-Chi, Master of Kung Fu\nSowing Mycospawn\nSpellseeker\nSpringheart Nantuko\nThe Queen of Dale\nValley Floodcaller\nVoice of Victory\nBorne Upon a Wind\nChord of Calling\nCommandeer\nCrop Rotation\nEnlightened Tutor\nFierce Guardianship\nFlare of Denial\nFlusterstorm\nForce of Will\nLegolas's Quick Reflexes\nLouisoix's Sacrifice\nMental Misstep\nMindbreak Trap\nNoxious Revival\nOrim's Chant\nPact of Negation\nRetraction Helix\nSilence\nSnap\nSwan Song\nSwords to Plowshares\nVeil of Summer\nWorldly Tutor\nFinale of Devastation\nGreen Sun's Zenith\nNature's Rhythm\nSylvan Scrying\nCandelabra of Tawnos\nChrome Mox\nExpedition Map\nLotus Petal\nMox Amber\nMox Diamond\nSol Ring\nCryptolith Rite\nEarthcraft\nMystic Remora\nRhystic Study\nSmothering Tithe\nTraining Grounds\nWild Growth\nAncient Tomb\nBoseiju, Who Endures\nBreeding Pool\nCity of Brass\nCommand Tower\nDeserted Temple\nDryad Arbor\nEmergence Zone\nFlooded Strand\nForest\nGaea's Cradle\nGemstone Caverns\nIsland\nMana Confluence\nMinamo, School at Water's Edge\nMisty Rainforest\nOtawara, Soaring City\nPolluted Delta\nSavannah\nScalding Tarn\nTalon Gates of Madara\nTropical Island\nTundra\nUrza's Saga\nWindswept Heath\nWooded Foothills"},{"n":"Nick Fury, Agent of S.H.I.E.L.D.","p":"1,4%","s":"Ohio cEDH: Highlander 3, 1. Platz, 26.09.26","l":"Commander\nNick Fury, Agent of S.H.I.E.L.D.\n\nDeck\nBirgi, God of Storytelling\nDeathrite Shaman\nElvish Spirit Guide\nEsper Sentinel\nGeist of Saint Thalia\nHexing Squelcher\nJennifer Walters\nRagavan, Nimble Pilferer\nRal, Monsoon Mage\nSimian Spirit Guide\nStorm-Kiln Artist\nThassa's Oracle\nTinder Wall\nWild Cantor\nAd Nauseam\nAn Offer You Can't Refuse\nBorne Upon a Wind\nBrain Freeze\nCabal Ritual\nChain of Vapor\nCrop Rotation\nCulling the Weak\nDark Ritual\nDeflecting Swat\nDemonic Consultation\nDesperate Ritual\nEnlightened Tutor\nFierce Guardianship\nFinal Fortune\nFlashback\nFlusterstorm\nForce of Will\nManamorphose\nMental Misstep\nMystical Tutor\nNoxious Revival\nPact of Negation\nPyretic Ritual\nPyroblast\nRed Elemental Blast\nSilence\nTainted Pact\nVampiric Tutor\nVeil of Summer\nBeseech the Mirror\nCulling Ritual\nDemonic Counsel\nDemonic Tutor\nDiabolic Intent\nGamble\nHex Magic\nImperial Seal\nJeska's Will\nMnemonic Betrayal\nPraetor's Grasp\nRite of Flame\nStrike It Rich\nWheel of Fortune\nWill of the Jeskai\nWindfall\nYawgmoth's Will\nChrome Mox\nLion's Eye Diamond\nLotus Petal\nMana Vault\nMox Amber\nMox Diamond\nMox Opal\nRelic of Legends\nSol Ring\nSpringleaf Drum\nGleaming Splendor\nMystic Remora\nNecropotence\nRhystic Study\nUnderworld Breach\nAncient Tomb\nBadlands\nBayou\nBloodstained Mire\nCity of Brass\nCommand Tower\nEmergence Zone\nExotic Orchard\nForbidden Orchard\nGemstone Caverns\nGemstone Mine\nGlimmervoid\nMana Confluence\nPolluted Delta\nScalding Tarn\nScrubland\nSpire of Industry\nStarting Town\nTundra\nUnderground Sea\nVerdant Catacombs\nVolcanic Island\nWooded Foothills"},{"n":"Tayam, Luminous Enigma","p":"1,3%","s":"Mox Mania II, 1. Platz, 18.07.26","l":"Commander\nTayam, Luminous Enigma\n\nDeck\nAbigale, Eloquent First-Year\nArchon of Emeria\nAvacyn's Pilgrim\nAven Interrupter\nBadgermole Cub\nBasking Broodscale\nBirds of Paradise\nBloom Tender\nCarrion Feeder\nCircle of Dreams Druid\nColonel Autumn\nDeathrite Shaman\nDelighted Halfling\nDevoted Druid\nDrannith Magistrate\nEidolon of Rhetoric\nElves of Deep Shadow\nElvish Mystic\nEndurance\nEnduring Vitality\nEsper Sentinel\nEthersworn Canonist\nFormidable Speaker\nHammerhead, Maggia Boss\nIcatian Moneychanger\nKnight of the Reliquary\nManglehorn\nMarvin, Murderous Mimic\nMoonshadow\nOpposition Agent\nOrcish Bowmasters\nPatrol Signaler\nPatrolling Peacemaker\nRanger-Captain of Eos\nRecruiter of the Guard\nRishkar, Peema Renegade\nRosie Cotton of South Lane\nShang-Chi, Master of Kung Fu\nSkyclave Apparition\nStrangleroot Geist\nSylvan Safekeeper\nWalking Ballista\nWall of Roots\nWarden of the Grove\nWeathered Wayfarer\nWhite Plume Adventurer\nYoung Wolf\nChord of Calling\nCrop Rotation\nVampiric Tutor\nGreen Sun's Zenith\nNature's Rhythm\nAgatha's Soul Cauldron\nAshnod's Altar\nChrome Mox\nDisruptor Flute\nLion's Eye Diamond\nMox Diamond\nSol Ring\nThousand-Year Elixir\nCarpet of Flowers\nCryptolith Rite\nDeafening Silence\nEarthcraft\nNature's Chosen\nSeal of Primordium\nSurvival of the Fittest\nTyvar, Jubilant Brawler\nAncient Tomb\nArid Mesa\nBayou\nBoseiju, Who Endures\nCavern of Souls\nCentaur Garden\nCity of Brass\nCommand Beacon\nCommand Tower\nDryad Arbor\nFlooded Strand\nForest\nGaea's Cradle\nGavony Township\nGemstone Caverns\nMana Confluence\nMarsh Flats\nMisty Rainforest\nOvergrown Tomb\nPhyrexian Tower\nPlains\nPolluted Delta\nSavannah\nScrubland\nTalon Gates of Madara\nTemple Garden\nUrza's Saga\nVerdant Catacombs\nWindswept Heath\nWooded Foothills\nYavimaya, Cradle of Growth"},{"n":"Crystal, Inhuman Princess","p":"1,3%","s":"cEDH at New City Brewery, 1. Platz, 05.09.26","l":"Commander\nCrystal, Inhuman Princess\n\nDeck\nBirds of Paradise\nDelighted Halfling\nElvish Spirit Guide\nEsper Sentinel\nGrand Abolisher\nKellan, the Fae-Blooded\nNoble Hierarch\nRagavan, Nimble Pilferer\nSimian Spirit Guide\nStorm-Kiln Artist\nTandem Lookout\nTinder Wall\nVivi Ornitier\nAn Offer You Can't Refuse\nAutumn's Veil\nBorne Upon a Wind\nBrain Freeze\nCrop Rotation\nDaze\nDeflecting Swat\nEmerald Charm\nEnlightened Tutor\nFierce Guardianship\nFinal Fortune\nFlashback\nFlusterstorm\nForce of Will\nGut Shot\nIntuition\nLegolas's Quick Reflexes\nManamorphose\nMental Misstep\nMindbreak Trap\nMisdirection\nNoxious Revival\nOrim's Chant\nPact of Negation\nPyrokinesis\nRedirect Lightning\nSeedtime\nSilence\nSnapback\nSubmerge\nSummoner's Pact\nSwan Song\nTidal Bore\nVeil of Summer\nGamble\nGitaxian Probe\nHex Magic\nJeska's Will\nOpen the Armory\nReverent Silence\nRite of Flame\nSevinne's Reclamation\nStrike It Rich\nWill of the Jeskai\nChrome Mox\nLion's Eye Diamond\nLotus Petal\nMox Amber\nMox Diamond\nSol Ring\nArtist's Talent\nCuriosity\nGleaming Splendor\nJeskai Ascendancy\nKeen Sense\nMystic Remora\nOphidian Eye\nRhystic Study\nUnderworld Breach\nArid Mesa\nBloodstained Mire\nBoseiju, Who Endures\nBreeding Pool\nCity of Brass\nCommand Tower\nEmergence Zone\nExotic Orchard\nFlooded Strand\nGemstone Caverns\nMana Confluence\nMisty Rainforest\nOtawara, Soaring City\nPlateau\nPolluted Delta\nSavannah\nScalding Tarn\nStarting Town\nSteam Vents\nTaiga\nTarnished Citadel\nTropical Island\nTundra\nVerdant Catacombs\nVolcanic Island\nWindswept Heath\nWooded Foothills"}],"Modern":[{"n":"Rakdos Delirium","p":"14%","s":"MTGO Challenge 32, 1. Platz, 01.11.26","l":"2 Verdant Catacombs\n2 Troll of Khazad-dum\n4 Thoughtseize\n4 Dark Matter Manipulator\n4 Detective's Phoenix\n2 Swamp\n4 Fear of Missing Out\n4 Street Wraith\n1 Polluted Delta\n1 Nihil Spellbomb\n1 Mountain\n4 Nethergoyf\n4 Mishra's Bauble\n1 Ob Nixilis, the Adversary\n1 Marsh Flats\n2 Raucous Theater\n4 Lightning Bolt\n1 Fatal Push\n4 Bloodstained Mire\n3 Blood Crypt\n2 Unholy Heat\n1 Arid Mesa\n4 Moonshadow\n\nSideboard\n1 Nihil Spellbomb\n1 Ob Nixilis, the Adversary\n1 Fatal Push\n1 End of the Hunt\n2 Glistening Deluge\n1 Grafdigger's Cage\n1 Ingot Chewer\n1 Inquisition of Kozilek\n2 Meltdown\n3 Obsidian Charmaw\n1 Strategic Betrayal"},{"n":"Broodscale Bloodchief","p":"13%","s":"MTGO Challenge 32, 1. Platz, 02.11.26","l":"4 Basking Broodscale\n3 Dismember\n1 Ba Sing Se\n2 Devourer of Destiny\n4 Eldrazi Temple\n4 Ancient Stirrings\n1 Gemstone Caverns\n1 Haywire Mite\n4 Kozilek's Command\n4 Malevolent Rumble\n1 Soul-Guide Lantern\n4 Sowing Mycospawn\n1 Springleaf Drum\n4 Ugin's Labyrinth\n4 Urza's Saga\n1 Vexing Bauble\n1 Talisman of Resilience\n2 Blade of the Bloodchief\n2 Boseiju, Who Endures\n2 Sire of Seven Deaths\n4 Emrakul, the Promised End\n6 Forest\n\nSideboard\n1 Gemstone Caverns\n1 Vexing Bauble\n3 Trinisphere\n2 Nature's Claim\n2 Thought-Knot Seer\n1 Cavern of Souls\n1 Grafdigger's Cage\n2 The Stone Brain\n2 Engineered Explosives"},{"n":"Pinnacle Affinity","p":"7%","s":"MTGO Challenge 16, 2. Platz, 31.10.26","l":"4 Kappa Cannoneer\n4 Metallic Rebuke\n4 Tormod's Crypt\n4 Mox Opal\n4 Mishra's Bauble\n2 Welding Jar\n4 Engineered Explosives\n4 Urza's Saga\n4 Pinnacle Emissary\n2 Basim Ibn Ishaq\n1 Skateboard\n1 Shadowspear\n1 Watery Grave\n2 Island\n4 Polluted Delta\n2 Preordain\n1 Scalding Tarn\n4 Emry, Lurker of the Loch\n1 Steam Vents\n1 Pithing Needle\n2 Mox Amber\n4 Darkslick Shores\n\nSideboard\n3 Consign to Memory\n1 Vexing Bauble\n1 Strix Serenade\n4 Fatal Push\n4 Thoughtseize\n1 Grafdigger's Cage\n1 Damping Sphere"},{"n":"UW Control (Scepter Chant)","p":"7%","s":"Regional Championship MIT, 2. Platz, 01.11.26","l":"4 Solitude\n1 Isochron Scepter\n1 The Mind Stone\n4 Orim's Chant\n3 Silence\n2 Erode\n1 Razorgrass Ambush\n1 Sink into Stupor\n1 Spell Snare\n2 Prismatic Ending\n4 Narset, Parter of Veils\n4 Teferi, Time Raveler\n4 Flooded Strand\n3 Arid Mesa\n2 Island\n2 Meticulous Archive\n2 Plains\n1 Geier Reach Sanitarium\n1 Misty Rainforest\n1 Otawara, Soaring City\n4 Day's Undoing\n3 Preordain\n2 Hallowed Fountain\n1 Celestial Colonnade\n1 Monumental Henge\n1 Polluted Delta\n1 Thundering Falls\n3 Wrath of the Skies\n\nSideboard\n3 Consign to Memory\n3 High Noon\n3 Mystical Dispute\n3 Sanctifier en-Vec\n2 The Wandering Emperor\n1 Wrath of the Skies"},{"n":"Boros Aggro","p":"6%","s":"MTGO Challenge 32, 2. Platz, 28.10.26","l":"4 Ajani, Nacatl Pariah\n2 Plains\n4 Inspiring Vantage\n1 Dalkovan Encampment\n2 Elegant Parlor\n3 Sacred Foundry\n4 Galvanic Discharge\n4 Marsh Flats\n4 Guide of Souls\n2 Lightning Bolt\n3 Goblin Bombardment\n4 Ocelot Pride\n4 Ragavan, Nimble Pilferer\n1 Mountain\n1 Flooded Strand\n4 Seasoned Pyromancer\n1 Blood Moon\n4 Arid Mesa\n1 Sunbaked Canyon\n2 Thraben Charm\n2 Voice of Victory\n3 Sanctifier en-Vec\n\nSideboard\n1 Clarion Conqueror\n2 High Noon\n3 Rest in Peace\n4 Obsidian Charmaw\n1 Meltdown\n2 Wear/Tear\n2 Wrath of the Skies"},{"n":"Amulet Titan","p":"6%","s":"MTGO League 5-0, 22.10.26","l":"2 Summoner's Pact\n4 Gruul Turf\n4 Crumbling Vestige\n3 Boseiju, Who Endures\n4 Primeval Titan\n1 Cultivator Colossus\n4 Scapeshift\n4 Arboreal Grazer\n1 Hanweir Battlements\n3 Malevolent Rumble\n1 Mirrorpool\n1 Otawara, Soaring City\n2 Roiling Canopy\n1 Echoing Deeps\n1 Dryad Arbor\n4 Spelunking\n2 Forest\n4 Amulet of Vigor\n4 Urza's Saga\n1 Yavimaya, Cradle of Growth\n1 Tolaria West\n4 Simic Growth Chamber\n1 Azusa, Lost but Seeking\n3 Green Sun's Zenith\n\nSideboard\n3 Trinisphere\n3 Grafdigger's Cage\n1 Bojuka Bog\n2 Sowing Mycospawn\n3 Dismember\n1 Force of Vigor\n1 Ba Sing Se\n1 Thrun, the Last Troll"},{"n":"UR Cutter Prowess","p":"5%","s":"MTGO Challenge 32, Top 4, 01.11.26","l":"4 Cori-Steel Cutter\n3 Bloodstained Mire\n3 Boomerang Basics\n4 Lightning Bolt\n4 Dragon's Rage Channeler\n2 Expressive Iteration\n2 Fiery Islet\n4 Lava Dart\n4 Mishra's Bauble\n2 Mutagenic Growth\n4 Monastery Swiftspear\n3 Mountain\n4 Preordain\n2 Scalding Tarn\n4 Slickshot Show-Off\n3 Steam Vents\n1 Thundering Falls\n1 Tormod's Crypt\n2 Violent Urge\n2 Wooded Foothills\n2 Arid Mesa\n\nSideboard\n1 Expressive Iteration\n1 Tormod's Crypt\n4 Consign to Memory\n1 Meltdown\n1 Murktide Regent\n1 Obsidian Charmaw\n1 Spell Pierce\n2 Spell Snare\n3 Unholy Heat"},{"n":"Domain Zoo (4/5c Aggro)","p":"4%","s":"LDXPSAC26 ReCQ, 2. Platz, 25.10.26","l":"4 Quantum Riddler\n4 Ragavan, Nimble Pilferer\n4 Scion of Draco\n4 Territorial Kavu\n3 Phelia, Exuberant Shepherd\n4 Lightning Bolt\n3 Stubborn Denial\n2 Consign to Memory\n1 Pest Control\n4 Leyline Binding\n4 Leyline of the Guildpact\n4 Arid Mesa\n4 Flooded Strand\n4 Wooded Foothills\n2 Arena of Glory\n2 Steam Vents\n1 Blood Crypt\n1 Indatha Triome\n1 Lush Portico\n1 Mountain\n1 Plains\n1 Temple Garden\n1 Thundering Falls\n\nSideboard\n2 Consign to Memory\n1 Pest Control\n3 Obsidian Charmaw\n2 Mystical Dispute\n2 Rest in Peace\n2 Wrath of the Skies\n1 High Noon\n1 Teferi, Time Raveler\n1 Wear/Tear"},{"n":"Tron","p":"4%","s":"MTGO Challenge 32, Top 4, 27.10.26","l":"4 Ugin, Eye of the Storms\n4 Ugin's Labyrinth\n4 Urza's Mine\n3 Disruptor Flute\n3 Eldrazi Temple\n1 All Is Dust\n1 Abstergo Entertainment\n4 Dismember\n4 Talisman of Dominance\n2 Island\n1 Talisman of Curiosity\n4 Karn, the Great Creator\n3 Devourer of Destiny\n4 Kozilek's Command\n4 Expedition Map\n4 Urza's Tower\n4 Urza's Power Plant\n2 Emrakul, the Promised End\n4 Portent of Calamity\n\nSideboard\n1 Disruptor Flute\n1 Grafdigger's Cage\n1 The Stone Brain\n1 Ensnaring Bridge\n1 Cityscape Leveler\n1 Pithing Needle\n1 Torpor Orb\n1 Trinisphere\n1 The Endstone\n1 Oblivion Stone\n1 Engineered Explosives\n1 Golos, Tireless Pilgrim\n1 Tormod's Crypt\n1 Walking Ballista\n1 Extinguisher Battleship"},{"n":"Devoted Combo","p":"3%","s":"14ª Liga Lleida, Top 4, 01.11.26","l":"4 Badgermole Cub\n4 Delighted Halfling\n4 Devoted Druid\n2 Birds of Paradise\n1 Craterhoof Behemoth\n1 Shang-Chi, Master of Kung Fu\n1 Duskwatch Recruiter\n2 Fiend Artisan\n1 Vizier of Remedies\n1 Tyvar, the Pummeler\n4 Green Sun's Zenith\n4 Nature's Rhythm\n2 Thoughtseize\n4 Leyline of Abundance\n4 Tyvar, Jubilant Brawler\n4 Verdant Catacombs\n3 Misty Rainforest\n2 Dryad Arbor\n2 Boseiju, Who Endures\n2 Forest\n2 Overgrown Tomb\n1 Gemstone Caverns\n1 Horizon Canopy\n1 Temple Garden\n1 Underground Mortuary\n2 Wooded Foothills\n\nSideboard\n2 Abrupt Decay\n3 Endurance\n1 Murderous Cut\n1 Grist, the Hunger Tide\n1 Guerrilla Gorilla\n1 Kraul Harpooner\n3 Chalice of the Void\n1 Boromir, Warden of the Tower\n1 Karn, Argent Defender\n1 Crystal Barricade"},{"n":"Ruby Storm","p":"3%","s":"MTGO Challenge 32, 1. Platz, 29.10.26","l":"3 Arid Mesa\n1 Artist's Talent\n3 Mountain\n4 Manamorphose\n1 Elegant Parlor\n4 Hex Magic\n3 Past in Flames\n4 Desperate Ritual\n4 Pyretic Ritual\n4 Ral, Monsoon Mage\n1 Raucous Theater\n4 Reckless Impulse\n4 Ruby Medallion\n1 Blood Crypt\n2 Twinned Vision\n2 Valakut Awakening\n2 Wish\n4 Wrenn's Resolve\n1 Sacred Foundry\n3 Bloodstained Mire\n2 Scalding Tarn\n3 Wooded Foothills\n\nSideboard\n1 Past in Flames\n1 Grapeshot\n1 Fatal Push\n1 Empty the Warrens\n4 Prismatic Ending\n3 Wear/Tear\n4 Thoughtseize"},{"n":"Living End","p":"3%","s":"MTGO Challenge 64, Top 8, 05.10.26","l":"4 Street Wraith\n4 Oliphaunt\n4 Wistfulness\n1 Stomping Ground\n1 Thundering Falls\n1 Steam Vents\n1 Hedge Maze\n4 Shardless Agent\n1 Sink into Stupor\n4 Misty Rainforest\n3 Living End\n4 Subtlety\n4 Endurance\n4 Generous Ent\n4 Force of Negation\n4 Violent Outburst\n1 Brazen Borrower\n1 Island\n1 Forest\n1 Breeding Pool\n1 Flooded Grove\n1 Colossal Skyturtle\n1 Sacred Foundry\n1 Waker of Waves\n1 Temple Garden\n1 Commercial District\n2 Striped Riverwinder\n\nSideboard\n4 Mystical Dispute\n3 Inevitable Betrayal\n2 Brotherhood's End\n4 Clarion Conqueror\n2 Force of Vigor"},{"n":"Esper Blink","p":"2%","s":"MTGO Challenge 32, 1. Platz, 26.10.26","l":"1 Ephemerate\n1 Consign to Memory\n2 Teferi, Time Raveler\n2 Pest Control\n4 Thoughtseize\n4 Fatal Push\n1 Boggart Trawler\n3 Flickerwisp\n3 Emperor of Bones\n4 Solitude\n4 Overlord of the Balemurk\n4 Phelia, Exuberant Shepherd\n4 Quantum Riddler\n4 Witch Enchanter\n1 Swamp\n1 Godless Shrine\n1 Meticulous Archive\n1 Hallowed Fountain\n1 Polluted Delta\n1 Shadowy Backstreet\n1 Watery Grave\n1 Undercity Sewers\n1 Bleachbone Verge\n2 Plains\n4 Marsh Flats\n4 Flooded Strand\n\nSideboard\n2 Nihil Spellbomb\n3 White Orchid Phantom\n3 High Noon\n3 Clarion Conqueror\n3 Consign to Memory\n1 Pest Control"},{"n":"Dimir Control","p":"2%","s":"14ª Liga Lleida, 2. Platz, 17.10.26","l":"4 Island\n4 Polluted Delta\n4 Field of Ruin\n3 Watery Grave\n3 Flooded Strand\n2 Undercity Sewers\n1 Verdant Catacombs\n1 Swamp\n1 Scalding Tarn\n1 Gloomlake Verge\n4 Wan Shi Tong, Librarian\n4 Subtlety\n3 Orcish Bowmasters\n1 Snapcaster Mage\n4 Fatal Push\n4 Counterspell\n4 Consult the Star Charts\n3 Sheoldred's Edict\n3 Cling to Dust\n2 Surgical Extraction\n2 Spell Snare\n2 Spell Pierce\n\nSideboard\n1 Spell Snare\n2 Requiting Hex\n1 Nihil Spellbomb\n2 Mystical Dispute\n1 Murktide Regent\n1 Engineered Explosives\n2 Damnation\n4 Consign to Memory\n1 Stern Scolding"},{"n":"Goryo's Vengeance (Instant Reanimator)","p":"2%","s":"MTGO Challenge 32, 01.11.26","l":"4 Ephemerate\n4 Faithful Mending\n1 Swamp\n4 Solitude\n1 Godless Shrine\n1 Shadowy Backstreet\n4 Psychic Frog\n1 Breeding Pool\n1 Plains\n1 Meticulous Archive\n3 Marsh Flats\n1 Island\n4 Polluted Delta\n1 Hallowed Fountain\n1 Griselbrand\n4 Goryo's Vengeance\n2 Force of Negation\n4 Flooded Strand\n4 Atraxa, Grand Unifier\n3 Thoughtseize\n1 Undercity Sewers\n1 Watery Grave\n4 Quantum Riddler\n3 Prismatic Ending\n1 Superior Spider-Man\n1 Pest Control\n\nSideboard\n1 Force of Negation\n1 Pest Control\n2 Teferi, Time Raveler\n2 Mystical Dispute\n4 Consign to Memory\n2 Wrath of the Skies\n2 Nihil Spellbomb\n1 Damping Sphere"},{"n":"Dimir Reanimator (Persist)","p":"1%","s":"Regional Championship MIT, Top 4, 01.11.26","l":"4 Archon of Cruelty\n4 Gran-Gran\n4 Psychic Frog\n2 Abhorrent Oculus\n2 Emperor of Bones\n2 Fallaji Archaeologist\n2 Seasoned Cryomancer\n4 Fatal Push\n4 Flare of Denial\n2 Bitter Triumph\n4 Persist\n2 Unearth\n4 Polluted Delta\n3 Undercity Sewers\n3 Watery Grave\n2 Bloodstained Mire\n2 Cephalid Coliseum\n2 Marsh Flats\n2 Swamp\n1 Island\n1 Otawara, Soaring City\n4 Thoughtseize\n\nSideboard\n4 Consign to Memory\n3 Engineered Explosives\n2 Harbinger of the Seas\n2 Mystical Dispute\n2 Requiting Hex\n2 Surgical Extraction"}],"Legacy":[{"n":"Hogaak","p":"8%","s":"STHLM Weekly, 1. Platz, 29.10.26","l":"2 Bayou\n1 Bojuka Bog\n2 Boseiju, Who Endures\n4 Dark Matter Manipulator\n1 Dryad Arbor\n2 Eumidian Hatchery\n3 Fatal Push\n1 Forest\n4 Hogaak, Arisen Necropolis\n1 Misty Rainforest\n4 Moonshadow\n3 Once Upon a Time\n4 Orcish Bowmasters\n1 Scythecat Cub\n4 Stitcher's Supplier\n1 Swamp\n3 Sylvan Safekeeper\n1 Talon Gates of Madara\n4 Thoughtseize\n1 Underground Mortuary\n4 Verdant Catacombs\n4 Wasteland\n4 Wight of the Reliquary\n1 Wooded Foothills\n\nSideboard\n2 Abrupt Decay\n2 Collector Ouphe\n3 Dread of Night\n2 Duress\n2 Force of Vigor\n4 Leyline of the Void"},{"n":"UWx Control","p":"7%","s":"11 Etapa Sul de Minas, 1. Platz, 31.10.26","l":"1 Consign to Memory\n2 Force of Negation\n2 Prismatic Ending\n4 Ponder\n4 Brainstorm\n4 Force of Will\n4 Stifle\n4 Swords to Plowshares\n3 Murktide Regent\n4 Quantum Riddler\n4 Tamiyo, Inquisitive Student\n4 Phelia, Exuberant Shepherd\n1 Island\n1 Karakas\n1 Meticulous Archive\n1 Plains\n1 Volcanic Island\n2 Tundra\n2 Arid Mesa\n3 Polluted Delta\n4 Wasteland\n4 Flooded Strand\n\nSideboard\n1 Supreme Verdict\n2 Containment Priest\n2 Hydroblast\n2 Red Elemental Blast\n2 Spell Snare\n2 Triumph of Saint Katherine\n2 Wrath of the Skies\n2 Consign to Memory"},{"n":"Dimir Tempo","p":"6%","s":"159º Alpha RJ, 3. Platz, 31.10.26","l":"2 Bloodstained Mire\n4 Brainstorm\n1 Brazen Borrower\n2 Daze\n4 Fatal Push\n2 Flooded Strand\n3 Flow State\n4 Force of Will\n1 Island\n2 Kaito, Bane of Nightmares\n2 Murktide Regent\n3 Nethergoyf\n3 Orcish Bowmasters\n4 Polluted Delta\n4 Ponder\n1 Snuff Out\n1 Swamp\n4 Tamiyo, Inquisitive Student\n4 Thoughtseize\n1 Undercity Sewers\n4 Underground Sea\n4 Wasteland\n\nSideboard\n2 Barrowgoyf\n3 Consign to Memory\n2 Dauthi Voidwalker\n1 Engineered Explosives\n2 Force of Negation\n2 Hydroblast\n1 Sheoldred's Edict\n2 Surgical Extraction"},{"n":"Boros Energy","p":"6%","s":"God of Legacy Trial, 1. Platz, 25.10.26","l":"4 Sand Scout\n4 Guide of Souls\n4 Ocelot Pride\n4 Amped Raptor\n4 Ajani, Nacatl Pariah\n4 Voice of Victory\n1 Hexing Squelcher\n4 Swords to Plowshares\n1 Galvanic Discharge\n1 Forth Eorlingas!\n3 Goblin Bombardment\n2 Static Prison\n2 Plains\n1 Mountain\n2 Sacred Foundry\n2 Flooded Strand\n2 Windswept Heath\n2 Karakas\n4 Arid Mesa\n4 Wasteland\n2 Sunbaked Canyon\n1 Elegant Parlor\n2 Lazotep Quarry\n\nSideboard\n1 Static Prison\n1 Blood Moon\n1 Celestial Purge\n1 Wear/Tear\n1 Price of Progress\n3 Pyroblast\n1 Rest in Peace\n2 Containment Priest\n3 Deafening Silence\n1 Soul-Guide Lantern"},{"n":"Doomsday","p":"6%","s":"MTGO League, 01.11.26","l":"4 Polluted Delta\n3 Daze\n4 Underground Sea\n1 Flooded Strand\n1 Verdant Catacombs\n1 Swamp\n1 Island\n1 Undercity Sewers\n4 Force of Will\n4 Ponder\n4 Brainstorm\n1 Quantum Riddler\n3 Street Wraith\n1 Edge of Autumn\n2 Flow State\n4 Dark Ritual\n3 Personal Tutor\n4 Lotus Petal\n1 Cavern of Souls\n4 Doomsday\n2 Thassa's Oracle\n1 Lion's Eye Diamond\n1 Misty Rainforest\n1 Scalding Tarn\n1 Consider\n3 Thoughtseize\n\nSideboard\n1 Murktide Regent\n1 Voice of Victory\n3 Dauthi Voidwalker\n4 Barrowgoyf\n2 Force of Negation\n3 Fatal Push\n1 Hide on the Ceiling"},{"n":"UR Tempo","p":"5%","s":"Lega Lair #1, 2. Platz, 25.10.26","l":"4 Brainstorm\n1 Brazen Borrower\n3 Cori-Steel Cutter\n3 Daze\n3 Delver of Secrets\n4 Dragon's Rage Channeler\n2 Flooded Strand\n3 Flow State\n4 Force of Will\n1 Island\n4 Lightning Bolt\n4 Mishra's Bauble\n2 Misty Rainforest\n2 Polluted Delta\n4 Ponder\n1 Preordain\n1 Prismari Charm\n2 Scalding Tarn\n2 Stifle\n1 Thundering Falls\n1 Unholy Heat\n4 Volcanic Island\n4 Wasteland\n\nSideboard\n2 Unholy Heat\n2 Consign to Memory\n2 Force of Negation\n2 Hydroblast\n1 Karakas\n1 Meltdown\n1 Price of Progress\n3 Pyroblast\n1 Rough/Tumble"},{"n":"Sneak and Show","p":"5%","s":"MTGO Showcase Challenge, Top 4, 25.10.26","l":"1 Mountain\n4 Ponder\n4 Brainstorm\n2 Flusterstorm\n2 Volcanic Island\n3 Emrakul, the Aeons Torn\n3 Ancient Tomb\n4 Show and Tell\n4 Scalding Tarn\n4 Sneak Attack\n4 Lotus Petal\n1 Thundering Falls\n4 Force of Will\n2 City of Traitors\n4 Stock Up\n1 Mistrise Village\n1 Polluted Delta\n2 Island\n4 Atraxa, Grand Unifier\n2 Misty Rainforest\n1 Spell Pierce\n1 Sink into Stupor\n2 Omniscience\n\nSideboard\n1 Pyroclasm\n2 Consign to Memory\n1 Surgical Extraction\n1 Abrade\n1 Brotherhood's End\n1 Pyroblast\n2 Defense Grid\n2 Hexing Squelcher\n1 Grafdigger's Cage\n2 Faerie Macabre\n1 Sear"},{"n":"Eldrazi Stompy","p":"4%","s":"Monthly, 1. Platz, 02.10.26","l":"4 Abundant Countryside\n4 Ancient Tomb\n4 Cavern of Souls\n4 Chalice of the Void\n1 City of Traitors\n4 Eldrazi Linebreaker\n4 Eldrazi Temple\n3 Eye of Ugin\n4 Glaring Fleshraker\n3 It That Heralds the End\n4 Kozilek's Command\n4 Lotus Petal\n4 Reality Smasher\n1 Sire of Seven Deaths\n4 Thought-Knot Seer\n4 Wasteland\n4 Wastescape Battlemage\n\nSideboard\n2 Dismember\n3 Disruptor Flute\n2 Eldrazi Confluence\n4 Leyline of the Void\n2 Null Rod\n2 Warping Wail"},{"n":"Death & Taxes (BW)","p":"4%","s":"Mont Weekly Event, 1. Platz, 30.10.26","l":"4 Overlord of the Balemurk\n4 Phelia, Exuberant Shepherd\n4 Recruiter of the Guard\n4 Solitude\n4 Stoneforge Mystic\n3 White Orchid Phantom\n2 Orcish Bowmasters\n2 Skyclave Apparition\n2 Witch Enchanter\n1 Cloak and Dagger, Entwined\n1 Emperor of Bones\n1 Flickerwisp\n1 Lion Sash\n1 Loran of the Third Path\n4 Aether Vial\n1 Lich's Relic\n1 Meteor Sword\n1 Pre-War Formalwear\n4 Swords to Plowshares\n4 Thoughtseize\n4 Karakas\n4 Marsh Flats\n4 Plains\n4 Prismatic Vista\n4 Wasteland\n4 Windswept Heath\n3 Scrubland\n2 Shadowy Backstreet\n1 Flooded Strand\n1 Swamp\n\nSideboard\n1 Yorion, Sky Nomad\n2 Deafening Silence\n2 Disruptor Flute\n2 Erode\n2 Wrath of the Skies\n1 Damping Sphere\n1 Duress\n1 Faerie Macabre\n1 Nihil Spellbomb\n1 Surgical Extraction\n1 Temporary Lockdown"},{"n":"Ux Tron","p":"4%","s":"MTGO Challenge 32, 2. Platz, 28.10.26","l":"2 Eldrazi Confluence\n4 Urza's Power Plant\n4 Urza's Mine\n2 Thundertrap Trainer\n2 Giant's Boulder\n4 Grim Monolith\n3 The One Ring\n4 Karn, the Great Creator\n4 Kozilek's Command\n4 Petrified Hamlet\n4 Planar Nexus\n2 Sink into Stupor\n4 Stock Up\n1 Island\n4 Force of Will\n4 Ugin, Eye of the Storms\n2 Force of Negation\n2 Expedition Map\n4 Urza's Tower\n\nSideboard\n1 The One Ring\n2 Force of Negation\n1 Tormod's Crypt\n2 Barrowgoyf\n1 Extinguisher Battleship\n2 Summon: Bahamut\n1 Invasion Submersible\n1 Mycosynth Lattice\n1 Karakas\n1 Ensnaring Bridge\n2 Dismember"},{"n":"Lands","p":"4%","s":"LawLeague #1, 1. Platz, 13.09.26","l":"1 Bedeck/Bedazzle\n4 Yavimaya, Cradle of Growth\n2 Ancient Tomb\n1 Otawara, Soaring City\n1 Blast Zone\n3 Dark Depths\n4 Wasteland\n4 Sphere of Resistance\n2 Ghost Quarter\n4 Crop Rotation\n1 Grafdigger's Cage\n4 Life from the Loam\n4 Malevolent Rumble\n1 Maze of Ith\n1 Pithing Needle\n1 Forest\n1 The Tabernacle at Pendrell Vale\n1 Karakas\n4 Urza's Saga\n3 Thespian's Stage\n4 Exploration\n3 Boseiju, Who Endures\n1 Skateboard\n1 Bojuka Bog\n4 Mox Diamond\n1 Expedition Map\n\nSideboard\n3 Force of Vigor\n3 Endurance\n3 Disruptor Flute\n2 Dismember\n2 Icetill Explorer\n2 Choke"},{"n":"Bant Control","p":"4%","s":"MTGO Challenge 32, 1. Platz, 14.10.26","l":"1 Lorien Revealed\n1 Terminus\n1 Force of Negation\n2 Leyline Binding\n2 Daze\n3 Stifle\n4 Brainstorm\n4 Ponder\n4 Up the Beanstalk\n4 Swords to Plowshares\n4 Force of Will\n2 Phelia, Exuberant Shepherd\n2 Tamiyo, Inquisitive Student\n3 Quantum Riddler\n3 Murktide Regent\n1 Plains\n1 Island\n1 Savannah\n1 Meticulous Archive\n1 Underground Sea\n2 Tropical Island\n2 Tundra\n3 Wasteland\n4 Flooded Strand\n4 Misty Rainforest\n\nSideboard\n1 Wrath of the Skies\n1 Surgical Extraction\n2 Carpet of Flowers\n1 Celestial Purge\n3 Consign to Memory\n2 Containment Priest\n1 Erode\n2 Lavinia, Azorius Renegade\n1 Triumph of Saint Katherine\n1 Terminus"},{"n":"Aluren","p":"4%","s":"Oslo Open 2026, 1. Platz, 24.10.26","l":"4 Acererak the Archlich\n4 Atraxa, Grand Unifier\n4 Lotus Petal\n4 Brainstorm\n4 Force of Will\n2 Veil of Summer\n4 Ponder\n4 Show and Tell\n4 Stock Up\n4 Aluren\n2 Omniscience\n4 Ancient Tomb\n4 Misty Rainforest\n2 Hedge Maze\n2 Island\n2 Tropical Island\n1 Boseiju, Who Endures\n1 City of Traitors\n1 Flooded Strand\n1 Forest\n1 Polluted Delta\n1 Scalding Tarn\n\nSideboard\n2 Veil of Summer\n1 Boseiju, Who Endures\n3 Carpet of Flowers\n3 Consign to Memory\n2 Defense Grid\n1 Dismember\n1 Disruptor Flute\n1 Force of Negation\n1 Grafdigger's Cage"},{"n":"Welder Cam","p":"4%","s":"MTGO Challenge 32, 1. Platz, 11.09.26","l":"1 Legion Extruder\n4 Emry, Lurker of the Loch\n1 Phyrexian Dragon Engine\n4 Sewer-veillance Cam\n4 Goblin Engineer\n1 Agatha's Soul Cauldron\n4 Goblin Welder\n1 Skateboard\n4 Lotus Petal\n4 Mox Opal\n4 Mishra's Bauble\n3 Urza's Bauble\n1 Bloodstained Mire\n4 Scalding Tarn\n1 Great Furnace\n1 Plateau\n4 Volcanic Island\n1 Mountain\n4 Urza's Saga\n1 Chromatic Star\n1 Arena of Glory\n1 Loki, God of Mischief\n1 Seat of the Synod\n4 Pinnacle Emissary\n1 Lion's Eye Diamond\n\nSideboard\n1 Loki, God of Mischief\n2 Consign to Memory\n1 Portable Hole\n1 Twinshot Sniper\n1 Jegantha, the Wellspring\n1 Torpor Orb\n1 Disruptor Flute\n1 Damping Sphere\n1 Haywire Mite\n1 Pithing Needle\n1 Island\n1 Rip Apart\n1 Spell Pierce\n1 Flusterstorm"},{"n":"Karn Forge","p":"3%","s":"Best Event each Month, 1. Platz, 25.10.26","l":"4 Urza's Workshop\n4 Glaring Fleshraker\n2 Mystic Forge\n4 Planar Nexus\n4 The One Ring\n1 Voltaic Key\n1 Basalt Monolith\n4 Lotus Petal\n4 Ancient Tomb\n4 Grim Monolith\n1 Paradox Engine\n4 Karn, the Great Creator\n4 Manifold Key\n4 Urza's Saga\n1 Portable Hole\n1 Mishra's Research Desk\n1 Mox Opal\n1 Pithing Needle\n4 Urza's Tower\n4 Kozilek's Command\n3 Tezzeret, Cruel Captain\n\nSideboard\n1 Mystic Forge\n1 Paradox Engine\n1 Tormod's Crypt\n1 Ensnaring Bridge\n1 Perilous Snare\n1 Archive Arbiter\n1 Dismember\n1 Torpor Orb\n2 Trinisphere\n1 Engineered Explosives\n1 Mycosynth Lattice\n2 Disruptor Flute\n1 The Echoverse Fulcrum"},{"n":"Dragon Stompy","p":"2%","s":"MTGO Challenge 32, Top 4, 22.09.26","l":"4 Simian Spirit Guide\n4 Fury\n2 Pyrogoyf\n4 The One Ring\n4 Shatterskull Smashing\n4 Fable of the Mirror-Breaker\n4 Chrome Mox\n2 Magus of the Moon\n4 Chalice of the Void\n4 Ancient Tomb\n4 Sundering Eruption\n4 City of Traitors\n4 Mountain\n4 Karn, the Great Creator\n4 Broadside Bombardiers\n4 Blood Moon\n\nSideboard\n2 Pyrogoyf\n1 Magus of the Moon\n3 Disruptor Flute\n1 Ensnaring Bridge\n1 Liquimetal Coating\n2 Eldrazi Confluence\n1 Mycosynth Lattice\n1 Tormod's Crypt\n1 Perilous Snare\n2 Fiery Confluence"}]};
-const META_INFO = "Stand 3. November 2026 · Modern und Legacy: MTGTop8, Metagame der letzten 2 Wochen · cEDH: EDHTop16, letzte 6 Monate (Turniere ab 50 Spielern)";
+const META_INFO = "Stand 6. November 2026 · Modern und Legacy: MTGTop8, Metagame der letzten 2 Wochen · cEDH: EDHTop16, letzte 6 Monate (Turniere ab 50 Spielern)";
 /*META_END*/
 
 /* ---------- Scryfall ---------- */
@@ -1241,7 +1258,7 @@ function pub(){
   const m = S.match || {w:0, l:0};
   return {name: me.name, life:S.life, poison:S.poison, turn:S.turn, handN:S.hand.length, libN:S.library.length,
     bf:S.bf.map(strip), gy:S.gy.map(strip), ex:S.ex.map(strip), cz:S.cz.map(strip), match: (m.w || m.l) ? `${m.w}–${m.l}` : "",
-    mat: LOOK.mat, sleeve: okColor(LOOK.sleeve) ? LOOK.sleeve : "", avatar: okImg(LOOK.avatar) ? LOOK.avatar : "", deckName: String(S.deckName || "").slice(0, 40)};
+    pool: poolStr(poolOf()), mat: LOOK.mat, sleeve: okColor(LOOK.sleeve) ? LOOK.sleeve : "", avatar: okImg(LOOK.avatar) ? LOOK.avatar : "", deckName: String(S.deckName || "").slice(0, 40)};
 }
 let pushTimer = null;
 function schedulePush(){ clearTimeout(pushTimer); pushTimer = setTimeout(pushState, 120); }
@@ -2577,6 +2594,7 @@ function setTurn(t){
 function applyTurn(t){ if(net.role === "host") broadcastAll(t); else { setTurn(t); renderAll(); } }
 function setPhase(i){
   if(TURN.active !== me.id) return;
+  if(i !== TURN.phase && poolTotal(poolOf())){ emptyPool("Phasenwechsel"); commit(); }
   if(net.role === "client") return toHost({t:"phase", p:i});
   applyTurn({...TURN, phase:i});
 }
@@ -2602,12 +2620,13 @@ function passTurn(){
   if(STACK.length){ toast("Auf dem Stapel liegt noch etwas. Erst wenn alle «OK» gegeben haben, kannst du den Zug beenden."); return; }
   const off = TURN.active !== me.id && TURN.active !== "bot" && (!others[TURN.active] || others[TURN.active].off);
   if(TURN.active !== me.id && !off) return;
-  if(TURN.active === me.id){ if(TURN.phase < 5) remindTriggers("end", true); act("beendet den Zug"); }
+  if(TURN.active === me.id){ if(TURN.phase < 5) remindTriggers("end", true); emptyPool("Zugende"); act("beendet den Zug"); commit(); }
   if(net.role === "client") return toHost({t:"pass"});
   advanceTurn();
 }
 function onMyTurnStart(){
   S.turn = (S.turn || 0) + 1;
+  emptyPool("neuer Zug");
   S.bf.forEach(c => c.tap = false);
   const skipDraw = S.turn === 1 && TURN.starter === me.id;
   remindTriggers("upkeep", true); sfx("turn");
@@ -2663,6 +2682,196 @@ function renderTurn(){
   $("#bReroll").hidden = !a || net.role === "client";
   const mb = document.querySelector(".pboard.mine"); if(mb) mb.classList.toggle("active-turn", mine);
   document.title = (mine ? "▶ Dein Zug · " : (STACK.length && STACK[STACK.length - 1] && !STACK[STACK.length - 1].passes.includes(me.id) ? "● Stapel · " : "")) + "Küchentisch MTG";
+}
+
+/* ---------- Manapool ---------- */
+// Tappst du eine Manaquelle, kommt ihr Mana in deinen Pool. Beim Wirken bezahlt die App aus dem Pool
+// und tappt bei Bedarf selbst passende Länder nach. Der Pool leert sich bei jedem Phasen- und Zugwechsel.
+const POOL_ORDER = ["W", "U", "B", "R", "G", "C"];
+const emptyPoolObj = () => ({W:0, U:0, B:0, R:0, G:0, C:0});
+function poolOf(){ if(!S.pool || typeof S.pool !== "object") S.pool = emptyPoolObj(); POOL_ORDER.forEach(k => { S.pool[k] = Math.max(0, parseInt(S.pool[k], 10) || 0); }); return S.pool; }
+const poolTotal = p => POOL_ORDER.reduce((s, k) => s + (p[k] || 0), 0);
+const symStr = arr => arr.map(s => `{${s}}`).join("");
+function poolStr(p){ return POOL_ORDER.map(k => k.repeat(p[k] || 0)).join(""); }
+/* Mana-Fähigkeiten einer Karte aus dem Kartentext lesen */
+function parseAddClause(cl){
+  const any = /any (one )?colou?r|any type|color identity|any combination of colors/i.test(cl);
+  const n = /\bthree mana\b/i.test(cl) ? 3 : /\btwo mana\b/i.test(cl) ? 2 : 1;
+  if(any) return COLORS.map(col => Array(n).fill(col));
+  const syms = g => (g.match(/\{([WUBRGC])\}/g) || []).map(x => x[1]);
+  if(/\}\s*(,|or)\s*\{|\}\s*,?\s*or\s+\{/i.test(cl)){
+    return cl.split(/\s*,\s*or\s+|\s*,\s*|\s+or\s+/i).map(syms).filter(a => a.length);
+  }
+  const s = syms(cl); return s.length ? [s] : [];
+}
+function manaChoices(c){
+  if(!c || c.fd) return null;
+  const opts = [];
+  String(c.o || "").split("\n").forEach(raw => {
+    const line = raw.replace(/^\(|\)$/g, "").trim();
+    const m = line.match(/^([^:]*\{T\}[^:]*):\s*Add ([^.]*)\.?(.*)$/i);
+    if(!m) return;
+    const cost = m[1];
+    const gen = (cost.match(/\{(\d+)\}/g) || []).reduce((s, x) => s + parseInt(x.slice(1), 10), 0);
+    const sac = /sacrifice/i.test(cost);
+    const lifeM = cost.match(/pay (\d+) life/i);
+    const painM = m[3].match(/deals (\d+) damage to you/i);
+    parseAddClause(m[2]).forEach(add => opts.push({add, cost: gen, sac, life: lifeM ? +lifeM[1] : 0, pain: painM ? +painM[1] : 0}));
+  });
+  if(!opts.length && isLand(c)){
+    let cols = (c.pm || []).filter(x => POOL_ORDER.includes(x));
+    if(!cols.length) Object.keys(BASIC).forEach(b => { if(new RegExp("\\b" + b + "\\b").test(c.type || "")) cols.push(BASIC[b]); });
+    [...new Set(cols)].forEach(col => opts.push({add:[col], cost:0, sac:false, life:0, pain:0}));
+  }
+  // gleiche Optionen nur einmal
+  const seen = new Set();
+  return opts.filter(o => { const k = o.add.join("") + "|" + o.cost + o.sac + o.life + o.pain; if(seen.has(k)) return false; seen.add(k); return true; });
+}
+function optHtml(o){
+  const extra = [o.cost ? `kostet ${o.cost} Mana` : "", o.pain ? `${o.pain} Schaden an dir` : "", o.life ? `${o.life} Leben` : "", o.sac ? "wird geopfert" : ""].filter(Boolean);
+  return `${manaHtml(symStr(o.add))}${extra.length ? ` <span class="stat">(${esc(extra.join(", "))})</span>` : ""}`;
+}
+function poolAdd(syms){ const p = poolOf(); syms.forEach(s => { if(POOL_ORDER.includes(s)) p[s]++; }); }
+function poolTakeGeneric(n){
+  const p = poolOf(); if(poolTotal(p) < n) return false;
+  for(let k = 0; k < n; k++){ const col = ["C", ...POOL_ORDER.filter(x => x !== "C").sort((a, b) => p[b] - p[a])].find(x => p[x] > 0); p[col]--; }
+  return true;
+}
+function cardPoint(c){
+  const el = document.querySelector(`#myField .card[data-u="${cssEsc(c.u)}"]`);
+  const r = el ? el.getBoundingClientRect() : {left: innerWidth / 2, top: innerHeight / 2, width:0, height:0};
+  return {clientX: r.left + r.width / 2, clientY: r.top + r.height / 2};
+}
+function tapForMana(c, o){
+  if(o.cost && !poolTakeGeneric(o.cost)){ toast(`Für ${esc(c.n)} brauchst du zuerst ${o.cost} Mana im Pool.`); return; }
+  c.tap = true; c.mtap = o.sac ? null : [...o.add];
+  poolAdd(o.add);
+  if(o.pain) S.life -= o.pain;
+  if(o.life) S.life -= o.life;
+  act(`tappt ${c.n} für ${symStr(o.add)}${o.pain ? ` (${o.pain} Schaden)` : ""}${o.life ? ` (${o.life} Leben)` : ""}`);
+  if(o.sac){ moveCard(c.u, "gy"); return; }
+  commit();
+}
+function toggleTap(c, e){
+  if(c.tap){
+    c.tap = false;
+    if(Array.isArray(c.mtap) && c.mtap.length){
+      const p = poolOf(); const back = [];
+      c.mtap.forEach(s => { if(p[s] > 0){ p[s]--; back.push(s); } });
+      if(back.length) act(`enttappt ${c.n}, ${symStr(back)} geht aus dem Pool zurück`);
+    }
+    c.mtap = null; commit(); return;
+  }
+  const opts = LOOK.autoPool !== false ? manaChoices(c) : null;
+  if(!opts || !opts.length){ c.tap = true; commit(); return; }
+  if(opts.length === 1) return tapForMana(c, opts[0]);
+  openMenu(e && e.clientX != null ? e : cardPoint(c), [{t:`${c.n}: welches Mana?`}, ...opts.map(o => ({h: optHtml(o), f: () => tapForMana(c, o)})), "-", {l:"Nur tappen (kein Mana)", f: () => { c.tap = true; c.mtap = null; commit(); }}]);
+}
+function emptyPool(why){
+  const p = poolOf(); const n = poolTotal(p);
+  if(n){ act(`Manapool geleert${why ? " (" + why + ")" : ""}: ${symStr(POOL_ORDER.flatMap(k => Array(p[k]).fill(k)))} verfällt`); }
+  S.pool = emptyPoolObj();
+  S.bf.forEach(c => { c.mtap = null; });
+}
+/* Bezahlen: zuerst aus dem Pool, dann passende Quellen automatisch tappen */
+function playerPayPlan(c, X){
+  const fromCz = S.cz.includes(c);
+  const {generic, req} = parseCost(costOf(c));
+  const xCount = (String(c.mc || "").match(/\{X\}/g) || []).length;
+  let gen = generic + (fromCz ? 2 * (c.casts || 0) : 0) + xCount * (X || 0);
+  const pool = {...poolOf()};
+  const taps = []; const usedSrc = new Set(); const missing = []; let life = 0;
+  const auto = LOOK.autoPay !== false;
+  const sources = () => S.bf.filter(s => !s.tap && !s.fd && !usedSrc.has(s.u)).map(s => ({s, opts:(manaChoices(s) || []).filter(o => !o.cost && !o.sac && !o.life)})).filter(x => x.opts.length)
+    .sort((a, b) => (isCreature(a.s) - isCreature(b.s)) || (!isLand(a.s) - !isLand(b.s)) || (new Set(a.opts.flatMap(o => o.add)).size - new Set(b.opts.flatMap(o => o.add)).size));
+  const tap = (src, o) => { usedSrc.add(src.u); taps.push({c:src, o}); o.add.forEach(s => pool[s] = (pool[s] || 0) + 1); };
+  for(const opts of [...req].sort((a, b) => a.length - b.length)){
+    const cols = opts.filter(x => POOL_ORDER.includes(x));
+    let col = cols.filter(x => pool[x] > 0).sort((a, b) => pool[b] - pool[a])[0];
+    if(!col && auto){
+      for(const x of sources()){
+        const o = x.opts.filter(o => o.add.some(s => cols.includes(s))).sort((a, b) => a.pain - b.pain)[0];
+        if(o){ tap(x.s, o); col = cols.find(s => pool[s] > 0); break; }
+      }
+    }
+    if(col){ pool[col]--; continue; }
+    if(opts.includes("LIFE")){ life += 2; continue; }
+    if(opts.includes("2GEN")){ gen += 2; continue; }
+    missing.push(cols.length > 1 ? `{${cols.join("/")}}` : `{${cols[0] || "?"}}`);
+  }
+  const takeGen = () => { while(gen > 0){ const col = ["C", ...POOL_ORDER.filter(x => x !== "C").sort((a, b) => pool[b] - pool[a])].find(x => pool[x] > 0); if(!col) break; pool[col]--; gen--; } };
+  takeGen();
+  if(gen > 0 && auto){
+    for(const x of sources()){
+      if(gen <= 0) break;
+      const o = [...x.opts].sort((a, b) => (a.pain - b.pain) || (b.add.length - a.add.length) || ((b.add[0] === "C") - (a.add[0] === "C")))[0];
+      tap(x.s, o); takeGen();
+    }
+  }
+  if(gen > 0) missing.push(`{${gen}}`);
+  return {ok: !missing.length, pool, taps, life, missing, fromCz};
+}
+function applyPayment(c, plan){
+  plan.taps.forEach(({c:src, o}) => { src.tap = true; src.mtap = null; if(o.pain) S.life -= o.pain; });
+  POOL_ORDER.forEach(k => plan.pool[k] = Math.max(0, plan.pool[k] || 0));
+  S.pool = plan.pool;
+  S.life -= plan.life;
+  if(plan.fromCz) c.casts = (c.casts || 0) + 1;
+  const tapped = plan.taps.map(t => t.c.n);
+  if(costOf(c) || plan.taps.length) act(`bezahlt ${c.mc || "die Kosten"} für ${c.n}${tapped.length ? ` (tappt ${tapped.join(", ")})` : ""}${plan.life ? `, ${plan.life} Leben` : ""}`);
+}
+function askNumber(title, text){
+  return new Promise(resolve => {
+    modalState = {kind:"ask"}; $("#modal").hidden = false;
+    const box = $("#modalBox"); box.innerHTML = "";
+    box.append(head(title));
+    box.insertAdjacentHTML("beforeend", `<p class="muted" style="margin:0">${esc(text)}</p><div class="row"><input id="askN" type="number" min="0" max="99" value="1" style="width:90px"></div>`);
+    const row = document.createElement("div"); row.className = "row";
+    row.append(btn("Weiter", () => { const v = Math.max(0, Math.min(99, parseInt($("#askN").value, 10) || 0)); closeModal(); resolve(v); }, "primary"), btn("Abbrechen", () => { closeModal(); resolve(null); }));
+    box.append(row); $("#askN").focus(); $("#askN").select();
+  });
+}
+function shortDialog(c, plan){
+  return new Promise(resolve => {
+    modalState = {kind:"ask"}; $("#modal").hidden = false;
+    const box = $("#modalBox"); box.innerHTML = "";
+    box.append(head(`${c.n}: zu wenig Mana`));
+    box.insertAdjacentHTML("beforeend", `<p style="margin:0">Kosten ${manaHtml(costOf(c))}${plan.fromCz && c.casts ? ` + Commander-Steuer ${manaHtml(symStr([String(2 * c.casts)]))}` : ""}. Es fehlt: ${manaHtml(plan.missing.join(""))}</p>
+      <p class="muted" style="margin:0">Tappe die passenden Quellen selbst an oder lege Mana über «+ Mana» in den Pool (zum Beispiel für Rituale). Bei alternativen Kosten wie Force of Will oder Daze wählst du «Ohne Mana wirken».</p>`);
+    const row = document.createElement("div"); row.className = "row";
+    row.append(btn("Ohne Mana wirken", () => { closeModal(); resolve("free"); }, "primary"), btn("Abbrechen", () => { closeModal(); resolve(null); }));
+    box.append(row);
+  });
+}
+async function payFor(c){
+  if(LOOK.autoPay === false && !poolTotal(poolOf())) return true;
+  let X = 0;
+  if(/\{X\}/.test(c.mc || "")){ X = await askNumber(`${c.n}: Wert für X`, `Wie gross soll X sein? Die Kosten sind ${c.mc}.`); if(X === null) return false; }
+  const plan = playerPayPlan(c, X);
+  if(plan.ok){ applyPayment(c, plan); return true; }
+  const r = await shortDialog(c, plan);
+  if(r === "free"){ if(plan.fromCz) c.casts = (c.casts || 0) + 1; act(`wirkt ${c.n} ohne Mana (alternative Kosten)`); return true; }
+  return false;
+}
+function renderPool(){
+  const box = $("#myPool"); if(!box) return;
+  const p = poolOf(); box.innerHTML = "";
+  const lab = document.createElement("span"); lab.className = "stat"; lab.textContent = "Manapool"; box.append(lab);
+  let any = false;
+  POOL_ORDER.forEach(k => {
+    if(!p[k]) return; any = true;
+    const b = document.createElement("button"); b.className = "manachip"; b.title = `1 ${MANA_NAME[k]} ausgeben`;
+    b.innerHTML = `${manaHtml(`{${k}}`)}<b class="num">${p[k]}</b>`;
+    b.onclick = () => { p[k]--; act(`gibt {${k}} aus dem Pool aus`); commit(); };
+    box.append(b);
+  });
+  if(!any) box.append(Object.assign(document.createElement("span"), {className:"muted pool-empty", textContent:"leer"}));
+  const add = btn("+ Mana", e => openMenu(e, [{t:"Mana in den Pool legen"}, ...POOL_ORDER.map(k => ({h:`${manaHtml(`{${k}}`)} ${MANA_NAME[k]}`, f: () => { poolAdd([k]); act(`legt {${k}} in den Pool`); commit(); }}))]), "small");
+  box.append(add);
+  if(any) box.append(btn("Leeren", () => { emptyPool(); commit(); }, "small"));
+  const at = btn(LOOK.autoPay !== false ? "Auto-Bezahlen an" : "Auto-Bezahlen aus", () => { LOOK.autoPay = LOOK.autoPay === false; saveLook(); renderPool(); }, "small autopay" + (LOOK.autoPay !== false ? " on" : ""));
+  at.title = "Beim Wirken automatisch aus dem Pool bezahlen und fehlendes Mana selbst tappen";
+  box.append(at);
 }
 
 /* ---------- Grafik: Animationen, Pfeile, Effekte ---------- */
@@ -2848,7 +3057,7 @@ const MATS = {
   blau:  {name:"Ozean", bg:"radial-gradient(120% 90% at 50% 0%, #1f4a5e 0%, #12293a 75%)"}
 };
 const SLEEVES = ["#7a5230", "#2f5d8a", "#8a2f3c", "#2f7a52", "#5b3f8a", "#b8892f", "#2b2b2b", "#d9d4c5"];
-let LOOK = Object.assign({mat:"filz", sleeve:"#7a5230", avatar:"", avatarName:"", sound:false, table:"auto"}, LS.get("kt-look", {}));
+let LOOK = Object.assign({mat:"filz", sleeve:"#7a5230", avatar:"", avatarName:"", sound:false, table:"auto", autoPool:true, autoPay:true}, LS.get("kt-look", {}));
 function saveLook(){ LS.set("kt-look", LOOK); }
 const okColor = c => typeof c === "string" && /^#[0-9a-f]{6}$/i.test(c);
 const matBg = key => (MATS[key] || MATS.filz).bg;
@@ -2900,7 +3109,12 @@ function openLookDialog(){
       <option value="rund">Immer Rundtisch</option>
       <option value="liste">Immer untereinander</option>
     </select></label>
-    <label class="row stat"><input type="checkbox" id="soundPick"> Geräusche (Zugbeginn, Würfel, Ausspielen, Schaden)</label>`);
+    <label class="row stat"><input type="checkbox" id="soundPick"> Geräusche (Zugbeginn, Würfel, Ausspielen, Schaden)</label>
+    <h3>Mana</h3>
+    <label class="row stat"><input type="checkbox" id="autoPoolPick"> Beim Tappen einer Manaquelle das Mana in den Pool legen</label>
+    <label class="row stat"><input type="checkbox" id="autoPayPick"> Beim Wirken automatisch bezahlen und fehlendes Mana selbst tappen</label>`);
+  $("#autoPoolPick").checked = LOOK.autoPool !== false; $("#autoPoolPick").onchange = () => { LOOK.autoPool = $("#autoPoolPick").checked; saveLook(); };
+  $("#autoPayPick").checked = LOOK.autoPay !== false; $("#autoPayPick").onchange = () => { LOOK.autoPay = $("#autoPayPick").checked; saveLook(); renderPool(); };
   const mp = $("#matPick");
   Object.entries(MATS).forEach(([k, m]) => {
     const b = document.createElement("button"); b.className = "matbtn" + (LOOK.mat === k ? " on" : "");
@@ -2945,9 +3159,20 @@ const MANA_NAME = {W:"Weiss", U:"Blau", B:"Schwarz", R:"Rot", G:"Grün", C:"Farb
 const PLAYER_COL = ["#c9a35a", "#7fb0d6", "#e0745e", "#79c294", "#b48ad6", "#e6d38a"];
 /* Manasymbole von Scryfall statt {2}{R} */
 function manaHtml(mc){
+  // Manasymbole selbst gezeichnet (keine Bilder, funktioniert auch offline)
   return String(mc || "").replace(/\{([^}]{1,6})\}/g, (m, s) => {
-    const f = s.replace(/\//g, "").toUpperCase();
-    return /^[0-9WUBRGCXSP]+$/.test(f) ? `<img class="ms" src="https://svgs.scryfall.io/card-symbols/${f}.svg" alt="{${esc(s)}}">` : esc(m);
+    const u = s.toUpperCase();
+    const label = `{${esc(s)}}`;
+    if(/^[WUBRGC]$/.test(u)) return `<span class="ms ms-${u}" role="img" aria-label="${label}">${u === "C" ? "◇" : u}</span>`;
+    if(/^(\d{1,2}|X|Y)$/.test(u)) return `<span class="ms ms-N" role="img" aria-label="${label}">${u}</span>`;
+    const parts = u.split("/");
+    if(parts.length === 2 && parts.every(x => /^([WUBRGC]|P|2)$/.test(x))){
+      if(parts[1] === "P") return `<span class="ms ms-${parts[0]} ms-phy" role="img" aria-label="${label}">${parts[0]}</span>`;
+      const a = parts[0] === "2" ? "N" : parts[0], b = parts[1];
+      return `<span class="ms ms-hyb" style="--a:var(--m${a});--b:var(--m${b})" role="img" aria-label="${label}">${parts[0] === "2" ? "2" : ""}</span>`;
+    }
+    if(u === "T") return `<span class="ms ms-N" role="img" aria-label="{T}">↷</span>`;
+    return esc(m);
   });
 }
 /* Lebensverlauf: pro Spieler und Runde der letzte Stand */
@@ -3068,7 +3293,7 @@ function historyAdd(win){
 /* ---------- Automatische Updates ---------- */
 // Liegt die App im Web, prüft sie regelmässig version.json im selben Ordner und lädt sich bei einer neuen Version neu.
 // Alles Wichtige (Spielstand, Deck, Tisch) liegt im Browser-Speicher und ist nach dem Neuladen wieder da.
-const APP_VERSION = "2026.11.03-3";
+const APP_VERSION = "2026.11.06-1";
 const ONLINE = /^https?:$/.test(location.protocol);
 let updPending = null, updTimer = null, updSnoozeUntil = 0;
 function busyForUpdate(){ return botBusy || (!$("#modal").hidden && modalState && ["block","deck"].includes(modalState.kind)); }
@@ -3131,7 +3356,7 @@ $("#bDeck").onclick = openDeckDialog;
 $("#bNew").onclick = () => { if(!S.deck.length) return openDeckDialog(); startGame(); };
 $("#bTurn").onclick = () => passTurn();
 $("#bReroll").onclick = () => rollStarter(true);
-$("#bUntap").onclick = () => { S.bf.forEach(c => c.tap = false); act("enttappt alle Karten"); commit(); };
+$("#bUntap").onclick = () => { S.bf.forEach(c => { c.tap = false; c.mtap = null; }); act("enttappt alle Karten"); commit(); };
 $("#bD6").onclick = () => rollDie(6);
 $("#bD20").onclick = () => rollDie(20);
 $("#bCoin").onclick = () => rollDie(2);
