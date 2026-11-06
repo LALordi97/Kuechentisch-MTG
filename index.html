@@ -3107,6 +3107,7 @@ function markEvent(ev, extraSources){
   if(gains.length) gainMarks(gains);
 }
 function markOnMove(c, from, to, wasFd){
+  if(c && to === "bf" && from !== "bf" && !c.fd) lifeEvent("enter", 1, c);
   if(!c || !markAutoOn()) return;
   if(to === "bf" && from !== "bf" && !c.fd) markEvent({kind:"enter", c});
   else if(from === "bf" && to === "gy" && !wasFd) markEvent({kind:"die", c}, [c]);
@@ -3361,19 +3362,22 @@ function lifeTriggers(c){
   const out = [];
   String(c.o).split("\n").forEach(raw => {
     const line = raw.replace(/\([^)]*\)/g, "").replace(/\s+/g, " ").trim();
-    const h = line.match(/^Whenever ([^,]+), (.*)$/i); if(!h) return;
-    const cond = h[1].trim(), eff = h[2].trim();
+    const h = line.match(/^(When|Whenever) ([^,]+), (.*)$/i); if(!h) return;
+    const cond = h[2].trim(), eff = h[3].trim();
     let ev = null;
     if(/^you gain life$/i.test(cond)) ev = "gain";
     else if(/^an opponent loses life$/i.test(cond)) ev = "oppLose";
     else if(/^you lose life$/i.test(cond)) ev = "lose";
     else if(/\bdies?$/i.test(cond) || /put into a graveyard from the battlefield$/i.test(cond)) ev = "die";
+    else if(/\benters?(?: the battlefield)?(?: under (?:your|an opponent's) control)?$/i.test(cond)) ev = "enter";
     if(!ev) return;
-    const first = eff.split(/\.\s+/)[0];
+    // «you may gain 1 life» sagt man praktisch immer ja
+    const first = eff.split(/\.\s+/)[0].replace(/\byou may gain\b/i, "you gain");
     if(/\b(may|if|unless|choose|instead)\b/i.test(first)) return;
     const fx = [];
     let m;
     if((m = first.match(/\beach opponent loses (\d+|one|two|three|that much|x) life/i))) fx.push({t:"oppAll", n:m[1]});
+    else if((m = first.match(/\bdeals (\d+|one|two|three) damage to each opponent/i))) fx.push({t:"oppAllDmg", n:m[1]});
     else if((m = first.match(/\b(?:target|that) (opponent|player) loses (\d+|one|two|three|that much|x) life/i))) fx.push({t:"oppOne", n:m[2]});
     if((m = first.match(/\byou gain (\d+|one|two|three|that much|x) life/i))) fx.push({t:"gain", n:m[1]});
     else if(/\byou gain life equal to the life lost this way/i.test(first)) fx.push({t:"gainLost"});
@@ -3422,7 +3426,11 @@ async function runLifeFx(src, trig, much){
   const parts = [];
   let lost = 0;
   for(const f of trig.fx){
-    if(f.t === "oppAll" || f.t === "oppOne"){
+    if(f.t === "oppAllDmg"){
+      const n = ltNum(f.n, much); if(!n) continue;
+      liveOpps().forEach(o => hitOpponent(o.id, {kind:"damage", amount:n, src:src.n}));
+      parts.push(`${n} Schaden an jeden Gegner`);
+    } else if(f.t === "oppAll" || f.t === "oppOne"){
       const n = ltNum(f.n, much); if(!n) continue;
       const ids = f.t === "oppAll" ? liveOpps().map(o => o.id) : [await pickOpponent(`${src.n}: Welcher Gegner verliert ${n} Leben?`)].filter(Boolean);
       ids.forEach(id => { hitOpponent(id, {kind:"loss", amount:n, src:src.n}); lost += n; });
@@ -3438,14 +3446,20 @@ async function runLifeFx(src, trig, much){
   if(parts.length){ act(`${src.n}: ${parts.join(", ")}`); commit(); }
 }
 /* Ereignis verteilen; läuft entkoppelt vom Zeichnen */
-function lifeEvent(kind, amount, diedCard){
+function lifeEvent(kind, amount, card, opp){
+  // card: die sterbende bzw. eintretende Karte; opp: true, wenn sie einem Gegner gehört
   if(!ltAutoOn() || !amount) return;
   const srcs = S.bf.filter(c => !c.fd);
-  if(diedCard && !srcs.includes(diedCard)) srcs.push(diedCard);
+  if(kind === "die" && card && !opp && !srcs.includes(card)) srcs.push(card);
   const todo = [];
   srcs.forEach(src => lifeTriggers(src).forEach(tr => {
     if(tr.ev !== kind) return;
-    if(kind === "die" && !condFires(tr.cond, src, {kind:"die", c:diedCard})) return;
+    if(kind === "die" || kind === "enter"){
+      let cond = tr.cond;
+      if(/\b(under an opponent's control|an opponent controls)\b/i.test(cond)){ if(!opp) return; cond = cond.replace(/\s*under an opponent's control/i, "").replace(/\s*an opponent controls/i, ""); }
+      else if(opp && /\b(you control|under your control)\b/i.test(cond)) return;
+      if(!condFires(cond, src, {kind, c:card})) return;
+    }
     todo.push({src, tr});
   }));
   if(!todo.length) return;
@@ -3507,6 +3521,21 @@ function lifeFloats(){
     } else if(!(id in lastLife)) lifeLogAdd(id, v.name, v.life);
     lastLife[id] = v.life;
   }
+  oppBoardScan();
+}
+/* Karten der Gegner: neu im Spiel (Essence Warden) oder gestorben (Blood Artist) */
+const OPP_BF = {};
+function oppBoardScan(){
+  Object.entries(others).forEach(([id, o]) => {
+    if(id === me.id || !o) return;
+    const now = new Map((Array.isArray(o.bf) ? o.bf : []).filter(c => c && c.u).map(c => [c.u, c]));
+    const prev = OPP_BF[id];
+    OPP_BF[id] = now;
+    if(!prev) return;
+    const gyU = new Set((Array.isArray(o.gy) ? o.gy : []).map(c => c && c.u));
+    now.forEach((c, u) => { if(!prev.has(u) && !c.fd) lifeEvent("enter", 1, c, true); });
+    prev.forEach((c, u) => { if(!now.has(u) && !c.fd && (gyU.has(u) || c.tok)) lifeEvent("die", 1, c, true); });
+  });
 }
 function playerLifeEl(id){
   if(id === me.id) return $("#myLife");
@@ -3707,7 +3736,7 @@ function openLookDialog(){
     <h3>Spielermarken</h3>
     <label class="row stat"><input type="checkbox" id="autoMarksPick"> Energie, Erfahrung und Strahlung aus dem Kartentext automatisch zählen</label>
     <h3>Lebens-Auslöser</h3>
-    <label class="row stat"><input type="checkbox" id="autoLifePick"> Dina, Sanguine Bond, Blood Artist und ähnliche Karten automatisch auslösen</label>`);
+    <label class="row stat"><input type="checkbox" id="autoLifePick"> Dina, Essence Warden, Sanguine Bond, Blood Artist und ähnliche Karten automatisch auslösen</label>`);
   $("#autoLifePick").checked = LOOK.autoLife !== false; $("#autoLifePick").onchange = () => { LOOK.autoLife = $("#autoLifePick").checked; saveLook(); };
   $("#autoMarksPick").checked = LOOK.autoMarks !== false; $("#autoMarksPick").onchange = () => { LOOK.autoMarks = $("#autoMarksPick").checked; saveLook(); };
   $("#autoPoolPick").checked = LOOK.autoPool !== false; $("#autoPoolPick").onchange = () => { LOOK.autoPool = $("#autoPoolPick").checked; saveLook(); };
@@ -3890,7 +3919,7 @@ function historyAdd(win){
 /* ---------- Automatische Updates ---------- */
 // Liegt die App im Web, prüft sie regelmässig version.json im selben Ordner und lädt sich bei einer neuen Version neu.
 // Alles Wichtige (Spielstand, Deck, Tisch) liegt im Browser-Speicher und ist nach dem Neuladen wieder da.
-const APP_VERSION = "2026.11.06-5";
+const APP_VERSION = "2026.11.06-6";
 const ONLINE = /^https?:$/.test(location.protocol);
 let updPending = null, updTimer = null, updSnoozeUntil = 0;
 function busyForUpdate(){ return botBusy || (!$("#modal").hidden && modalState && ["block","deck"].includes(modalState.kind)); }
