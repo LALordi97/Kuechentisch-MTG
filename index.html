@@ -229,6 +229,9 @@ table.stats th{color:var(--muted);font-weight:500;font-size:12px;text-transform:
 .mnum{cursor:pointer;text-decoration:underline dotted;text-underline-offset:3px}
 .pregame{gap:6px;flex-wrap:wrap;align-items:center;padding:6px 8px;margin:6px 0;border:1px dashed var(--brass);border-radius:8px;background:rgba(201,163,90,.08)}
 .comp{border-color:var(--brass)}.comp.ready{background:rgba(201,163,90,.18)}
+.card.picked{outline:3px solid var(--brass);outline-offset:2px}
+.diglist{display:flex;flex-direction:column;gap:8px;max-height:60vh;overflow:auto}
+.digrow{align-items:center;gap:12px}
 .update-bar{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom, 0px));z-index:80;display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:center;background:var(--panel);border:1px solid var(--brass);border-radius:10px;padding:10px 14px;box-shadow:0 10px 30px rgba(0,0,0,.5);max-width:calc(100% - 32px)}
 .mybar{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center}
 .zones{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;margin-top:8px}
@@ -432,7 +435,7 @@ let order = [];
 let modalState = null;
 
 function newCard(t){ return {n:t.n, img:t.img||null, back:t.back||null, type:t.type||"", tok:!!t.tok, u:uid(), tap:false, flip:false, fd:false, c:0,
-  cmc:t.cmc||0, pw:t.pw ?? null, tg:t.tg ?? null, kw:t.kw||[], o:t.o||"", mc:t.mc||"", pm:t.pm||[], tk:t.tk||[], cmdr:!!t.cmdr}; }
+  cmc:t.cmc||0, pw:t.pw ?? null, tg:t.tg ?? null, kw:t.kw||[], o:t.o||"", mc:t.mc||"", pm:t.pm||[], tk:t.tk||[], cmdr:!!t.cmdr, loy:t.loy ?? null}; }
 const isLand = c => /\bLand\b/.test(c.type||"") && !/\bCreature\b/.test(c.type||"");
 
 function save(){ LS.set("kt-state", S); LS.set("kt-me", me); }
@@ -504,9 +507,10 @@ async function castSpell(u){
   if(usesStack()){ const target = STACK.length ? await stackTargetDialog(f.c) : null; return putOnStack(f.c, "gy", target); }
   act(`wirkt ${f.c.n}`);
   const card = f.c;
-  if(typeof botRespond === "function" && await botRespond(f.c)){ act(`${f.c.n} wurde gekontert`); }
-  else { markOnResolve(card); ritualResolve(card); }
+  const countered = typeof botRespond === "function" && await botRespond(f.c);
+  if(countered) act(`${f.c.n} wurde gekontert`);
   moveCard(u, "gy");
+  if(!countered) await queued(async () => { await markOnResolve(card); await ritualResolve(card); await abilSpellResolve(card); });
 }
 function draw(n=1){
   let k = 0;
@@ -833,6 +837,7 @@ function cardMenu(c, zone){
     items.push({l:"Kopie als Token", f:() => cloneToken(c.u)});
     (c.tk || []).forEach(t => items.push({l:`Token erzeugen: ${t.n}`, f:() => createTokenFromId(t.id, t.n, 1, c)}));
     if(!c.fd) markMenuItems(c).forEach(it => items.push(it));
+    abilMenuItems(c, "bf").forEach(it => items.push(it));
     const opp = order.filter(id => id !== me.id && id !== "bot" && others[id] && !others[id].off);
     if(c.ow && opp.includes(c.ow.id)) items.push({l:`Kontrolle zurück an ${c.ow.name}`, f:() => giveControl(c.u, c.ow.id)});
     opp.filter(id => !(c.ow && c.ow.id === id)).forEach(id => items.push({l:`Kontrolle geben an ${others[id].name}`, f:() => giveControl(c.u, id)}));
@@ -844,9 +849,11 @@ function cardMenu(c, zone){
     items.push({l:"Verdeckt ausspielen", f:() => play(c.u, true)});
     items.push({l:"Zeigen", f:() => act(`zeigt ${c.n}`)});
     handManaItems(c).forEach(it => items.push(it));
+    abilMenuItems(c, "hand").forEach(it => items.push(it));
     items.push("-");
   } else if(zone !== "bf"){
     if(zone === "gy" && /\b(Instant|Sorcery)\b/.test(c.type || "")) markMenuItems(c).forEach(it => items.push(it));
+    if(zone === "gy") abilMenuItems(c, "gy").forEach(it => items.push(it));
     items.push({l:"Aufs Spielfeld", f:mv("bf")});
   }
   if(zone !== "hand") items.push({l:"Auf die Hand", f:mv("hand")});
@@ -878,7 +885,7 @@ document.addEventListener("keydown", e => { if(e.key === "Escape"){ closeMenu();
 
 /* ---------- Modale ---------- */
 function openModal(st){ modalState = st; $("#modal").hidden = false; renderModal(); }
-function closeModal(){ modalState = null; $("#modal").hidden = true; $("#modalBox").innerHTML = ""; }
+function closeModal(){ modalState = null; $("#modal").hidden = true; $("#modalBox").innerHTML = ""; delete $("#modalBox").dataset.abil; }
 $("#modal").addEventListener("click", e => { if(e.target.id === "modal" && !(modalState && modalState.kind === "block")) closeModal(); });
 
 function head(title, extra){
@@ -949,7 +956,7 @@ function bigView(c, mine){
 /* ---------- Top-Decks (eingebaut) ---------- */
 /*META_START*/
 const META_DECKS = {"cEDH":[{"n":"Kraum / Tymna","p":"7,4%","s":"MBG Commanderpalooza #3, 1. Platz, 24.10.26","l":"Commander\nKraum, Ludevic's Opus\nTymna the Weaver\n\nDeck\nEsper Sentinel\nFaerie Mastermind\nLavinia, Azorius Renegade\nLotho, Corrupt Shirriff\nMemnite\nMockingbird\nOpposition Agent\nOrcish Bowmasters\nRagavan, Nimble Pilferer\nRanger-Captain of Eos\nSimian Spirit Guide\nTataru Taru\nThassa's Oracle\nValley Floodcaller\nVoice of Victory\nAd Nauseam\nAn Offer You Can't Refuse\nBorne Upon a Wind\nBrain Freeze\nCabal Ritual\nChain of Vapor\nCommandeer\nCulling the Weak\nDark Ritual\nDeflecting Swat\nDemonic Consultation\nDispel\nEnlightened Tutor\nFierce Guardianship\nFinal Fortune\nFlusterstorm\nForce of Negation\nForce of Will\nInto the Flood Maw\nLim-Dûl's Vault\nMental Misstep\nMindbreak Trap\nMisdirection\nMystical Tutor\nOrim's Chant\nPact of Negation\nPyroblast\nRain of Filth\nRed Elemental Blast\nSilence\nSnapback\nSwan Song\nTainted Pact\nVampiric Tutor\nBeseech the Mirror\nDemonic Tutor\nDiabolic Intent\nGamble\nImperial Seal\nRite of Flame\nScheming Symmetry\nStrike It Rich\nArcane Signet\nChrome Mox\nFellwar Stone\nLion's Eye Diamond\nLotus Petal\nMana Vault\nMox Amber\nMox Diamond\nMox Opal\nSol Ring\nWishclaw Talisman\nGleaming Splendor\nMystic Remora\nNecropotence\nRhystic Study\nUnderworld Breach\nAncient Tomb\nArid Mesa\nBadlands\nBloodstained Mire\nCity of Brass\nCity of Traitors\nCommand Tower\nExotic Orchard\nFlooded Strand\nGemstone Caverns\nMana Confluence\nMarsh Flats\nMisty Rainforest\nOtawara, Soaring City\nPlateau\nPolluted Delta\nScalding Tarn\nScrubland\nStarting Town\nTarnished Citadel\nTundra\nUnderground Sea\nVerdant Catacombs\nVolcanic Island\nWindswept Heath"},{"n":"Kinnan, Bonder Prodigy","p":"6,7%","s":"cEDH UK Open Benfest III, 1. Platz, 12.09.26","l":"Commander\nKinnan, Bonder Prodigy\n\nDeck\nBirds of Paradise\nClever Impersonator\nColossal Skyturtle\nConsecrated Sphinx\nDelighted Halfling\nDrift of Phantasms\nElvish Mystic\nElvish Spirit Guide\nEndurance\nEnduring Vitality\nFaerie Mastermind\nFlesh Duplicate\nFyndhorn Elves\nGene Pollinator\nGilded Drake\nHigh Fae Trickster\nHullbreaker Horror\nInvasion of Ikoria\nLlanowar Elves\nMockingbird\nThrasios, Triton Hero\nTrophy Mage\nValley Floodcaller\nVolatile Stormdrake\nWan Shi Tong, Librarian\nAn Offer You Can't Refuse\nBorne Upon a Wind\nChain of Vapor\nChord of Calling\nCommandeer\nDispel\nDisrupting Shoal\nDizzy Spell\nDramatic Reversal\nFierce Guardianship\nFlusterstorm\nForce of Negation\nForce of Will\nMental Misstep\nMindbreak Trap\nMisdirection\nPact of Negation\nSink into Stupor\nSnapback\nSudden Substitution\nSwan Song\nTwincast\nWhir of Invention\nFinale of Devastation\nFlash Photography\nHidden Strings\nNature's Rhythm\nTransmute Artifact\nArcane Signet\nBasalt Monolith\nChrome Mox\nFellwar Stone\nGrim Monolith\nImposter Mech\nLotus Petal\nMana Vault\nMirage Mirror\nMox Amber\nMox Diamond\nMox Opal\nSol Ring\nSpringleaf Drum\nTalisman of Curiosity\nThe One Ring\nCopy Enchantment\nMirrormade\nMystic Remora\nRhystic Study\nSteal Enchantment\nSylvan Library\nAncient Tomb\nBoseiju, Who Endures\nBotanical Sanctum\nBreeding Pool\nCity of Brass\nCommand Tower\nFlooded Strand\nForest\nGemstone Caverns\nIsland\nMana Confluence\nMisty Rainforest\nOtawara, Soaring City\nPolluted Delta\nRejuvenating Springs\nScalding Tarn\nStarting Town\nTarnished Citadel\nTropical Island\nVerdant Catacombs\nWaterlogged Grove\nWindswept Heath\nWooded Foothills\nYavimaya Coast"},{"n":"Rograkh / Thrasios","p":"5,1%","s":"Pittsburgh 2026 t/cEDH, 1. Platz, 11.07.26","l":"Commander\nRograkh, Son of Rohgahh\nThrasios, Triton Hero\n\nDeck\nAllosaurus Shepherd\nBadgermole Cub\nBiomancer's Familiar\nBirds of Paradise\nClever Impersonator\nCloud of Faeries\nElvish Spirit Guide\nEnduring Vitality\nEternal Witness\nFaerie Mastermind\nFlesh Duplicate\nFormidable Speaker\nGene Pollinator\nHexing Squelcher\nInvasion of Ikoria\nMagus of the Candelabra\nMockingbird\nOboro Breezecaller\nPhantasmal Image\nShang-Chi, Master of Kung Fu\nSowing Mycospawn\nSpellseeker\nSpringheart Nantuko\nThe Cabbage Merchant\nValley Floodcaller\nVibrance\nWan Shi Tong, Librarian\nBorne Upon a Wind\nChain of Vapor\nChord of Calling\nCommandeer\nCrop Rotation\nDeflecting Swat\nDramatic Reversal\nEmerald Charm\nFierce Guardianship\nFlare of Denial\nFlare of Duplication\nFlusterstorm\nForce of Negation\nForce of Will\nLouisoix's Sacrifice\nMental Misstep\nMindbreak Trap\nMisdirection\nNoxious Revival\nPact of Negation\nSnap\nSwan Song\nVeil of Summer\nChatterstorm\nFinale of Devastation\nGamble\nGreen Sun's Zenith\nHidden Strings\nNature's Rhythm\nCandelabra of Tawnos\nChrome Mox\nExpedition Map\nLotus Petal\nMana Vault\nMox Amber\nMox Diamond\nSol Ring\nSpringleaf Drum\nCryptolith Rite\nEarthcraft\nMystic Remora\nRhystic Study\nTraining Grounds\nWild Growth\nAncient Tomb\nBoseiju, Who Endures\nBreeding Pool\nCommand Tower\nDeserted Temple\nDryad Arbor\nEmergence Zone\nFlooded Strand\nForest\nGaea's Cradle\nGemstone Caverns\nIsland\nMinamo, School at Water's Edge\nMisty Rainforest\nOtawara, Soaring City\nPolluted Delta\nPrismatic Vista\nScalding Tarn\nShifting Woodland\nTaiga\nTalon Gates of Madara\nTropical Island\nUrza's Saga\nVerdant Catacombs\nVolcanic Island\nWindswept Heath\nWooded Foothills"},{"n":"Rograkh / Silas Renn","p":"4,4%","s":"cEDH Nationals Deutschland Open, 1. Platz, 05.09.26","l":"Commander\nRograkh, Son of Rohgahh\nSilas Renn, Seeker Adept\n\nDeck\nHexing Squelcher\nPhyrexian Metamorph\nSimian Spirit Guide\nThassa's Oracle\nValley Floodcaller\nAd Nauseam\nAn Offer You Can't Refuse\nBorne Upon a Wind\nBrain Freeze\nCabal Ritual\nChain of Vapor\nCommandeer\nCulling the Weak\nDark Ritual\nDeflecting Swat\nDemonic Consultation\nDispel\nDramatic Reversal\nFierce Guardianship\nFinal Fortune\nFlare of Duplication\nFlusterstorm\nForce of Will\nMental Misstep\nMindbreak Trap\nMisdirection\nMystical Tutor\nPact of Negation\nSink into Stupor\nSnapback\nSwan Song\nTainted Pact\nVampiric Tutor\nBeseech the Mirror\nDemonic Tutor\nDiabolic Intent\nImperial Seal\nStock Up\nTimetwister\nTransmute Artifact\nArcane Signet\nBolas's Citadel\nChrome Mox\nDefense Grid\nDimir Signet\nGilded Lotus\nGrim Monolith\nImposter Mech\nLion's Eye Diamond\nLotus Petal\nMana Vault\nManifold Key\nMoonsnare Prototype\nMox Amber\nMox Diamond\nMox Opal\nRelic of Legends\nRelic of Sauron\nScroll Rack\nSensei's Divining Top\nSol Ring\nSpringleaf Drum\nThe One Ring\nVexing Bauble\nVoltaic Key\nWishclaw Talisman\nCopy Artifact\nMystic Remora\nNecrodominance\nNecropotence\nRhystic Study\nUnderworld Breach\nTezzeret, Cruel Captain\nAncient Tomb\nBadlands\nBloodstained Mire\nCity of Brass\nCity of Traitors\nCommand Tower\nDarkwater Catacombs\nEmergence Zone\nGemstone Caverns\nMana Confluence\nMarsh Flats\nMishra's Workshop\nMisty Rainforest\nOtawara, Soaring City\nPhyrexian Tower\nPolluted Delta\nScalding Tarn\nTalon Gates of Madara\nUndercity Sewers\nUnderground Sea\nUrborg, Tomb of Yawgmoth\nUrza's Saga\nVerdant Catacombs\nVolcanic Island\nWatery Grave"},{"n":"Sisay, Weatherlight Captain","p":"3,8%","s":"Nacional de cEDH 100K, 1. Platz, 29.08.26","l":"Commander\nSisay, Weatherlight Captain\n\nDeck\nBadgermole Cub\nBirds of Paradise\nBloom Tender\nColossal Skyturtle\nDeadpool, Trading Card\nDeathrite Shaman\nDelighted Halfling\nDerevi, Empyrial Tactician\nElvish Spirit Guide\nEmiel the Blessed\nEsika, God of the Tree\nEsper Sentinel\nIgnoble Hierarch\nIoreth of the Healing House\nKing T'Challa\nKinnan, Bonder Prodigy\nLavinia, Azorius Renegade\nLotho, Corrupt Shirriff\nMarvin, Murderous Mimic\nNoble Hierarch\nRagavan, Nimble Pilferer\nRanger-Captain of Eos\nSelvala, Heart of the Wilds\nShang-Chi, Master of Kung Fu\nSpellskite\nTataru Taru\nThe Cabbage Merchant\nWan Shi Tong, Librarian\nAbrupt Decay\nChord of Calling\nCrop Rotation\nCyclonic Rift\nDeflecting Swat\nEladamri's Call\nEnlightened Tutor\nFierce Guardianship\nFlusterstorm\nForce of Negation\nForce of Will\nLegolas's Quick Reflexes\nMental Misstep\nMindbreak Trap\nOrim's Chant\nPact of Negation\nSilence\nSummoner's Pact\nSwan Song\nVampiric Tutor\nDemonic Tutor\nGreen Sun's Zenith\nNature's Rhythm\nAgatha's Soul Cauldron\nArcane Signet\nChrome Mox\nImposter Mech\nLoki's Scepter\nLotus Petal\nMana Vault\nMox Amber\nMox Diamond\nMox Opal\nRelic of Legends\nSol Ring\nDeafening Silence\nMystic Remora\nRhystic Study\nSmothering Tithe\nTouch the Spirit Realm\nTeferi, Time Raveler\nTeferi, Who Slows the Sunset\nTyvar, Jubilant Brawler\nAncient Tomb\nBayou\nBoseiju, Who Endures\nCity of Brass\nCommand Tower\nExotic Orchard\nFlooded Strand\nGaea's Cradle\nGemstone Caverns\nMana Confluence\nMisty Rainforest\nMount Doom\nOtawara, Soaring City\nPlateau\nPolluted Delta\nSavannah\nScalding Tarn\nScrubland\nStarting Town\nTaiga\nTarnished Citadel\nTropical Island\nTundra\nUnderground Sea\nVerdant Catacombs\nVolcanic Island\nWindswept Heath\nWooded Foothills"},{"n":"Thrasios / Tymna","p":"2,9%","s":"Steel City Green Chile Slopper, 1. Platz, 18.10.26","l":"Commander\nThrasios, Triton Hero\nTymna the Weaver\n\nDeck\nBirds of Paradise\nClever Impersonator\nDeathrite Shaman\nDelney, Streetwise Lookout\nDevoted Druid\nElvish Spirit Guide\nEndurance\nEsper Sentinel\nFaerie Mastermind\nFlesh Duplicate\nGilded Drake\nHazel's Brewmaster\nHigh Fae Trickster\nKing T'Challa\nKinnan, Bonder Prodigy\nLotho, Corrupt Shirriff\nMockingbird\nNoble Hierarch\nOrcish Bowmasters\nRanger-Captain of Eos\nSubtlety\nTataru Taru\nTeferi, Mage of Zhalfir\nThe Cabbage Merchant\nVolatile Stormdrake\nWan Shi Tong, Librarian\nAn Offer You Can't Refuse\nBorne Upon a Wind\nChord of Calling\nCommandeer\nCrop Rotation\nDark Ritual\nDeadly Rollick\nDispel\nEnlightened Tutor\nFierce Guardianship\nFlusterstorm\nForce of Negation\nForce of Will\nLim-Dûl's Vault\nMental Misstep\nMindbreak Trap\nMisdirection\nOrim's Chant\nPact of Negation\nSilence\nSink into Stupor\nSnapback\nSwan Song\nSwords to Plowshares\nVampiric Tutor\nBeseech the Mirror\nDemonic Tutor\nEldritch Evolution\nFinale of Devastation\nFlash Photography\nGreen Sun's Zenith\nImperial Seal\nNature's Rhythm\nNeoform\nChrome Mox\nLotus Petal\nMana Vault\nMox Amber\nMox Diamond\nSol Ring\nCopy Enchantment\nGleaming Splendor\nMirrormade\nMystic Remora\nRhystic Study\nSmothering Tithe\nAncient Tomb\nBayou\nBoseiju, Who Endures\nCity of Brass\nCity of Traitors\nCommand Tower\nEmergence Zone\nExotic Orchard\nFlooded Strand\nGaea's Cradle\nGemstone Caverns\nMana Confluence\nMarsh Flats\nMisty Rainforest\nOtawara, Soaring City\nPolluted Delta\nSavannah\nScalding Tarn\nScrubland\nStarting Town\nTarnished Citadel\nTropical Island\nTundra\nUnderground Sea\nVerdant Catacombs\nWindswept Heath"},{"n":"Ishai / Rograkh","p":"2,1%","s":"The Cookout 2026, 1. Platz, 29.08.26","l":"Commander\nIshai, Ojutai Dragonspeaker\nRograkh, Son of Rohgahh\n\nDeck\nBirgi, God of Storytelling\nClever Impersonator\nDisplacer Kitten\nEsper Sentinel\nFaerie Mastermind\nHullbreaker Horror\nHydroelectric Specimen\nKing T'Challa\nMockingbird\nRagavan, Nimble Pilferer\nRanger-Captain of Eos\nSimian Spirit Guide\nStorm-Kiln Artist\nSubtlety\nTataru Taru\nThe Queen of Dale\nValley Floodcaller\nAn Offer You Can't Refuse\nBorne Upon a Wind\nBrain Freeze\nChain of Vapor\nCommandeer\nDeflecting Swat\nDisrupting Shoal\nEnlightened Tutor\nFierce Guardianship\nFirestorm\nFlare of Duplication\nFlusterstorm\nForce of Negation\nForce of Will\nGifts Ungiven\nInto the Flood Maw\nIntuition\nMental Misstep\nMindbreak Trap\nMisdirection\nMystical Tutor\nOrim's Chant\nPact of Negation\nPyroblast\nRed Elemental Blast\nRedirect Lightning\nSilence\nSink into Stupor\nSnapback\nSudden Substitution\nSwan Song\nSwords to Plowshares\nFlash Photography\nGamble\nIdyllic Tutor\nRite of Flame\nSevinne's Reclamation\nArcane Signet\nChrome Mox\nImposter Mech\nLion's Eye Diamond\nLotus Petal\nMana Vault\nMox Amber\nMox Diamond\nMox Opal\nParadise Mantle\nRelic of Legends\nSol Ring\nSpringleaf Drum\nCopy Enchantment\nCurse of Opulence\nGleaming Splendor\nMirrormade\nMystic Remora\nRhystic Study\nSmothering Tithe\nUnderworld Breach\nAncient Tomb\nArid Mesa\nBloodstained Mire\nCity of Brass\nCity of Traitors\nCommand Tower\nExotic Orchard\nFlooded Strand\nGemstone Caverns\nHallowed Fountain\nMana Confluence\nMarsh Flats\nMisty Rainforest\nOtawara, Soaring City\nPlateau\nPolluted Delta\nScalding Tarn\nStarting Town\nSteam Vents\nTarnished Citadel\nTundra\nVolcanic Island\nWindswept Heath"},{"n":"Dargo / Tymna","p":"2,0%","s":"MBG Mox Diamond Event, 1. Platz, 08.08.26","l":"Commander\nDargo, the Shipwrecker\nTymna the Weaver\n\nDeck\nAjani, Nacatl Pariah\nAltar of the Wretched\nBirgi, God of Storytelling\nDeadpool, Trading Card\nDragon's Rage Channeler\nEsper Sentinel\nGoblin Engineer\nGrand Abolisher\nGreedy Freebooter\nHexing Squelcher\nHope of Ghirapur\nImpulsive Pilferer\nInsolent Neonate\nKnuckles the Echidna\nLotho, Corrupt Shirriff\nMardu Devotee\nMarionette Apprentice\nMemnite\nOrcish Bowmasters\nRagavan, Nimble Pilferer\nRakdos, the Muscle\nRanger-Captain of Eos\nRazaketh, the Foulblooded\nRuthless Technomancer\nShambling Ghast\nSimian Spirit Guide\nTataru Taru\nThe Jolly Balloon Man\nThe Queen of Dale\nVoice of Victory\nWarren Soultrader\nAd Nauseam\nBurnt Offering\nCabal Ritual\nCulling the Weak\nDark Ritual\nDeflecting Swat\nEnlightened Tutor\nEntomb\nFinal Fortune\nSacrifice\nSilence\nTainted Pact\nVampiric Tutor\nBeseech the Mirror\nDemonic Tutor\nDiabolic Intent\nGamble\nImperial Seal\nInfernal Plunge\nLively Dirge\nReanimate\nRite of Flame\nSevinne's Reclamation\nAgatha's Soul Cauldron\nAltar of Dementia\nArcane Signet\nChrome Mox\nLion's Eye Diamond\nLotus Petal\nMana Vault\nMox Amber\nMox Diamond\nMox Opal\nPrized Statue\nRelic of Legends\nSol Ring\nVexing Bauble\nWishclaw Talisman\nGleaming Splendor\nGoblin Bombardment\nNecropotence\nStatic Prison\nUnderworld Breach\nAncient Tomb\nArid Mesa\nBadlands\nBlood Crypt\nBloodstained Mire\nCavern of Souls\nCity of Brass\nCity of Traitors\nCommand Tower\nEmergence Zone\nGemstone Caverns\nGodless Shrine\nGreat Furnace\nMana Confluence\nMarsh Flats\nPhyrexian Tower\nPlateau\nPolluted Delta\nSacred Foundry\nScrubland\nStarting Town\nVerdant Catacombs\nWindswept Heath\nWooded Foothills"},{"n":"Ral, Monsoon Mage","p":"2,0%","s":"Sunshine Showdown $10k+, 1. Platz, 10.10.26","l":"Commander\nRal, Monsoon Mage\n\nDeck\nBirgi, God of Storytelling\nElectro, Assaulting Battery\nGandalf, Goblins' Bane\nHexing Squelcher\nPinnacle Monk\nRagavan, Nimble Pilferer\nSimian Spirit Guide\nStorm-Kiln Artist\nTavern Scoundrel\nTreasonous Ogre\n_____ Goblin\nAbandon Attachments\nAn Offer You Can't Refuse\nBrain Freeze\nDeflecting Swat\nDemand Answers\nDesperate Ritual\nFierce Guardianship\nFlashback\nFlusterstorm\nFrantic Search\nGut Shot\nInvoke Calamity\nLava Dart\nLightning Bolt\nMental Misstep\nMystical Tutor\nOpera Love Song\nPact of Negation\nPyretic Ritual\nPyroblast\nRed Elemental Blast\nRedirect Lightning\nReiterate\nSeething Song\nSink into Stupor\nSnap\nThrill of Possibility\nTibalt's Trickery\nUntimely Malfunction\nVision of Love\nEcho of Eons\nFinale of Promise\nFlow State\nGamble\nGitaxian Probe\nGlimpse the Impossible\nHex Magic\nHidden Strings\nHighway Robbery\nJeska's Will\nMind's Desire\nPast in Flames\nPyroclasm\nQuiet Speculation\nReckless Impulse\nRite of Flame\nRomantic Rendezvous\nSea Gate Restoration\nShatterskull Smashing\nSolve the Equation\nStorm of Memories\nStrike It Rich\nTimetwister\nWheel of Fortune\nWheel of Misfortune\nWill of the Jeskai\nWindfall\nWitch's Mark\nWrenn's Resolve\nChrome Mox\nLion's Eye Diamond\nLotus Petal\nMana Vault\nMox Amber\nMox Diamond\nSol Ring\nSpringleaf Drum\nVexing Bauble\nMystic Remora\nUnderworld Breach\nAncient Tomb\nArid Mesa\nBloodstained Mire\nCommand Tower\nFiery Islet\nFlooded Strand\nGemstone Caverns\nGreat Furnace\nMisty Rainforest\nMountain\nPolluted Delta\nScalding Tarn\nShivan Reef\nSteam Vents\nThundering Falls\nTraining Center\nVolcanic Island\nWooded Foothills"},{"n":"Vivi Ornitier","p":"1,8%","s":"Consult The Coast Win-A-Dual, 1. Platz, 19.09.26","l":"Commander\nVivi Ornitier\n\nDeck\nDrift of Phantasms\nHullbreaker Horror\nHydroelectric Specimen\nImperial Recruiter\nNiv-Mizzet, Visionary\nPinnacle Monk\nQuicksilver Elemental\nRagavan, Nimble Pilferer\nSimian Spirit Guide\nTandem Lookout\nThor, Guardian of Midgard\nAn Offer You Can't Refuse\nBlazing Shoal\nBorne Upon a Wind\nBrain Freeze\nChain of Vapor\nCommandeer\nDaze\nDeflecting Swat\nDisrupting Shoal\nDizzy Spell\nFierce Guardianship\nFinal Fortune\nFlusterstorm\nForce of Negation\nForce of Will\nGut Shot\nIntuition\nInvert\nMental Misstep\nMindbreak Trap\nMisdirection\nMystical Tutor\nPact of Negation\nPyroblast\nPyrokinesis\nRedirect Lightning\nSecret Identity\nSink into Stupor\nSnapback\nSubmerge\nSwan Song\nVirtue of Courage\nWild Slash\nAlchemist's Gambit\nCave-In\nCommand Performance\nGamble\nGitaxian Probe\nJeska's Will\nLast Chance\nMerchant Scroll\nRite of Flame\nSea Gate Restoration\nShatterskull Smashing\nStrike It Rich\nSundering Eruption\nWarrior's Oath\nWild Ride\nChrome Mox\nGrim Monolith\nJeweled Amulet\nLion's Eye Diamond\nLotus Petal\nMana Vault\nMishra's Bauble\nMox Amber\nMox Diamond\nMox Opal\nSol Ring\nSpringleaf Drum\nUrza's Bauble\nVexing Bauble\nCuriosity\nMystic Remora\nOphidian Eye\nRhystic Study\nUnderworld Breach\nAncient Tomb\nArid Mesa\nBloodstained Mire\nCavern of Souls\nFiery Islet\nFlooded Strand\nGemstone Caverns\nMisty Rainforest\nMultiversal Passage\nPolluted Delta\nPrismatic Vista\nSandstone Needle\nSaprazzan Skerry\nScalding Tarn\nSnow-Covered Island\nSnow-Covered Mountain\nSteam Vents\nThran Portal\nThundering Falls\nVolcanic Island\nWooded Foothills"},{"n":"Etali, Primal Conqueror","p":"1,6%","s":"ISG Clash for the Cradle, 1. Platz, 26.09.26","l":"Commander\nEtali, Primal Conqueror\n\nDeck\nApex Devastator\nBirds of Paradise\nBirgi, God of Storytelling\nDelighted Halfling\nDisciple of Freyalise\nDualcaster Mage\nElvish Spirit Guide\nEmrakul, the Promised End\nEternal Witness\nFear of Missing Out\nFormidable Speaker\nFury\nHellkite Courser\nHexing Squelcher\nHunting Velociraptor\nImperial Recruiter\nJaxis, the Troublemaker\nOrcish Lumberjack\nPinnacle Monk\nRagavan, Nimble Pilferer\nRionya, Fire Dancer\nSimian Spirit Guide\nSquee, the Immortal\nTinder Wall\nTreasonous Ogre\nWandering Archaic\n_____ Goblin\nCrop Rotation\nDeflecting Swat\nDesperate Ritual\nEldrazi Confluence\nFinal Fortune\nFlare of Duplication\nLightning Bolt\nNoxious Revival\nOpen the Omenpaths\nPyretic Ritual\nPyroblast\nRed Elemental Blast\nSeething Song\nVeil of Summer\nWorldly Tutor\nEldritch Evolution\nElectroduplicate\nGamble\nGeosurge\nHeat Shimmer\nImprovisation Capstone\nInfernal Plunge\nJeska's Will\nMetamorphosis\nMolten Duplication\nRite of Flame\nTwinflame\nWheel of Fortune\nArcane Signet\nChrome Mox\nCursed Mirror\nGrim Monolith\nLion's Eye Diamond\nLotus Petal\nMana Vault\nMox Amber\nMox Diamond\nMox Opal\nSol Ring\nCream of the Crop\nFood Chain\nSylvan Library\nUnderworld Breach\nWorld War Hulk\nChandra, Flameshaper\nTezzeret, Cruel Captain\nAncient Tomb\nArid Mesa\nBloodstained Mire\nBoseiju, Who Endures\nCavern of Souls\nCity of Traitors\nCommand Tower\nCommercial District\nCrystal Vein\nEmergence Zone\nForest\nGaea's Cradle\nGemstone Caverns\nGrove of the Burnwillows\nKarplusan Forest\nMana Confluence\nMisty Rainforest\nMountain\nSandstone Needle\nShifting Woodland\nSpire Garden\nStarting Town\nStomping Ground\nTaiga\nWindswept Heath\nWooded Foothills"},{"n":"Magda, Brazen Outlaw","p":"1,6%","s":"cEDH Nationals Deutschland Invitational, 1. Platz, 05.09.26","l":"Commander\nMagda, Brazen Outlaw\n\nDeck\nBarkform Harvester\nBattered Golem\nBloodfire Dwarf\nDwarven Armorer\nDwarven Bloodboiler\nDwarven Grunt\nDwarven Mauler\nDwarven Scorcher\nDwarven Trader\nEnslaved Dwarf\nFíli and Kíli, Joyous\nGogo, Mysterious Mime\nKnuckles the Echidna\nLiberated Dwarf\nMagda, the Hoardmaster\nPinnacle Monk\nPlundering Barbarian\nProfessional Face-Breaker\nRoaming Throne\nSimian Spirit Guide\nSpark Mage\nThree Tree Mascot\nTreasonous Ogre\nTwinshot Sniper\nUniversal Automaton\nXorn\nÓin the Brave\nBottle-Cap Blast\nDeflecting Swat\nFlare of Duplication\nGalvanic Blast\nGhostfire Slice\nLightning Bolt\nPyroblast\nPyrokinesis\nRed Elemental Blast\nRedirect Lightning\nReturn the Favor\nSudden Shock\nTibalt's Trickery\nUntimely Malfunction\nJeska's Will\nMolten Duplication\nRite of Flame\nShatterskull Smashing\nSundering Eruption\nCaptain America's Motorcycle\nChrome Mox\nClock of Omens\nClown Car\nCursed Mirror\nDisruptor Flute\nFirdoch Core\nFlywheel Racer\nGrafdigger's Cage\nGreat Furnace\nGrinding Station\nHigh-Speed Hoverbike\nLifecraft Engine\nLiquimetal Torque\nLotus Petal\nMana Vault\nMaskwood Nexus\nMox Opal\nPeter Parker's Camera\nPortal to Phyrexia\nRelic of Legends\nSculpting Steel\nSol Ring\nSpringleaf Drum\nStalactite Dagger\nTorpor Orb\nTreasure Vault\nUnlicensed Hearse\nVexing Bauble\nUrza's Saga\nTezzeret, Cruel Captain\nAncient Tomb\nCavern of Souls\nCity of Traitors\nCrystal Vein\nDragon-Cursed Halls\nGemstone Caverns\nHammerheim\nHoldout Settlement\nKavaron, Memorial World\n8 Mountain\nMutavault\nShinka, the Bloodsoaked Keep\nSurvivors' Encampment\nTalon Gates of Madara\nVolatile Fault"},{"n":"Thrasios / Yoshimaru","p":"1,4%","s":"Commander Invitational Qualifier East Coast Gaming, 1. Platz, 19.09.26","l":"Commander\nThrasios, Triton Hero\nYoshimaru, Ever Faithful\n\nDeck\nAvacyn's Pilgrim\nBadgermole Cub\nBiomancer's Familiar\nBirds of Paradise\nBloom Tender\nCaptain America, Living Legend\nCloud of Faeries\nDelighted Halfling\nDerevi, Empyrial Tactician\nElvish Spirit Guide\nEmiel the Blessed\nEnduring Vitality\nEsper Sentinel\nEternal Witness\nFaerie Mastermind\nFlesh Duplicate\nFormidable Speaker\nJennifer Walters\nKing T'Challa\nKinnan, Bonder Prodigy\nMagus of the Candelabra\nMockingbird\nNoble Hierarch\nOboro Breezecaller\nShang-Chi, Master of Kung Fu\nSowing Mycospawn\nSpellseeker\nSpringheart Nantuko\nThe Queen of Dale\nValley Floodcaller\nVoice of Victory\nBorne Upon a Wind\nChord of Calling\nCommandeer\nCrop Rotation\nEnlightened Tutor\nFierce Guardianship\nFlare of Denial\nFlusterstorm\nForce of Will\nLegolas's Quick Reflexes\nLouisoix's Sacrifice\nMental Misstep\nMindbreak Trap\nNoxious Revival\nOrim's Chant\nPact of Negation\nRetraction Helix\nSilence\nSnap\nSwan Song\nSwords to Plowshares\nVeil of Summer\nWorldly Tutor\nFinale of Devastation\nGreen Sun's Zenith\nNature's Rhythm\nSylvan Scrying\nCandelabra of Tawnos\nChrome Mox\nExpedition Map\nLotus Petal\nMox Amber\nMox Diamond\nSol Ring\nCryptolith Rite\nEarthcraft\nMystic Remora\nRhystic Study\nSmothering Tithe\nTraining Grounds\nWild Growth\nAncient Tomb\nBoseiju, Who Endures\nBreeding Pool\nCity of Brass\nCommand Tower\nDeserted Temple\nDryad Arbor\nEmergence Zone\nFlooded Strand\nForest\nGaea's Cradle\nGemstone Caverns\nIsland\nMana Confluence\nMinamo, School at Water's Edge\nMisty Rainforest\nOtawara, Soaring City\nPolluted Delta\nSavannah\nScalding Tarn\nTalon Gates of Madara\nTropical Island\nTundra\nUrza's Saga\nWindswept Heath\nWooded Foothills"},{"n":"Nick Fury, Agent of S.H.I.E.L.D.","p":"1,4%","s":"Ohio cEDH: Highlander 3, 1. Platz, 26.09.26","l":"Commander\nNick Fury, Agent of S.H.I.E.L.D.\n\nDeck\nBirgi, God of Storytelling\nDeathrite Shaman\nElvish Spirit Guide\nEsper Sentinel\nGeist of Saint Thalia\nHexing Squelcher\nJennifer Walters\nRagavan, Nimble Pilferer\nRal, Monsoon Mage\nSimian Spirit Guide\nStorm-Kiln Artist\nThassa's Oracle\nTinder Wall\nWild Cantor\nAd Nauseam\nAn Offer You Can't Refuse\nBorne Upon a Wind\nBrain Freeze\nCabal Ritual\nChain of Vapor\nCrop Rotation\nCulling the Weak\nDark Ritual\nDeflecting Swat\nDemonic Consultation\nDesperate Ritual\nEnlightened Tutor\nFierce Guardianship\nFinal Fortune\nFlashback\nFlusterstorm\nForce of Will\nManamorphose\nMental Misstep\nMystical Tutor\nNoxious Revival\nPact of Negation\nPyretic Ritual\nPyroblast\nRed Elemental Blast\nSilence\nTainted Pact\nVampiric Tutor\nVeil of Summer\nBeseech the Mirror\nCulling Ritual\nDemonic Counsel\nDemonic Tutor\nDiabolic Intent\nGamble\nHex Magic\nImperial Seal\nJeska's Will\nMnemonic Betrayal\nPraetor's Grasp\nRite of Flame\nStrike It Rich\nWheel of Fortune\nWill of the Jeskai\nWindfall\nYawgmoth's Will\nChrome Mox\nLion's Eye Diamond\nLotus Petal\nMana Vault\nMox Amber\nMox Diamond\nMox Opal\nRelic of Legends\nSol Ring\nSpringleaf Drum\nGleaming Splendor\nMystic Remora\nNecropotence\nRhystic Study\nUnderworld Breach\nAncient Tomb\nBadlands\nBayou\nBloodstained Mire\nCity of Brass\nCommand Tower\nEmergence Zone\nExotic Orchard\nForbidden Orchard\nGemstone Caverns\nGemstone Mine\nGlimmervoid\nMana Confluence\nPolluted Delta\nScalding Tarn\nScrubland\nSpire of Industry\nStarting Town\nTundra\nUnderground Sea\nVerdant Catacombs\nVolcanic Island\nWooded Foothills"},{"n":"Tayam, Luminous Enigma","p":"1,3%","s":"Mox Mania II, 1. Platz, 18.07.26","l":"Commander\nTayam, Luminous Enigma\n\nDeck\nAbigale, Eloquent First-Year\nArchon of Emeria\nAvacyn's Pilgrim\nAven Interrupter\nBadgermole Cub\nBasking Broodscale\nBirds of Paradise\nBloom Tender\nCarrion Feeder\nCircle of Dreams Druid\nColonel Autumn\nDeathrite Shaman\nDelighted Halfling\nDevoted Druid\nDrannith Magistrate\nEidolon of Rhetoric\nElves of Deep Shadow\nElvish Mystic\nEndurance\nEnduring Vitality\nEsper Sentinel\nEthersworn Canonist\nFormidable Speaker\nHammerhead, Maggia Boss\nIcatian Moneychanger\nKnight of the Reliquary\nManglehorn\nMarvin, Murderous Mimic\nMoonshadow\nOpposition Agent\nOrcish Bowmasters\nPatrol Signaler\nPatrolling Peacemaker\nRanger-Captain of Eos\nRecruiter of the Guard\nRishkar, Peema Renegade\nRosie Cotton of South Lane\nShang-Chi, Master of Kung Fu\nSkyclave Apparition\nStrangleroot Geist\nSylvan Safekeeper\nWalking Ballista\nWall of Roots\nWarden of the Grove\nWeathered Wayfarer\nWhite Plume Adventurer\nYoung Wolf\nChord of Calling\nCrop Rotation\nVampiric Tutor\nGreen Sun's Zenith\nNature's Rhythm\nAgatha's Soul Cauldron\nAshnod's Altar\nChrome Mox\nDisruptor Flute\nLion's Eye Diamond\nMox Diamond\nSol Ring\nThousand-Year Elixir\nCarpet of Flowers\nCryptolith Rite\nDeafening Silence\nEarthcraft\nNature's Chosen\nSeal of Primordium\nSurvival of the Fittest\nTyvar, Jubilant Brawler\nAncient Tomb\nArid Mesa\nBayou\nBoseiju, Who Endures\nCavern of Souls\nCentaur Garden\nCity of Brass\nCommand Beacon\nCommand Tower\nDryad Arbor\nFlooded Strand\nForest\nGaea's Cradle\nGavony Township\nGemstone Caverns\nMana Confluence\nMarsh Flats\nMisty Rainforest\nOvergrown Tomb\nPhyrexian Tower\nPlains\nPolluted Delta\nSavannah\nScrubland\nTalon Gates of Madara\nTemple Garden\nUrza's Saga\nVerdant Catacombs\nWindswept Heath\nWooded Foothills\nYavimaya, Cradle of Growth"},{"n":"Crystal, Inhuman Princess","p":"1,3%","s":"cEDH at New City Brewery, 1. Platz, 05.09.26","l":"Commander\nCrystal, Inhuman Princess\n\nDeck\nBirds of Paradise\nDelighted Halfling\nElvish Spirit Guide\nEsper Sentinel\nGrand Abolisher\nKellan, the Fae-Blooded\nNoble Hierarch\nRagavan, Nimble Pilferer\nSimian Spirit Guide\nStorm-Kiln Artist\nTandem Lookout\nTinder Wall\nVivi Ornitier\nAn Offer You Can't Refuse\nAutumn's Veil\nBorne Upon a Wind\nBrain Freeze\nCrop Rotation\nDaze\nDeflecting Swat\nEmerald Charm\nEnlightened Tutor\nFierce Guardianship\nFinal Fortune\nFlashback\nFlusterstorm\nForce of Will\nGut Shot\nIntuition\nLegolas's Quick Reflexes\nManamorphose\nMental Misstep\nMindbreak Trap\nMisdirection\nNoxious Revival\nOrim's Chant\nPact of Negation\nPyrokinesis\nRedirect Lightning\nSeedtime\nSilence\nSnapback\nSubmerge\nSummoner's Pact\nSwan Song\nTidal Bore\nVeil of Summer\nGamble\nGitaxian Probe\nHex Magic\nJeska's Will\nOpen the Armory\nReverent Silence\nRite of Flame\nSevinne's Reclamation\nStrike It Rich\nWill of the Jeskai\nChrome Mox\nLion's Eye Diamond\nLotus Petal\nMox Amber\nMox Diamond\nSol Ring\nArtist's Talent\nCuriosity\nGleaming Splendor\nJeskai Ascendancy\nKeen Sense\nMystic Remora\nOphidian Eye\nRhystic Study\nUnderworld Breach\nArid Mesa\nBloodstained Mire\nBoseiju, Who Endures\nBreeding Pool\nCity of Brass\nCommand Tower\nEmergence Zone\nExotic Orchard\nFlooded Strand\nGemstone Caverns\nMana Confluence\nMisty Rainforest\nOtawara, Soaring City\nPlateau\nPolluted Delta\nSavannah\nScalding Tarn\nStarting Town\nSteam Vents\nTaiga\nTarnished Citadel\nTropical Island\nTundra\nVerdant Catacombs\nVolcanic Island\nWindswept Heath\nWooded Foothills"}],"Modern":[{"n":"Rakdos Delirium","p":"14%","s":"MTGO Challenge 32, 1. Platz, 01.11.26","l":"2 Verdant Catacombs\n2 Troll of Khazad-dum\n4 Thoughtseize\n4 Dark Matter Manipulator\n4 Detective's Phoenix\n2 Swamp\n4 Fear of Missing Out\n4 Street Wraith\n1 Polluted Delta\n1 Nihil Spellbomb\n1 Mountain\n4 Nethergoyf\n4 Mishra's Bauble\n1 Ob Nixilis, the Adversary\n1 Marsh Flats\n2 Raucous Theater\n4 Lightning Bolt\n1 Fatal Push\n4 Bloodstained Mire\n3 Blood Crypt\n2 Unholy Heat\n1 Arid Mesa\n4 Moonshadow\n\nSideboard\n1 Nihil Spellbomb\n1 Ob Nixilis, the Adversary\n1 Fatal Push\n1 End of the Hunt\n2 Glistening Deluge\n1 Grafdigger's Cage\n1 Ingot Chewer\n1 Inquisition of Kozilek\n2 Meltdown\n3 Obsidian Charmaw\n1 Strategic Betrayal"},{"n":"Broodscale Bloodchief","p":"13%","s":"MTGO Challenge 32, 1. Platz, 02.11.26","l":"4 Basking Broodscale\n3 Dismember\n1 Ba Sing Se\n2 Devourer of Destiny\n4 Eldrazi Temple\n4 Ancient Stirrings\n1 Gemstone Caverns\n1 Haywire Mite\n4 Kozilek's Command\n4 Malevolent Rumble\n1 Soul-Guide Lantern\n4 Sowing Mycospawn\n1 Springleaf Drum\n4 Ugin's Labyrinth\n4 Urza's Saga\n1 Vexing Bauble\n1 Talisman of Resilience\n2 Blade of the Bloodchief\n2 Boseiju, Who Endures\n2 Sire of Seven Deaths\n4 Emrakul, the Promised End\n6 Forest\n\nSideboard\n1 Gemstone Caverns\n1 Vexing Bauble\n3 Trinisphere\n2 Nature's Claim\n2 Thought-Knot Seer\n1 Cavern of Souls\n1 Grafdigger's Cage\n2 The Stone Brain\n2 Engineered Explosives"},{"n":"Pinnacle Affinity","p":"7%","s":"MTGO Challenge 16, 2. Platz, 31.10.26","l":"4 Kappa Cannoneer\n4 Metallic Rebuke\n4 Tormod's Crypt\n4 Mox Opal\n4 Mishra's Bauble\n2 Welding Jar\n4 Engineered Explosives\n4 Urza's Saga\n4 Pinnacle Emissary\n2 Basim Ibn Ishaq\n1 Skateboard\n1 Shadowspear\n1 Watery Grave\n2 Island\n4 Polluted Delta\n2 Preordain\n1 Scalding Tarn\n4 Emry, Lurker of the Loch\n1 Steam Vents\n1 Pithing Needle\n2 Mox Amber\n4 Darkslick Shores\n\nSideboard\n3 Consign to Memory\n1 Vexing Bauble\n1 Strix Serenade\n4 Fatal Push\n4 Thoughtseize\n1 Grafdigger's Cage\n1 Damping Sphere"},{"n":"UW Control (Scepter Chant)","p":"7%","s":"Regional Championship MIT, 2. Platz, 01.11.26","l":"4 Solitude\n1 Isochron Scepter\n1 The Mind Stone\n4 Orim's Chant\n3 Silence\n2 Erode\n1 Razorgrass Ambush\n1 Sink into Stupor\n1 Spell Snare\n2 Prismatic Ending\n4 Narset, Parter of Veils\n4 Teferi, Time Raveler\n4 Flooded Strand\n3 Arid Mesa\n2 Island\n2 Meticulous Archive\n2 Plains\n1 Geier Reach Sanitarium\n1 Misty Rainforest\n1 Otawara, Soaring City\n4 Day's Undoing\n3 Preordain\n2 Hallowed Fountain\n1 Celestial Colonnade\n1 Monumental Henge\n1 Polluted Delta\n1 Thundering Falls\n3 Wrath of the Skies\n\nSideboard\n3 Consign to Memory\n3 High Noon\n3 Mystical Dispute\n3 Sanctifier en-Vec\n2 The Wandering Emperor\n1 Wrath of the Skies"},{"n":"Boros Aggro","p":"6%","s":"MTGO Challenge 32, 2. Platz, 28.10.26","l":"4 Ajani, Nacatl Pariah\n2 Plains\n4 Inspiring Vantage\n1 Dalkovan Encampment\n2 Elegant Parlor\n3 Sacred Foundry\n4 Galvanic Discharge\n4 Marsh Flats\n4 Guide of Souls\n2 Lightning Bolt\n3 Goblin Bombardment\n4 Ocelot Pride\n4 Ragavan, Nimble Pilferer\n1 Mountain\n1 Flooded Strand\n4 Seasoned Pyromancer\n1 Blood Moon\n4 Arid Mesa\n1 Sunbaked Canyon\n2 Thraben Charm\n2 Voice of Victory\n3 Sanctifier en-Vec\n\nSideboard\n1 Clarion Conqueror\n2 High Noon\n3 Rest in Peace\n4 Obsidian Charmaw\n1 Meltdown\n2 Wear/Tear\n2 Wrath of the Skies"},{"n":"Amulet Titan","p":"6%","s":"MTGO League 5-0, 22.10.26","l":"2 Summoner's Pact\n4 Gruul Turf\n4 Crumbling Vestige\n3 Boseiju, Who Endures\n4 Primeval Titan\n1 Cultivator Colossus\n4 Scapeshift\n4 Arboreal Grazer\n1 Hanweir Battlements\n3 Malevolent Rumble\n1 Mirrorpool\n1 Otawara, Soaring City\n2 Roiling Canopy\n1 Echoing Deeps\n1 Dryad Arbor\n4 Spelunking\n2 Forest\n4 Amulet of Vigor\n4 Urza's Saga\n1 Yavimaya, Cradle of Growth\n1 Tolaria West\n4 Simic Growth Chamber\n1 Azusa, Lost but Seeking\n3 Green Sun's Zenith\n\nSideboard\n3 Trinisphere\n3 Grafdigger's Cage\n1 Bojuka Bog\n2 Sowing Mycospawn\n3 Dismember\n1 Force of Vigor\n1 Ba Sing Se\n1 Thrun, the Last Troll"},{"n":"UR Cutter Prowess","p":"5%","s":"MTGO Challenge 32, Top 4, 01.11.26","l":"4 Cori-Steel Cutter\n3 Bloodstained Mire\n3 Boomerang Basics\n4 Lightning Bolt\n4 Dragon's Rage Channeler\n2 Expressive Iteration\n2 Fiery Islet\n4 Lava Dart\n4 Mishra's Bauble\n2 Mutagenic Growth\n4 Monastery Swiftspear\n3 Mountain\n4 Preordain\n2 Scalding Tarn\n4 Slickshot Show-Off\n3 Steam Vents\n1 Thundering Falls\n1 Tormod's Crypt\n2 Violent Urge\n2 Wooded Foothills\n2 Arid Mesa\n\nSideboard\n1 Expressive Iteration\n1 Tormod's Crypt\n4 Consign to Memory\n1 Meltdown\n1 Murktide Regent\n1 Obsidian Charmaw\n1 Spell Pierce\n2 Spell Snare\n3 Unholy Heat"},{"n":"Domain Zoo (4/5c Aggro)","p":"4%","s":"LDXPSAC26 ReCQ, 2. Platz, 25.10.26","l":"4 Quantum Riddler\n4 Ragavan, Nimble Pilferer\n4 Scion of Draco\n4 Territorial Kavu\n3 Phelia, Exuberant Shepherd\n4 Lightning Bolt\n3 Stubborn Denial\n2 Consign to Memory\n1 Pest Control\n4 Leyline Binding\n4 Leyline of the Guildpact\n4 Arid Mesa\n4 Flooded Strand\n4 Wooded Foothills\n2 Arena of Glory\n2 Steam Vents\n1 Blood Crypt\n1 Indatha Triome\n1 Lush Portico\n1 Mountain\n1 Plains\n1 Temple Garden\n1 Thundering Falls\n\nSideboard\n2 Consign to Memory\n1 Pest Control\n3 Obsidian Charmaw\n2 Mystical Dispute\n2 Rest in Peace\n2 Wrath of the Skies\n1 High Noon\n1 Teferi, Time Raveler\n1 Wear/Tear"},{"n":"Tron","p":"4%","s":"MTGO Challenge 32, Top 4, 27.10.26","l":"4 Ugin, Eye of the Storms\n4 Ugin's Labyrinth\n4 Urza's Mine\n3 Disruptor Flute\n3 Eldrazi Temple\n1 All Is Dust\n1 Abstergo Entertainment\n4 Dismember\n4 Talisman of Dominance\n2 Island\n1 Talisman of Curiosity\n4 Karn, the Great Creator\n3 Devourer of Destiny\n4 Kozilek's Command\n4 Expedition Map\n4 Urza's Tower\n4 Urza's Power Plant\n2 Emrakul, the Promised End\n4 Portent of Calamity\n\nSideboard\n1 Disruptor Flute\n1 Grafdigger's Cage\n1 The Stone Brain\n1 Ensnaring Bridge\n1 Cityscape Leveler\n1 Pithing Needle\n1 Torpor Orb\n1 Trinisphere\n1 The Endstone\n1 Oblivion Stone\n1 Engineered Explosives\n1 Golos, Tireless Pilgrim\n1 Tormod's Crypt\n1 Walking Ballista\n1 Extinguisher Battleship"},{"n":"Devoted Combo","p":"3%","s":"14ª Liga Lleida, Top 4, 01.11.26","l":"4 Badgermole Cub\n4 Delighted Halfling\n4 Devoted Druid\n2 Birds of Paradise\n1 Craterhoof Behemoth\n1 Shang-Chi, Master of Kung Fu\n1 Duskwatch Recruiter\n2 Fiend Artisan\n1 Vizier of Remedies\n1 Tyvar, the Pummeler\n4 Green Sun's Zenith\n4 Nature's Rhythm\n2 Thoughtseize\n4 Leyline of Abundance\n4 Tyvar, Jubilant Brawler\n4 Verdant Catacombs\n3 Misty Rainforest\n2 Dryad Arbor\n2 Boseiju, Who Endures\n2 Forest\n2 Overgrown Tomb\n1 Gemstone Caverns\n1 Horizon Canopy\n1 Temple Garden\n1 Underground Mortuary\n2 Wooded Foothills\n\nSideboard\n2 Abrupt Decay\n3 Endurance\n1 Murderous Cut\n1 Grist, the Hunger Tide\n1 Guerrilla Gorilla\n1 Kraul Harpooner\n3 Chalice of the Void\n1 Boromir, Warden of the Tower\n1 Karn, Argent Defender\n1 Crystal Barricade"},{"n":"Ruby Storm","p":"3%","s":"MTGO Challenge 32, 1. Platz, 29.10.26","l":"3 Arid Mesa\n1 Artist's Talent\n3 Mountain\n4 Manamorphose\n1 Elegant Parlor\n4 Hex Magic\n3 Past in Flames\n4 Desperate Ritual\n4 Pyretic Ritual\n4 Ral, Monsoon Mage\n1 Raucous Theater\n4 Reckless Impulse\n4 Ruby Medallion\n1 Blood Crypt\n2 Twinned Vision\n2 Valakut Awakening\n2 Wish\n4 Wrenn's Resolve\n1 Sacred Foundry\n3 Bloodstained Mire\n2 Scalding Tarn\n3 Wooded Foothills\n\nSideboard\n1 Past in Flames\n1 Grapeshot\n1 Fatal Push\n1 Empty the Warrens\n4 Prismatic Ending\n3 Wear/Tear\n4 Thoughtseize"},{"n":"Living End","p":"3%","s":"MTGO Challenge 64, Top 8, 05.10.26","l":"4 Street Wraith\n4 Oliphaunt\n4 Wistfulness\n1 Stomping Ground\n1 Thundering Falls\n1 Steam Vents\n1 Hedge Maze\n4 Shardless Agent\n1 Sink into Stupor\n4 Misty Rainforest\n3 Living End\n4 Subtlety\n4 Endurance\n4 Generous Ent\n4 Force of Negation\n4 Violent Outburst\n1 Brazen Borrower\n1 Island\n1 Forest\n1 Breeding Pool\n1 Flooded Grove\n1 Colossal Skyturtle\n1 Sacred Foundry\n1 Waker of Waves\n1 Temple Garden\n1 Commercial District\n2 Striped Riverwinder\n\nSideboard\n4 Mystical Dispute\n3 Inevitable Betrayal\n2 Brotherhood's End\n4 Clarion Conqueror\n2 Force of Vigor"},{"n":"Esper Blink","p":"2%","s":"MTGO Challenge 32, 1. Platz, 26.10.26","l":"1 Ephemerate\n1 Consign to Memory\n2 Teferi, Time Raveler\n2 Pest Control\n4 Thoughtseize\n4 Fatal Push\n1 Boggart Trawler\n3 Flickerwisp\n3 Emperor of Bones\n4 Solitude\n4 Overlord of the Balemurk\n4 Phelia, Exuberant Shepherd\n4 Quantum Riddler\n4 Witch Enchanter\n1 Swamp\n1 Godless Shrine\n1 Meticulous Archive\n1 Hallowed Fountain\n1 Polluted Delta\n1 Shadowy Backstreet\n1 Watery Grave\n1 Undercity Sewers\n1 Bleachbone Verge\n2 Plains\n4 Marsh Flats\n4 Flooded Strand\n\nSideboard\n2 Nihil Spellbomb\n3 White Orchid Phantom\n3 High Noon\n3 Clarion Conqueror\n3 Consign to Memory\n1 Pest Control"},{"n":"Dimir Control","p":"2%","s":"14ª Liga Lleida, 2. Platz, 17.10.26","l":"4 Island\n4 Polluted Delta\n4 Field of Ruin\n3 Watery Grave\n3 Flooded Strand\n2 Undercity Sewers\n1 Verdant Catacombs\n1 Swamp\n1 Scalding Tarn\n1 Gloomlake Verge\n4 Wan Shi Tong, Librarian\n4 Subtlety\n3 Orcish Bowmasters\n1 Snapcaster Mage\n4 Fatal Push\n4 Counterspell\n4 Consult the Star Charts\n3 Sheoldred's Edict\n3 Cling to Dust\n2 Surgical Extraction\n2 Spell Snare\n2 Spell Pierce\n\nSideboard\n1 Spell Snare\n2 Requiting Hex\n1 Nihil Spellbomb\n2 Mystical Dispute\n1 Murktide Regent\n1 Engineered Explosives\n2 Damnation\n4 Consign to Memory\n1 Stern Scolding"},{"n":"Goryo's Vengeance (Instant Reanimator)","p":"2%","s":"MTGO Challenge 32, 01.11.26","l":"4 Ephemerate\n4 Faithful Mending\n1 Swamp\n4 Solitude\n1 Godless Shrine\n1 Shadowy Backstreet\n4 Psychic Frog\n1 Breeding Pool\n1 Plains\n1 Meticulous Archive\n3 Marsh Flats\n1 Island\n4 Polluted Delta\n1 Hallowed Fountain\n1 Griselbrand\n4 Goryo's Vengeance\n2 Force of Negation\n4 Flooded Strand\n4 Atraxa, Grand Unifier\n3 Thoughtseize\n1 Undercity Sewers\n1 Watery Grave\n4 Quantum Riddler\n3 Prismatic Ending\n1 Superior Spider-Man\n1 Pest Control\n\nSideboard\n1 Force of Negation\n1 Pest Control\n2 Teferi, Time Raveler\n2 Mystical Dispute\n4 Consign to Memory\n2 Wrath of the Skies\n2 Nihil Spellbomb\n1 Damping Sphere"},{"n":"Dimir Reanimator (Persist)","p":"1%","s":"Regional Championship MIT, Top 4, 01.11.26","l":"4 Archon of Cruelty\n4 Gran-Gran\n4 Psychic Frog\n2 Abhorrent Oculus\n2 Emperor of Bones\n2 Fallaji Archaeologist\n2 Seasoned Cryomancer\n4 Fatal Push\n4 Flare of Denial\n2 Bitter Triumph\n4 Persist\n2 Unearth\n4 Polluted Delta\n3 Undercity Sewers\n3 Watery Grave\n2 Bloodstained Mire\n2 Cephalid Coliseum\n2 Marsh Flats\n2 Swamp\n1 Island\n1 Otawara, Soaring City\n4 Thoughtseize\n\nSideboard\n4 Consign to Memory\n3 Engineered Explosives\n2 Harbinger of the Seas\n2 Mystical Dispute\n2 Requiting Hex\n2 Surgical Extraction"}],"Legacy":[{"n":"Hogaak","p":"8%","s":"STHLM Weekly, 1. Platz, 29.10.26","l":"2 Bayou\n1 Bojuka Bog\n2 Boseiju, Who Endures\n4 Dark Matter Manipulator\n1 Dryad Arbor\n2 Eumidian Hatchery\n3 Fatal Push\n1 Forest\n4 Hogaak, Arisen Necropolis\n1 Misty Rainforest\n4 Moonshadow\n3 Once Upon a Time\n4 Orcish Bowmasters\n1 Scythecat Cub\n4 Stitcher's Supplier\n1 Swamp\n3 Sylvan Safekeeper\n1 Talon Gates of Madara\n4 Thoughtseize\n1 Underground Mortuary\n4 Verdant Catacombs\n4 Wasteland\n4 Wight of the Reliquary\n1 Wooded Foothills\n\nSideboard\n2 Abrupt Decay\n2 Collector Ouphe\n3 Dread of Night\n2 Duress\n2 Force of Vigor\n4 Leyline of the Void"},{"n":"UWx Control","p":"7%","s":"11 Etapa Sul de Minas, 1. Platz, 31.10.26","l":"1 Consign to Memory\n2 Force of Negation\n2 Prismatic Ending\n4 Ponder\n4 Brainstorm\n4 Force of Will\n4 Stifle\n4 Swords to Plowshares\n3 Murktide Regent\n4 Quantum Riddler\n4 Tamiyo, Inquisitive Student\n4 Phelia, Exuberant Shepherd\n1 Island\n1 Karakas\n1 Meticulous Archive\n1 Plains\n1 Volcanic Island\n2 Tundra\n2 Arid Mesa\n3 Polluted Delta\n4 Wasteland\n4 Flooded Strand\n\nSideboard\n1 Supreme Verdict\n2 Containment Priest\n2 Hydroblast\n2 Red Elemental Blast\n2 Spell Snare\n2 Triumph of Saint Katherine\n2 Wrath of the Skies\n2 Consign to Memory"},{"n":"Dimir Tempo","p":"6%","s":"159º Alpha RJ, 3. Platz, 31.10.26","l":"2 Bloodstained Mire\n4 Brainstorm\n1 Brazen Borrower\n2 Daze\n4 Fatal Push\n2 Flooded Strand\n3 Flow State\n4 Force of Will\n1 Island\n2 Kaito, Bane of Nightmares\n2 Murktide Regent\n3 Nethergoyf\n3 Orcish Bowmasters\n4 Polluted Delta\n4 Ponder\n1 Snuff Out\n1 Swamp\n4 Tamiyo, Inquisitive Student\n4 Thoughtseize\n1 Undercity Sewers\n4 Underground Sea\n4 Wasteland\n\nSideboard\n2 Barrowgoyf\n3 Consign to Memory\n2 Dauthi Voidwalker\n1 Engineered Explosives\n2 Force of Negation\n2 Hydroblast\n1 Sheoldred's Edict\n2 Surgical Extraction"},{"n":"Boros Energy","p":"6%","s":"God of Legacy Trial, 1. Platz, 25.10.26","l":"4 Sand Scout\n4 Guide of Souls\n4 Ocelot Pride\n4 Amped Raptor\n4 Ajani, Nacatl Pariah\n4 Voice of Victory\n1 Hexing Squelcher\n4 Swords to Plowshares\n1 Galvanic Discharge\n1 Forth Eorlingas!\n3 Goblin Bombardment\n2 Static Prison\n2 Plains\n1 Mountain\n2 Sacred Foundry\n2 Flooded Strand\n2 Windswept Heath\n2 Karakas\n4 Arid Mesa\n4 Wasteland\n2 Sunbaked Canyon\n1 Elegant Parlor\n2 Lazotep Quarry\n\nSideboard\n1 Static Prison\n1 Blood Moon\n1 Celestial Purge\n1 Wear/Tear\n1 Price of Progress\n3 Pyroblast\n1 Rest in Peace\n2 Containment Priest\n3 Deafening Silence\n1 Soul-Guide Lantern"},{"n":"Doomsday","p":"6%","s":"MTGO League, 01.11.26","l":"4 Polluted Delta\n3 Daze\n4 Underground Sea\n1 Flooded Strand\n1 Verdant Catacombs\n1 Swamp\n1 Island\n1 Undercity Sewers\n4 Force of Will\n4 Ponder\n4 Brainstorm\n1 Quantum Riddler\n3 Street Wraith\n1 Edge of Autumn\n2 Flow State\n4 Dark Ritual\n3 Personal Tutor\n4 Lotus Petal\n1 Cavern of Souls\n4 Doomsday\n2 Thassa's Oracle\n1 Lion's Eye Diamond\n1 Misty Rainforest\n1 Scalding Tarn\n1 Consider\n3 Thoughtseize\n\nSideboard\n1 Murktide Regent\n1 Voice of Victory\n3 Dauthi Voidwalker\n4 Barrowgoyf\n2 Force of Negation\n3 Fatal Push\n1 Hide on the Ceiling"},{"n":"UR Tempo","p":"5%","s":"Lega Lair #1, 2. Platz, 25.10.26","l":"4 Brainstorm\n1 Brazen Borrower\n3 Cori-Steel Cutter\n3 Daze\n3 Delver of Secrets\n4 Dragon's Rage Channeler\n2 Flooded Strand\n3 Flow State\n4 Force of Will\n1 Island\n4 Lightning Bolt\n4 Mishra's Bauble\n2 Misty Rainforest\n2 Polluted Delta\n4 Ponder\n1 Preordain\n1 Prismari Charm\n2 Scalding Tarn\n2 Stifle\n1 Thundering Falls\n1 Unholy Heat\n4 Volcanic Island\n4 Wasteland\n\nSideboard\n2 Unholy Heat\n2 Consign to Memory\n2 Force of Negation\n2 Hydroblast\n1 Karakas\n1 Meltdown\n1 Price of Progress\n3 Pyroblast\n1 Rough/Tumble"},{"n":"Sneak and Show","p":"5%","s":"MTGO Showcase Challenge, Top 4, 25.10.26","l":"1 Mountain\n4 Ponder\n4 Brainstorm\n2 Flusterstorm\n2 Volcanic Island\n3 Emrakul, the Aeons Torn\n3 Ancient Tomb\n4 Show and Tell\n4 Scalding Tarn\n4 Sneak Attack\n4 Lotus Petal\n1 Thundering Falls\n4 Force of Will\n2 City of Traitors\n4 Stock Up\n1 Mistrise Village\n1 Polluted Delta\n2 Island\n4 Atraxa, Grand Unifier\n2 Misty Rainforest\n1 Spell Pierce\n1 Sink into Stupor\n2 Omniscience\n\nSideboard\n1 Pyroclasm\n2 Consign to Memory\n1 Surgical Extraction\n1 Abrade\n1 Brotherhood's End\n1 Pyroblast\n2 Defense Grid\n2 Hexing Squelcher\n1 Grafdigger's Cage\n2 Faerie Macabre\n1 Sear"},{"n":"Eldrazi Stompy","p":"4%","s":"Monthly, 1. Platz, 02.10.26","l":"4 Abundant Countryside\n4 Ancient Tomb\n4 Cavern of Souls\n4 Chalice of the Void\n1 City of Traitors\n4 Eldrazi Linebreaker\n4 Eldrazi Temple\n3 Eye of Ugin\n4 Glaring Fleshraker\n3 It That Heralds the End\n4 Kozilek's Command\n4 Lotus Petal\n4 Reality Smasher\n1 Sire of Seven Deaths\n4 Thought-Knot Seer\n4 Wasteland\n4 Wastescape Battlemage\n\nSideboard\n2 Dismember\n3 Disruptor Flute\n2 Eldrazi Confluence\n4 Leyline of the Void\n2 Null Rod\n2 Warping Wail"},{"n":"Death & Taxes (BW)","p":"4%","s":"Mont Weekly Event, 1. Platz, 30.10.26","l":"4 Overlord of the Balemurk\n4 Phelia, Exuberant Shepherd\n4 Recruiter of the Guard\n4 Solitude\n4 Stoneforge Mystic\n3 White Orchid Phantom\n2 Orcish Bowmasters\n2 Skyclave Apparition\n2 Witch Enchanter\n1 Cloak and Dagger, Entwined\n1 Emperor of Bones\n1 Flickerwisp\n1 Lion Sash\n1 Loran of the Third Path\n4 Aether Vial\n1 Lich's Relic\n1 Meteor Sword\n1 Pre-War Formalwear\n4 Swords to Plowshares\n4 Thoughtseize\n4 Karakas\n4 Marsh Flats\n4 Plains\n4 Prismatic Vista\n4 Wasteland\n4 Windswept Heath\n3 Scrubland\n2 Shadowy Backstreet\n1 Flooded Strand\n1 Swamp\n\nSideboard\n1 Yorion, Sky Nomad\n2 Deafening Silence\n2 Disruptor Flute\n2 Erode\n2 Wrath of the Skies\n1 Damping Sphere\n1 Duress\n1 Faerie Macabre\n1 Nihil Spellbomb\n1 Surgical Extraction\n1 Temporary Lockdown"},{"n":"Ux Tron","p":"4%","s":"MTGO Challenge 32, 2. Platz, 28.10.26","l":"2 Eldrazi Confluence\n4 Urza's Power Plant\n4 Urza's Mine\n2 Thundertrap Trainer\n2 Giant's Boulder\n4 Grim Monolith\n3 The One Ring\n4 Karn, the Great Creator\n4 Kozilek's Command\n4 Petrified Hamlet\n4 Planar Nexus\n2 Sink into Stupor\n4 Stock Up\n1 Island\n4 Force of Will\n4 Ugin, Eye of the Storms\n2 Force of Negation\n2 Expedition Map\n4 Urza's Tower\n\nSideboard\n1 The One Ring\n2 Force of Negation\n1 Tormod's Crypt\n2 Barrowgoyf\n1 Extinguisher Battleship\n2 Summon: Bahamut\n1 Invasion Submersible\n1 Mycosynth Lattice\n1 Karakas\n1 Ensnaring Bridge\n2 Dismember"},{"n":"Lands","p":"4%","s":"LawLeague #1, 1. Platz, 13.09.26","l":"1 Bedeck/Bedazzle\n4 Yavimaya, Cradle of Growth\n2 Ancient Tomb\n1 Otawara, Soaring City\n1 Blast Zone\n3 Dark Depths\n4 Wasteland\n4 Sphere of Resistance\n2 Ghost Quarter\n4 Crop Rotation\n1 Grafdigger's Cage\n4 Life from the Loam\n4 Malevolent Rumble\n1 Maze of Ith\n1 Pithing Needle\n1 Forest\n1 The Tabernacle at Pendrell Vale\n1 Karakas\n4 Urza's Saga\n3 Thespian's Stage\n4 Exploration\n3 Boseiju, Who Endures\n1 Skateboard\n1 Bojuka Bog\n4 Mox Diamond\n1 Expedition Map\n\nSideboard\n3 Force of Vigor\n3 Endurance\n3 Disruptor Flute\n2 Dismember\n2 Icetill Explorer\n2 Choke"},{"n":"Bant Control","p":"4%","s":"MTGO Challenge 32, 1. Platz, 14.10.26","l":"1 Lorien Revealed\n1 Terminus\n1 Force of Negation\n2 Leyline Binding\n2 Daze\n3 Stifle\n4 Brainstorm\n4 Ponder\n4 Up the Beanstalk\n4 Swords to Plowshares\n4 Force of Will\n2 Phelia, Exuberant Shepherd\n2 Tamiyo, Inquisitive Student\n3 Quantum Riddler\n3 Murktide Regent\n1 Plains\n1 Island\n1 Savannah\n1 Meticulous Archive\n1 Underground Sea\n2 Tropical Island\n2 Tundra\n3 Wasteland\n4 Flooded Strand\n4 Misty Rainforest\n\nSideboard\n1 Wrath of the Skies\n1 Surgical Extraction\n2 Carpet of Flowers\n1 Celestial Purge\n3 Consign to Memory\n2 Containment Priest\n1 Erode\n2 Lavinia, Azorius Renegade\n1 Triumph of Saint Katherine\n1 Terminus"},{"n":"Aluren","p":"4%","s":"Oslo Open 2026, 1. Platz, 24.10.26","l":"4 Acererak the Archlich\n4 Atraxa, Grand Unifier\n4 Lotus Petal\n4 Brainstorm\n4 Force of Will\n2 Veil of Summer\n4 Ponder\n4 Show and Tell\n4 Stock Up\n4 Aluren\n2 Omniscience\n4 Ancient Tomb\n4 Misty Rainforest\n2 Hedge Maze\n2 Island\n2 Tropical Island\n1 Boseiju, Who Endures\n1 City of Traitors\n1 Flooded Strand\n1 Forest\n1 Polluted Delta\n1 Scalding Tarn\n\nSideboard\n2 Veil of Summer\n1 Boseiju, Who Endures\n3 Carpet of Flowers\n3 Consign to Memory\n2 Defense Grid\n1 Dismember\n1 Disruptor Flute\n1 Force of Negation\n1 Grafdigger's Cage"},{"n":"Welder Cam","p":"4%","s":"MTGO Challenge 32, 1. Platz, 11.09.26","l":"1 Legion Extruder\n4 Emry, Lurker of the Loch\n1 Phyrexian Dragon Engine\n4 Sewer-veillance Cam\n4 Goblin Engineer\n1 Agatha's Soul Cauldron\n4 Goblin Welder\n1 Skateboard\n4 Lotus Petal\n4 Mox Opal\n4 Mishra's Bauble\n3 Urza's Bauble\n1 Bloodstained Mire\n4 Scalding Tarn\n1 Great Furnace\n1 Plateau\n4 Volcanic Island\n1 Mountain\n4 Urza's Saga\n1 Chromatic Star\n1 Arena of Glory\n1 Loki, God of Mischief\n1 Seat of the Synod\n4 Pinnacle Emissary\n1 Lion's Eye Diamond\n\nSideboard\n1 Loki, God of Mischief\n2 Consign to Memory\n1 Portable Hole\n1 Twinshot Sniper\n1 Jegantha, the Wellspring\n1 Torpor Orb\n1 Disruptor Flute\n1 Damping Sphere\n1 Haywire Mite\n1 Pithing Needle\n1 Island\n1 Rip Apart\n1 Spell Pierce\n1 Flusterstorm"},{"n":"Karn Forge","p":"3%","s":"Best Event each Month, 1. Platz, 25.10.26","l":"4 Urza's Workshop\n4 Glaring Fleshraker\n2 Mystic Forge\n4 Planar Nexus\n4 The One Ring\n1 Voltaic Key\n1 Basalt Monolith\n4 Lotus Petal\n4 Ancient Tomb\n4 Grim Monolith\n1 Paradox Engine\n4 Karn, the Great Creator\n4 Manifold Key\n4 Urza's Saga\n1 Portable Hole\n1 Mishra's Research Desk\n1 Mox Opal\n1 Pithing Needle\n4 Urza's Tower\n4 Kozilek's Command\n3 Tezzeret, Cruel Captain\n\nSideboard\n1 Mystic Forge\n1 Paradox Engine\n1 Tormod's Crypt\n1 Ensnaring Bridge\n1 Perilous Snare\n1 Archive Arbiter\n1 Dismember\n1 Torpor Orb\n2 Trinisphere\n1 Engineered Explosives\n1 Mycosynth Lattice\n2 Disruptor Flute\n1 The Echoverse Fulcrum"},{"n":"Dragon Stompy","p":"2%","s":"MTGO Challenge 32, Top 4, 22.09.26","l":"4 Simian Spirit Guide\n4 Fury\n2 Pyrogoyf\n4 The One Ring\n4 Shatterskull Smashing\n4 Fable of the Mirror-Breaker\n4 Chrome Mox\n2 Magus of the Moon\n4 Chalice of the Void\n4 Ancient Tomb\n4 Sundering Eruption\n4 City of Traitors\n4 Mountain\n4 Karn, the Great Creator\n4 Broadside Bombardiers\n4 Blood Moon\n\nSideboard\n2 Pyrogoyf\n1 Magus of the Moon\n3 Disruptor Flute\n1 Ensnaring Bridge\n1 Liquimetal Coating\n2 Eldrazi Confluence\n1 Mycosynth Lattice\n1 Tormod's Crypt\n1 Perilous Snare\n2 Fiery Confluence"}]};
-const META_INFO = "Stand 6. November 2026 · Modern und Legacy: MTGTop8, Metagame der letzten 2 Wochen · cEDH: EDHTop16, letzte 6 Monate (Turniere ab 50 Spielern)";
+const META_INFO = "Stand 7. November 2026 · Modern und Legacy: MTGTop8, Metagame der letzten 2 Wochen · cEDH: EDHTop16, letzte 6 Monate (Turniere ab 50 Spielern)";
 /*META_END*/
 
 /* ---------- Scryfall ---------- */
@@ -964,7 +971,7 @@ function tpl(sc){
   const pw = sc.power != null ? sc.power : f0.power, tg = sc.toughness != null ? sc.toughness : f0.toughness;
   return {n: sc.name, img, back, type: sc.type_line || f0.type_line || "",
     cmc: Number(sc.cmc) || 0, pw: pw != null ? num(pw) : null, tg: tg != null ? num(tg) : null,
-    kw: Array.isArray(sc.keywords) ? sc.keywords : [], o: String(sc.oracle_text || f0.oracle_text || "").slice(0, 700),
+    kw: Array.isArray(sc.keywords) ? sc.keywords : [], o: String(sc.oracle_text || f0.oracle_text || "").slice(0, 1500), loy: sc.loyalty ?? f0.loyalty ?? null,
     mc: sc.mana_cost || f0.mana_cost || "", pm: Array.isArray(sc.produced_mana) ? sc.produced_mana : [],
     tk: (sc.all_parts || []).filter(x => x.component === "token" && x.id).reduce((a, x) => a.some(y => y.n === x.name) ? a : [...a, {id: x.id, n: x.name}], [])};
 }
@@ -1290,7 +1297,7 @@ function setStatus(t){ $("#status").textContent = t; }
 function pub(){
   const strip = c => {
     const base = {u:c.u, tap:c.tap, c:c.c, type:c.type, x:c.x, y:c.y, ow: c.ow ? c.ow.name : undefined};
-    return c.fd ? {...base, fd:true} : {...base, n:c.n, img:c.img, back:c.back, flip:c.flip, tok:c.tok, pw:c.pwO ?? c.pw, tg:c.tgO ?? c.tg, pto: c.pwO != null, kw:(c.kw || []).slice(0, 8)};
+    return c.fd ? {...base, fd:true} : {...base, n:c.n, img:c.img, back:c.back, flip:c.flip, tok:c.tok, pw:c.pwO ?? c.pw, tg:c.tgO ?? c.tg, pto: c.pwO != null, kw:(c.kw || []).slice(0, 8), mc:String(c.mc || "").slice(0, 40), cmc:Number(c.cmc) || 0};
   };
   const m = S.match || {w:0, l:0};
   return {name: me.name, life:S.life, poison:S.poison, turn:S.turn, handN:S.hand.length, libN:S.library.length,
@@ -1592,8 +1599,8 @@ function stackResolveMine(m){
   const c = S.st[i];
   if(m.cancelled){ S.st.splice(i, 1); S.hand.push(c); act(`nimmt ${c.n} zurück auf die Hand`); commit(); return; }
   if(it.countered){ moveCard(c.u, "gy"); return; }
-  if(it.dest !== "bf"){ markOnResolve(c); ritualResolve(c); }
   moveCard(c.u, it.dest === "bf" ? "bf" : "gy");
+  if(it.dest !== "bf") queued(async () => { await markOnResolve(c); await ritualResolve(c); await abilSpellResolve(c); });
 }
 async function botStackReact(it){
   // Die KI darf auf Zauber anderer Spieler reagieren, danach gibt sie «OK»
@@ -1674,7 +1681,7 @@ const tough = c => (c.tgO ?? c.tg ?? 0) + (c.c || 0);
 function botLog(text){ sendLog({from:"KI", text, sys:true}); }
 function botSay(text){ if(text && String(text).trim()) sendLog({from:"KI", text:String(text).trim().slice(0, 200), sys:false}); }
 function botPub(){
-  const strip = c => ({u:c.u, n:c.n, img:c.img, back:c.back, type:c.type, tap:c.tap, flip:false, c:c.c, tok:c.tok, x:c.x, y:c.y});
+  const strip = c => ({u:c.u, n:c.n, img:c.img, back:c.back, type:c.type, tap:c.tap, flip:false, c:c.c, tok:c.tok, x:c.x, y:c.y, pw:c.pwO ?? c.pw, tg:c.tgO ?? c.tg, mc:c.mc, cmc:c.cmc});
   return {name: "KI" + (BOT.deckName ? " · " + BOT.deckName : "") + (claudeOn() ? " (Claude)" : ""), life:BOT.life, poison:BOT.poison, turn:BOT.turn,
     handN:BOT.hand.length, libN:BOT.library.length, bf:BOT.bf.map(strip), gy:BOT.gy.map(strip), ex:BOT.ex.map(strip), cz:BOT.cz.map(strip)};
 }
@@ -1735,7 +1742,7 @@ function manaUnits(){
   });
   return units;
 }
-const costOf = c => c.mc || (c.cmc ? "{" + c.cmc + "}" : "");
+const costOf = c => c.payMc != null ? c.payMc : (c.mc || (c.cmc ? "{" + c.cmc + "}" : ""));
 function parseCost(mc){
   const req = []; let generic = 0;
   String(mc || "").split("//")[0].replace(/\{([^}]+)\}/g, (_, s) => {
@@ -1846,6 +1853,7 @@ function discardFromMe(card){
 }
 function castFromHand(c, plan, extra){
   payPlan(plan);
+  if(!isLand(c)) abilEvent({kind:"oppCast", c, opp:true});
   const fromCz = BOT.cz.includes(c);
   if(fromCz){ BOT.cz.splice(BOT.cz.indexOf(c), 1); BOT.cmdCasts++; c.cmdr = true; }
   else BOT.hand.splice(BOT.hand.indexOf(c), 1);
@@ -2535,6 +2543,11 @@ function applyHitToCard(c, m, isBot){
   const amt = Math.max(0, Math.min(99, parseInt(m.amount, 10) || 0));
   const name = c.fd ? "eine verdeckte Karte" : c.n;
   const move = z => isBot ? botToZone(c, z) : moveCard(c.u, z);
+  if(m.kind === "damage" && /Planeswalker/.test(c.type || "") && !/Creature/.test(c.type || "")){
+    c.c = (c.c || 0) - amt;
+    if(c.c <= 0){ move("gy"); return `${amt} Schaden an ${name}, keine Loyalität mehr`; }
+    return `${amt} Schaden an ${name} (Loyalität ${c.c})`;
+  }
   if(m.kind === "damage"){
     if(c.tg == null){ return `${amt} Schaden an ${name} (Widerstand unbekannt, bitte selbst prüfen)`; }
     if(amt >= tough(c) && !kwHas(c, "indestructible")){ move("gy"); return `${amt} Schaden an ${name}, sie stirbt`; }
@@ -2671,7 +2684,8 @@ function onMyTurnStart(){
   setTimeout(sagaAdvanceAll, 0); // Sagas: Kapitelmarke nach dem Ziehen
   emptyPool("neuer Zug");
   S.bf.forEach(c => c.tap = false);
-  const skipDraw = S.turn === 1 && TURN.starter === me.id;
+  const skipDraw = (S.turn === 1 && TURN.starter === me.id) || S.bf.some(c => !c.fd && /^Skip your draw step\.?$/im.test(c.o || ""));
+  setTimeout(() => abilEvent({kind:"phase", phase:"draw", mine:true}), 0);
   remindTriggers("upkeep", true); sfx("turn");
   if(!S.deck.length || !S.library.length){ act(`beginnt den Zug (Runde ${TURN.n}) und enttappt alles`); commit(); return; }
   act(`beginnt den Zug (Runde ${TURN.n}) und enttappt alles${skipDraw ? " (im ersten Zug wird nicht gezogen)" : ""}`);
@@ -2692,8 +2706,12 @@ function toast(html, ms = 7000){
 }
 function remindTriggers(kind, myTurn){
   const T = TRIGGERS[kind]; if(!T) return;
+  const ev = {kind:"phase", phase:kind, mine:myTurn};
+  runDelayed(kind, myTurn);
+  abilEvent(ev);
+  const handled = c => abilAuto() && parseAbilities(c).some(a => a.kind === "trig" && trigMatches(a, c, ev));
   const pats = myTurn ? T.mine : T.other;
-  const cards = S.bf.filter(c => !c.fd && c.o && pats.some(r => r.test(c.o)));
+  const cards = S.bf.filter(c => !c.fd && c.o && pats.some(r => r.test(c.o)) && !handled(c));
   if(!cards.length) return;
   const names = [...new Set(cards.map(c => c.n))];
   toast(`<b>Erinnerung ${esc(T.label)}:</b> ${esc(names.join(", "))} ${names.length > 1 ? "lösen" : "löst"} aus.`);
@@ -2844,7 +2862,7 @@ function shortDialog(c, plan){
 async function payFor(c){
   if(LOOK.autoPay === false && !poolTotal(poolOf())) return true;
   let X = 0;
-  if(/\{X\}/.test(c.mc || "")){ X = await askNumber(`${c.n}: Wert für X`, `Wie gross soll X sein? Die Kosten sind ${c.mc}.`); if(X === null) return false; }
+  if(/\{X\}/.test(c.payMc != null ? c.payMc : (c.mc || ""))){ X = await askNumber(`${c.n}: Wert für X`, `Wie gross soll X sein? Die Kosten sind ${c.mc}.`); if(X === null) return false; c.lastX = X; }
   const plan = playerPayPlan(c, X);
   if(plan.ok){ applyPayment(c, plan); return true; }
   const r = await shortDialog(c, plan);
@@ -3070,22 +3088,24 @@ function markEvent(ev, extraSources){
   if(gains.length) gainMarks(gains);
 }
 function markOnMove(c, from, to, wasFd){
-  if(c && to === "bf" && from !== "bf" && !c.fd){ manaEnter(c); lifeEvent("enter", 1, c); sagaEnter(c); }
-  if(c && from === "bf" && to !== "bf") sagaLeave(c);
+  if(c && to === "bf" && from !== "bf" && !c.fd){ manaEnter(c); lifeEvent("enter", 1, c); sagaEnter(c); if(/Planeswalker/.test(c.type || "")) queued(() => pwEnter(c)); abilEvent({kind:"enter", c}); }
+  if(c && from === "bf" && to !== "bf"){ sagaLeave(c); if(to === "gy" && !wasFd) abilEvent({kind:"die", c}, [c]); delete c.evoked; delete c.loyUsed; }
   if(!c || !markAutoOn()) return;
   if(to === "bf" && from !== "bf" && !c.fd) markEvent({kind:"enter", c});
   else if(from === "bf" && to === "gy" && !wasFd) markEvent({kind:"die", c}, [c]);
 }
-function markOnCast(c){ if(c && !isLand(c)){ noteSpellCast(); markEvent({kind:"cast", c}); } }
-function markOnAttack(attackers){ attackers.forEach((c, i) => markEvent({kind:"attack", c, first: i === 0})); }
+function markOnCast(c){ if(c && !isLand(c)){ noteSpellCast(); markEvent({kind:"cast", c}); abilEvent({kind:"cast", c}); abilEvent({kind:"castSelf", c}, [c]); } }
+function markOnAttack(attackers){ attackers.forEach((c, i) => { markEvent({kind:"attack", c, first: i === 0}); abilEvent({kind:"attack", c, first: i === 0}); }); }
 /* Spontanzauber und Hexereien: «You get {E}{E}{E}» beim Verrechnen */
 async function markOnResolve(c){
   if(!c || !markAutoOn() || !/\b(Instant|Sorcery)\b/.test(c.type || "")) return;
   const gains = markClauses(c).filter(cl => cl.kind === "spell" && cl.clean).map(cl => ({k:cl.k, n:cl.n, src:c}));
   if(gains.length) await gainMarks(gains);
-  if(paysAnyEnergy(c) && marksOf().E > 0) payEnergyDialog(c);
+  if(paysAnyEnergy(c) && marksOf().E > 0) await payEnergyDialog(c);
 }
+let LAST_E_PAID = null;
 async function payEnergyDialog(c, fixed){
+  LAST_E_PAID = null;
   const have = marksOf().E;
   let n = fixed;
   if(n == null){
@@ -3096,7 +3116,7 @@ async function payEnergyDialog(c, fixed){
   }
   if(n > have){ toast(`Zu wenig Energie: ${c.n} braucht ${n}, du hast ${have}.`); return; }
   if(!n) return;
-  marksOf().E -= n;
+  marksOf().E -= n; LAST_E_PAID = n;
   act(`bezahlt ${n} Energie für ${c.n} (jetzt ${marksOf().E})`);
   commit();
 }
@@ -3439,6 +3459,7 @@ function lifeEvent(kind, amount, card, opp){
 /* Aus lifeFloats: Lebensänderung bei mir oder einem Gegner */
 function lifeChanged(id, delta){
   if(!delta) return;
+  if(id === me.id && delta > 0) noteLifeGain(delta);
   if(id === me.id){ if(delta > 0) lifeEvent("gain", delta); else lifeEvent("lose", -delta); }
   else if(delta < 0) lifeEvent("oppLose", -delta);
 }
@@ -3568,7 +3589,7 @@ function manaChoices(c){
     const m = line.match(/^([^:"]*):\s*Add ([^.]*)\.?(.*)$/i);
     if(!m) return;
     const cost = m[1];
-    if(!/\{T\}|sacrifice|discard|remove|exile|pay|put|tap an untapped/i.test(cost)) return;
+    if(!/\{T\}|sacrifice|discard|remove|exile|pay|put|tap (an?|one|two|three|four|five) untapped/i.test(cost)) return;
     const o = {cost:0, sac:false, life:0, pain:0};
     o.cost = (cost.match(/\{(\d+)\}/g) || []).reduce((s, x) => s + parseInt(x.slice(1), 10), 0);
     o.noTap = !/\{T\}/.test(cost);
@@ -3581,7 +3602,8 @@ function manaChoices(c){
     const rc = cost.match(/remove (an?|one|two|three) (\S+) counters? from/i);
     if(rc){ o.removeCtr = NUMW2[rc[1].toLowerCase()] || 1; if((c.c || 0) < o.removeCtr) return; }
     if(/exile/i.test(cost)) o.extra = (cost.match(/exile [^,]+/i) || ["etwas ins Exil legen"])[0];
-    if(/tap an untapped/i.test(cost)) o.extra = (cost.match(/tap an untapped [^,]+/i) || [""])[0];
+    const tu = cost.match(/tap (an?|one|two|three|four|five) untapped (.+?)(?: you control)?(?:,|$)/i);
+    if(tu) o.tapOthers = {n: NUMW2[tu[1].toLowerCase()] || 1, desc: tu[2].trim()};
     if(/put an? [-+]\d+\/[-+]\d+ counter/i.test(cost)) o.extra = "Marke auf die Karte legen";
     const rest = m[3] || "";
     const painM = rest.match(/deals (\d+) damage to you/i); o.pain = painM ? +painM[1] : (tapPain && !o.noTap ? +tapPain[1] : 0);
@@ -3637,7 +3659,7 @@ function manaChoices(c){
 }
 function optHtml(o){
   const extra = [o.noTap ? "ohne Tappen" : "", o.cost ? `kostet ${o.cost} Mana` : "", o.pain ? `${o.pain} Schaden an dir` : "", o.life ? `${o.life} Leben` : "",
-    o.sac ? "wird geopfert" : "", o.sacOther ? `opfere ${o.sacOther}` : "", o.discardHand ? "Hand abwerfen" : "", o.removeCtr ? `−${o.removeCtr} Marke` : "",
+    o.sac ? "wird geopfert" : "", o.sacOther ? `opfere ${o.sacOther}` : "", o.tapOthers ? `tappe ${o.tapOthers.n} ${o.tapOthers.desc}` : "", o.discardHand ? "Hand abwerfen" : "", o.removeCtr ? `−${o.removeCtr} Marke` : "",
     o.extra || "", o.restrict ? `nur für ${o.restrict}` : ""].filter(Boolean);
   return `${o.add.length ? manaHtml(symStr(o.add)) : "kein Mana"}${extra.length ? ` <span class="stat">(${esc(extra.join(", "))})</span>` : ""}`;
 }
@@ -3653,7 +3675,7 @@ function manaAllowedFor(o, spell){
   return false;
 }
 /* Für automatisches Bezahlen nur Quellen ohne Zusatzkosten */
-const autoOpt = (o, spell) => !o.cost && !o.sac && !o.life && !o.noTap && !o.sacOther && !o.discardHand && !o.extra && o.add.length && manaAllowedFor(o, spell);
+const autoOpt = (o, spell) => !o.cost && !o.sac && !o.life && !o.noTap && !o.sacOther && !o.tapOthers && !o.discardHand && !o.extra && o.add.length && manaAllowedFor(o, spell);
 /* Kartenauswahl für Opferkosten (Phyrexian Tower, Ashnod's Altar) */
 function pickFromBf(title, filter){
   return new Promise(res => {
@@ -3678,6 +3700,13 @@ function manaSideEffects(c, o){
   if(o.discardHand && S.hand.length){ const n = S.hand.length; S.gy.push(...S.hand); S.hand = []; act(`wirft die Hand ab (${n} Karten)`); }
 }
 async function tapForMana(c, o){
+  if(o.tapOthers){
+    const want = o.tapOthers.desc.replace(/s$/, "").replace(/^(foods?)$/i, "food");
+    const pool = S.bf.filter(x => x !== c && !x.tap && !x.fd && (descMatch(want, x) || normName(x.n).startsWith(normName(want))));
+    if(pool.length < o.tapOthers.n){ toast(`Dafür brauchst du ${o.tapOthers.n} ungetappte ${esc(o.tapOthers.desc)}.`); return; }
+    pool.slice(0, o.tapOthers.n).forEach(x => { x.tap = true; x.mtap = null; });
+    act(`tappt ${pool.slice(0, o.tapOthers.n).map(x => x.n).join(", ")} für ${c.n}`);
+  }
   if(o.sacOther){
     const desc = o.sacOther;
     const victim = await pickFromBf(`${c.n}: Was opferst du (${desc})?`, x => x !== c && descMatch(desc.replace(/s$/, ""), x));
@@ -3730,7 +3759,7 @@ async function ritualResolve(c){
   const then = clause.match(/^((?:\{[WUBRGC]\})+), then add (\{[WUBRGC]\}) for each card named (.+?) in each graveyard/i);
   if(then){
     add = (then[1].match(/[WUBRGC]/g) || []);
-    const nm = then[3].trim(); const n = S.gy.filter(x => x.n === nm).length + Object.values(others).reduce((s, o) => s + (Array.isArray(o && o.gy) ? o.gy.filter(x => x && x.n === nm).length : 0), 0);
+    const nm = then[3].trim(); const n = S.gy.filter(x => x.n === nm && x !== c).length + Object.values(others).reduce((s, o) => s + (Array.isArray(o && o.gy) ? o.gy.filter(x => x && x.n === nm).length : 0), 0);
     for(let i = 0; i < n; i++) add.push(then[2][1]);
   } else if(/^(?:\{[WUBRGC]\})+$/.test(clause.trim())) add = clause.match(/[WUBRGC]/g);
   else {
@@ -3764,8 +3793,8 @@ function pickColor(title, cols){
 function manaEnter(c){
   if(!c || c.fd) return;
   const t = String(c.o || "");
-  const ctr = t.match(/enters(?: the battlefield)? with (an?|one|two|three|four|five|six|seven|eight|nine|ten|\d+) ([^ ]+) counters? on it/i);
-  if(ctr && (!isCreature(c) || /^\+1\/\+1$/.test(ctr[2]))){ c.c = /^\d+$/.test(ctr[1]) ? +ctr[1] : (NUMW2[ctr[1].toLowerCase()] || 1); c.cn = ctr[2]; }
+  const ctr = t.match(/enters(?: the battlefield)? with (an?|one|two|three|four|five|six|seven|eight|nine|ten|\d+|X) ([^ ]+) counters? on it/i);
+  if(ctr && (!isCreature(c) || /^\+1\/\+1$/.test(ctr[2]))){ c.c = ctr[1] === "X" ? (c.lastX || 0) : /^\d+$/.test(ctr[1]) ? +ctr[1] : (NUMW2[ctr[1].toLowerCase()] || 1); c.cn = ctr[2]; }
   if(/Imprint\s*[—-]\s*When .+? enters, you may exile a nonartifact, nonland card from your hand/i.test(t)){
     setTimeout(async () => {
       const pick = await pickFromHand(`${c.n}: Welche Karte prägst du ein?`, x => !isLand(x) && !/Artifact/.test(x.type || ""));
@@ -3835,6 +3864,931 @@ function costMods(spell){
   return {less, more, tri, why};
 }
 
+/* ================= Fähigkeiten-Maschine ================= */
+// Zerlegt Kartentexte in Fähigkeiten (Auslöser, aktivierte Fähigkeiten, Loyalität, Zaubereffekte) und
+// diese in Schritte (ziehen, Schaden, zerstören, suchen, oben ansehen, Token, Marken …).
+// Was die App nicht versteht, zeigt sie als Text an, damit du es selbst ausführst.
+const ABIL_NUM = {a:1, an:1, one:1, two:2, three:3, four:4, five:5, six:6, seven:7, eight:8, nine:9, ten:10};
+const abilAuto = () => LOOK.autoAbil !== false;
+const cleanLine = s => String(s || "").replace(/\([^)]*\)/g, "").replace(/\s+/g, " ").trim();
+/* «your devotion to blue», «the number of creatures you control», «Tezzeret's power» … */
+function xExpr(e, src){
+  e = String(e || "").toLowerCase().replace(/\.$/, "");
+  let m;
+  if((m = e.match(/your devotion to (white|blue|black|red|green)(?: and (white|blue|black|red|green))?/))){ const cols = [COLW[m[1]], m[2] && COLW[m[2]]].filter(Boolean); return S.bf.filter(c => !c.fd).reduce((s, c) => s + (String(c.mc || "").toUpperCase().match(/\{[^}]+\}/g) || []).filter(sym => cols.some(col => sym.includes(col))).length, 0); }
+  if((m = e.match(/(?:the number of )?(\S+) counters? on (.+)$/))) return src.c || 0;
+  if((m = e.match(/^(?:the number of )?cards in your hand$/))) return S.hand.length;
+  if((m = e.match(/^(?:the number of )?cards in your graveyard$/))) return S.gy.length;
+  if((m = e.match(/^(?:the number of )?(.+?) cards? in your graveyard$/))) return S.gy.filter(c => cardFilter(m[1])(c)).length;
+  if((m = e.match(/^(?:the number of )?(.+?) you control$/))) return S.bf.filter(c => !c.fd && descMatch(m[1].replace(/s$/, ""), c)).length;
+  if((m = e.match(/power$/))) return power(src);
+  if((m = e.match(/^(?:the number of )?opponents you have$/))) return liveOpps().length;
+  return null;
+}
+function nWord(w, ctx){
+  if(w == null) return 1;
+  w = String(w).toLowerCase();
+  if(/^\d+$/.test(w)) return +w;
+  if(w === "x") return ctx && ctx.X != null ? ctx.X : null;
+  return ABIL_NUM[w] ?? null;
+}
+const KEYWORD_LINE = /^(Flying|First strike|Double strike|Deathtouch|Haste|Hexproof|Indestructible|Lifelink|Menace|Reach|Trample|Vigilance|Defender|Flash|Ward|Protection|Prowess|Convoke|Delve|Changeling|Shroud|Split second|Storm|Cascade|Affinity|Annihilator|Infect|Wither|Fear|Intimidate|Shadow|Horsemanship|Undying|Persist|Exalted|Islandwalk|Swampwalk|Forestwalk|Mountainwalk|Plainswalk|Skulk|Devoid|Emerge|Improvise|Partner|Living weapon|Battle cry|Bushido|Dethrone|Mentor|Riot|Spectacle|Surveil|Afflict|Training|Toxic|Offspring|Bargain|Craft|Disguise|Cloak|Plot|Saddle|Gift|Impending|Station|Warp|Max speed|Start your engines|Myriad|Rebound|Retrace|Buyback|Entwine|Overload|Replicate|Suspend|Madness|Morph|Megamorph|Ninjutsu|Dash|Blitz|Prototype|Unearth|Embalm|Eternalize|Encore|Escape|Kicker|Multikicker|Equip|Reconfigure|Crew|Fortify|Bestow|Mutate|Companion|Landfall|Echo|Cumulative upkeep|Fading|Vanishing)\b/i;
+/* ---------- Fähigkeiten einer Karte ---------- */
+function parseAbilities(c){
+  if(!c || !c.o) return [];
+  if(c._abO === c.o && c._ab) return c._ab;
+  const out = [];
+  const isPW = /Planeswalker/.test(c.type || ""), isSpell = /\b(Instant|Sorcery)\b/.test(c.type || ""), saga = isSaga(c);
+  const ltTexts = lifeTriggers(c).map(t => t.text.slice(0, 50));
+  const MODAL_RE = /(?:^|\.\s*)choose (one|two|three|up to one|up to two|up to three|one or more|any number)(?: or more)?\s*[—-]\s*$/i;
+  const withModal = (ab) => { const mm = ab.text.match(MODAL_RE); if(mm){ ab.modal = {n:mm[1].toLowerCase(), modes:[]}; ab.text = ab.text.slice(0, mm.index).trim(); } return ab; };
+  String(c.o).split("\n").forEach(raw => {
+    let line = cleanLine(raw); if(!line) return;
+    // Modi «• …» gehören zur vorigen Fähigkeit
+    if(/^[•●]\s*/.test(line)){ const last = out[out.length - 1]; if(last && last.modal){ last.modal.modes.push(line.replace(/^[•●]\s*/, "")); return; } }
+    line = line.replace(/^(Revolt|Converge|Threshold|Metalcraft|Delirium|Ferocious|Morbid|Raid|Spell mastery|Formidable|Coven|Hellbent|Domain|Landfall|Magecraft|Constellation|Heroic|Alliance|Celebration|Descend \d+|Fateful hour|Corrupted|Addendum|Adamant|Battalion|Lieutenant|Parley|Radiance|Rally|Strive|Undergrowth|Valiant|Void|Eerie|Survival|Max speed) — /i, "");
+    if(saga && /^(VII|VI|IV|V|III|II|I)(\s*,\s*(VII|VI|IV|V|III|II|I))*\s*[—-]/.test(line)) return;
+    if(/^[^:"]*:\s*Add\b/i.test(line) || /^[^:"]*\{T\}[^:"]*:\s*For each colou?r/i.test(line)) return; // Mana
+    if(ltTexts.some(t => line.slice(0, 50) === t)) return;                                              // Lebens-Auslöser
+    if(/^Companion\s*[—-]/i.test(line) || /in your opening hand/i.test(line)) return;                   // Begleiter, Vor dem Spiel
+    // Loyalität
+    const loy = isPW && line.match(/^([+−–-]?\s?(?:\d+|X)|0)\s*:\s*(.+)$/);
+    if(loy){ const v = loy[1].replace(/\s/g, "").replace(/[−–]/g, "-"); out.push(withModal({kind:"loy", cost:v, text:loy[2], line})); return; }
+    // Schlüsselwörter mit Kosten
+    let m;
+    if((m = line.match(/^Cycling\s*(?:[—-]\s*)?(.+)$/i))){ out.push({kind:"cycling", cost:m[1].trim(), line}); return; }
+    if((m = line.match(/^Evoke\s*(?:[—-]\s*)?(.+)$/i))){ out.push({kind:"evoke", cost:m[1].trim(), line}); return; }
+    if((m = line.match(/^Flashback\s*(?:[—-]\s*)?(.+)$/i))){ out.push({kind:"flashback", cost:m[1].trim(), line}); return; }
+    if((m = line.match(/^Equip\s*(?:[—-]\s*)?(\{[^]*?\})\s*$/i))){ out.push({kind:"equip", cost:m[1], line}); return; }
+    // Auslöser
+    if((m = line.match(/^(When|Whenever|At)\s+(.+?),\s*(.+)$/i))){
+      const head = m[1], cond = m[2].trim(), text = m[3].trim();
+      // «When this creature enters and whenever an opponent draws …» → zwei Ereignisse
+      const shared = withModal({text});
+      cond.split(/\s+and whenever\s+/i).forEach(cd => out.push({kind:"trig", head, cond:cd.trim(), text:shared.text, modal:shared.modal, line}));
+      return;
+    }
+    // aktivierte Fähigkeit «Kosten: Effekt»
+    if((m = line.match(/^([^:"]{1,120}?):\s*(.+)$/)) && /\{|tap |untap |sacrifice|pay |discard|exile|remove|put an?/i.test(m[1]) && !/^(Choose|If|As long as)/i.test(m[1])){
+      out.push(withModal({kind:"act", cost:m[1].replace(/^[A-Z][\w' ]+ — /, "").trim(), text:m[2].trim(), line})); return;
+    }
+    if(isSpell && !KEYWORD_LINE.test(line)) out.push(withModal({kind:"spell", text:line, line}));
+  });
+  c._abO = c.o; c._ab = out;
+  return out;
+}
+/* ---------- Text → Schritte ---------- */
+function splitSentences(t){
+  return abbr(String(t)).split(/(?<=\.)\s+(?=[A-Z])/).map(unAbbr).map(s => s.trim()).filter(Boolean);
+}
+const TGT_RE = "(up to (?:one|two|three) )?(?:another |other )?target";
+function parseSteps(text, src){
+  const steps = [];
+  let sentences = splitSentences(text);
+  for(let i = 0; i < sentences.length; i++){
+    let s = sentences[i].replace(/\.$/, "");
+    // «… , then …» und «… and …» in einzelne Teile
+    const parts = s.split(/,\s*then\s+|\.\s*Then\s+|,\s*and then\s+|\s+and\s+(?=(?:you (?:draw|lose|gain|create|scry|surveil|mill|discard|put)|draws? |create |scry |surveil |mill |each opponent loses |exile the top ))/i);
+    for(let p of parts){
+      p = p.trim(); if(!p) continue;
+      const prev = steps[steps.length - 1];
+      if(prev && prev._open && prev.t === "askOpp"){ prev.text += ". " + p; continue; }
+      if(prev && prev._open && (prev.t === "search" || prev.t === "dig")){ if(prev.t === "search") prev.rest = (prev.rest + " " + p).trim(); else prev.hint = (prev.hint ? prev.hint + " " : "") + p; continue; }
+      const st = matchStep(p, src, text);
+      st.forEach(x => { if(x.t === "search" || (x.t === "dig" && !x.mode) || x.t === "askOpp") x._open = true; });
+      if(st.length) steps.push(...st);
+      else steps.push({t:"manual", text:p});
+      // Nach «look at the top …» gehören die nächsten Sätze zur Anweisung
+      const last = steps[steps.length - 1];
+      if(last && last.t === "askOpp" && p === parts[parts.length - 1]){
+        while(i + 1 < sentences.length && /\b(from it|that player|that card|their hand|those cards)\b/i.test(sentences[i + 1])){ last.text += ". " + sentences[++i].replace(/\.$/, ""); }
+      }
+      if(last && last.t === "dig" && !last.mode && p === parts[parts.length - 1]){
+        while(i + 1 < sentences.length && /\b(them|among them|the rest|those cards|other|remaining|that card|the revealed|exiled card|put one|put up to)\b/i.test(sentences[i + 1]) && !/you win the game/i.test(sentences[i + 1])){ last.hint = (last.hint ? last.hint + " " : "") + sentences[++i]; }
+      }
+    }
+    steps.forEach(x => delete x._open);
+  }
+  // «If you do, …» gilt auch für die folgenden Sätze derselben Fähigkeit (Sylvan Library)
+  let did = false;
+  for(const x of steps){ if(x.ifDid) did = true; else if(did && x.t !== "skip") x.ifDid = true; }
+  return steps;
+}
+function matchStep(p, src, full){
+  const SELF = selfPat(src);
+  let m, may = false, xexpr = null;
+  p = p.replace(/^(Then|And)\s+/i, "");
+  const ifDid = /^(If you do|When you do),\s*/i.test(p), ifNot = /^If you don't,\s*/i.test(p);
+  p = p.replace(/^(If you do|When you do|If you don't),\s*/i, "");
+  const wx = p.match(/,?\s*where X is (.+)$/i); if(wx){ xexpr = wx[1]; p = p.slice(0, wx.index).trim(); }
+  const res = matchStep2(p, src, full, SELF);
+  res.forEach(s => { if(!s.src && s.t !== "manual") s.src = p; if(xexpr) s.xexpr = xexpr; if(ifDid) s.ifDid = true; if(ifNot) s.ifNot = true; });
+  return res;
+}
+function matchStep2(p, src, full, SELF){
+  let m, may = false;
+  const repeat = /repeat this process/i.test(full || "");
+  if(/^you may repeat this process any number of times$/i.test(p)) return [{t:"skip"}];
+  if(/^you lose life equal to its mana value$/i.test(p)) return [repeat ? {t:"skip"} : {t:"loseMV"}];
+  if((m = p.match(/^you may\s+(.+)$/i))){ may = true; p = m[1]; }
+  // «… unless that player pays {1}»
+  if((m = p.match(/^(.*?)\s+unless (?:that player|they|its controller|that spell's controller|an opponent|any player) pays? (.+)$/i))){
+    const sub = matchStep2(m[1], src, full, SELF); return [{t:"unless", sub, cost:m[2], may, text:m[1]}];
+  }
+  // «Target player draws/scries/mills …»
+  if((m = p.match(/^(target player|target opponent|each player) (draws|scries|mills|discards|gains|loses|creates|shuffles|sacrifices|surveils|puts) (.+)$/i)) && !/^each player (discards their hand|shuffles their hand)/i.test(p)){
+    const conj = {draws:"draw", scries:"scry", mills:"mill", discards:"discard", gains:"gain", loses:"lose", creates:"create", shuffles:"shuffle", sacrifices:"sacrifice", surveils:"surveil", puts:"put"}[m[2].toLowerCase()];
+    return [{t:"forPlayer", who:m[1].toLowerCase(), sub:matchStep2(`${conj} ${m[3]}`, src, full, SELF), text:p, may}];
+  }
+  const W = s => ({...s, may});
+  const out = [];
+  // schon anderswo erledigt
+  if(/^add\b/i.test(p) || /you get (\{E\}|an? (experience|energy|rad)|\w+ (experience|rad) counters)/i.test(p) || /pay (any amount of|an amount of) \{E\}/i.test(p)) return [{t:"skip"}];
+  if(/^counter (target|that|it)\b/i.test(p) || /^(its|that spell's) controller (may )?(pays?|sacrifices?)\b/i.test(p)) return [{t:"skip"}]; // Kontern läuft über den Stapel
+  // Ad Nauseam
+  if(/^reveal the top card of your library and put that card into your hand$/i.test(p)) return [W({t: repeat ? "adnauseam" : "revealTopHand"})];
+  if((m = p.match(/^exile the top (a|one|two|three|four|five|six|seven|x|\d+) cards? of your library( face down)?$/i)) || (m = p.match(/^exile the top card of your library( face down)?$/i))) return [W({t:"exileTop", n: m[2] !== undefined || /top card/i.test(p) && !/cards/i.test(p) ? (/top card/i.test(p) ? 1 : m[1]) : m[1], fd:/face down/i.test(p)})];
+  if(/^put that card into your hand at the beginning of your next end step$/i.test(p)) return [W({t:"delayed", when:"end", mineOnly:true, action:"hand"})];
+  if(/^draw a card at the beginning of the next turn's upkeep$/i.test(p)) return [W({t:"delayed", when:"upkeep", action:"draw"})];
+  if((m = p.match(/^(sacrifice|exile) (it|that creature|the creature|them|those creatures|those tokens|the tokens?|that token|that permanent) at the beginning of the next end step$/i))) return [W({t:"delayed", when:"end", action:m[1].toLowerCase()})];
+  if((m = p.match(/^return (it|that creature|them|that card) to (?:its|their) owner'?s?'? hands? at the beginning of the next end step$/i))) return [W({t:"delayed", when:"end", action:"bounce"})];
+  if(/^if x is greater than or equal to the number of cards in your library, you win the game$/i.test(p)) return [{t:"oracleWin"}];
+  if(/you win the game$/i.test(p)) return [{t:"note", text:p + " – prüfe die Bedingung, dann hast du gewonnen!"}];
+  if((m = p.match(/^put an? (.+?) card from your hand onto the battlefield( tapped)?$/i))) return [W({t:"putFromHand", who:m[1], tapped:!!m[2]})];
+  if((m = p.match(/^each player may put an? (.+?) card from their hand onto the battlefield$/i))) return [{t:"putFromHand", who:m[1], may:true}, {t:"askOpp", text:"Jeder andere Spieler darf ebenfalls eine solche Karte ins Spiel bringen"}];
+  if((m = p.match(/^(?:put|return) target (.+?) card from (?:a|your) graveyard (?:onto|to) the battlefield(?: under your control)?( tapped)?$/i))) return [W({t:"gyReturn", who:m[1], dest:"bf", tapped:!!m[2], n:1})];
+  if(/^choose (two|\w+) cards in your hand drawn this turn$/i.test(p)) return [{t:"skip"}];
+  if((m = p.match(/^for each of those cards, pay (\d+) life or put the card on top of your library$/i))) return [{t:"payOrTop", life:+m[1], n:2}];
+  // Ziehen
+  if((m = p.match(/^(?:you )?draws? (a|one|two|three|four|five|six|seven|x|\d+)(?: additional)? cards?(?: for each (.+))?$/i))) return [W({t:"draw", n:m[1], each:m[2] || null})];
+  if((m = p.match(/^(?:you )?draws? cards equal to (.+)$/i))) return [W({t:"draw", n:"x", xexpr:m[1]})];
+  if((m = p.match(/^(?:each player|each opponent|target player|target opponent) draws (a|one|two|three|\d+) cards?$/i))) return [W({t:"draw", n:m[1], who:p.split(" draws")[0].toLowerCase()})];
+  if((m = p.match(/^each player discards their hand(?:,| and) (?:then )?draws (seven|\d+|cards equal to .+?) cards?$/i)) || (m = p.match(/^each player discards their hand$/i))) return [W({t:"wheel", n:m[1] || null, text:p})];
+  if(/^each player shuffles their hand and graveyard into their library/i.test(p)){ const d = p.match(/draws (seven|\d+) cards/i); return [W({t:"twister", n:d ? d[1] : "seven"})]; }
+  // Abwerfen
+  if((m = p.match(/^(?:you )?discard (a|one|two|three|\d+) cards?(?: at random)?$/i))) return [W({t:"discard", n:m[1], random:/random/i.test(p)})];
+  if(/^discard your hand$/i.test(p)) return [W({t:"discardHand"})];
+  if(/^(each opponent|target opponent|target player|each player) (discards|reveals)/i.test(p)) return [W({t:"askOpp", text:p})];
+  // Leben
+  if((m = p.match(/^(?:you )?gain (\d+|x|that much) life(?: for each (.+))?$/i))) return [W({t:"gain", n:m[1], each:m[2] || null})];
+  if((m = p.match(/^(?:you )?gain life equal to (.+)$/i))) return [W({t:"gain", n:"x", xexpr:m[1]})];
+  if((m = p.match(/^(?:you )?lose (\d+|x) life(?: for each (.+))?$/i))) return [W({t:"lose", n:m[1], each:m[2] || null})];
+  if((m = p.match(/^(?:you )?lose life equal to (.+)$/i))) return [W({t:"lose", n:"x", xexpr:m[1]})];
+  if((m = p.match(/^each opponent loses (\d+|x) life(?: for each (.+))?$/i))) return [W({t:"oppLoss", n:m[1], each:m[2] || null})];
+  if((m = p.match(/^each opponent loses life equal to (.+)$/i))) return [W({t:"oppLoss", n:"x", xexpr:m[1]})];
+  if((m = p.match(/^(?:its|that creature's|that permanent's) controller gains life equal to its power$/i))) return [W({t:"ctrlGainPower"})];
+  // Schaden
+  if((m = p.match(new RegExp(`^(?:${SELF}|it|this \\w+) deals (\\d+|x|that much) damage (?:divided as you choose among |to )?(.+)$`, "i")))) return [W({t:"damage", n:m[1], who:m[2]})];
+  // Ziel wählen (Galvanic Discharge)
+  if((m = p.match(/^choose (up to one )?target (.+)$/i))) return [W({t:"choose", who:"target " + m[2], opt:!!m[1]})];
+  // Zerstören / Verbannen / Zurückschicken / Tappen
+  if((m = p.match(new RegExp(`^(destroy|exile|tap|untap) ${TGT_RE} (.+)$`, "i")))) return [W({t:"targetAct", act:m[1].toLowerCase(), opt:!!m[2], who:"target " + m[3]})];
+  if((m = p.match(/^(destroy|exile) (all|each) (.+)$/i))) return [W({t:"massAct", act:m[1].toLowerCase(), who:m[3]})];
+  if((m = p.match(new RegExp(`^return ${TGT_RE} (.+?) to (?:its|their) owner'?s?'? hands?$`, "i")))) return [W({t:"targetAct", act:"bounce", opt:!!m[1], who:"target " + m[2]})];
+  if((m = p.match(/^return (up to (?:one|two|three) )?(?:target )?(.+?) cards? from your graveyard to (your hand|the battlefield)( tapped)?$/i))) return [W({t:"gyReturn", who:m[2], dest:/hand/i.test(m[3]) ? "hand" : "bf", tapped:!!m[4], n:m[1] ? nWord(m[1].split(" ")[2]) : 1})];
+  // Marken
+  if((m = p.match(new RegExp(`^put (a|an|one|two|three|four|five|x|\\d+) (?!\\+1/\\+1)(\\S+) counters? on (?:${SELF}|this \\w+)$`, "i")))) return [W({t:"selfCounter", n:m[1]})];
+  if((m = p.match(new RegExp(`^put (a|an|one|two|three|four|five|x|\\d+) \\+1/\\+1 counters? on (${SELF}|this creature|it|each creature you control|${TGT_RE} .+)$`, "i")))){
+    const w = m[2];
+    if(new RegExp(`^(${SELF}|this creature)$`, "i").test(w)) return [W({t:"selfCounter", n:m[1]})];
+    if(/^it$/i.test(w)) return [W({t:"itCounter", n:m[1]})];
+    if(/^each creature you control$/i.test(w)) return [W({t:"allCounter", n:m[1]})];
+    return [W({t:"targetCounter", n:m[1], who:w.replace(/^up to (one|two|three) /i, "")})];
+  }
+  if((m = p.match(/^if it'?s an? (.+?), (.+)$/i))) return [W({t:"ifIt", desc:m[1], then:matchStep(m[2], src)})];
+  // Token
+  if((m = p.match(/^create (a|an|one|two|three|four|five|x|\d+|that many) (tapped )?(.+?) tokens?(?: with (.+))?$/i))) return [W({t:"token", n:m[1], tapped:!!m[2], desc:m[3], extra:m[4] || ""})];
+  if((m = p.match(/^amass (\w+) (\d+|x)$/i))) return [W({t:"amass", kind:m[1], n:m[2]})];
+  if(/^investigate$/i.test(p)) return [W({t:"token", n:"a", desc:"Clue"})];
+  // Bibliothek
+  if((m = p.match(/^search your library for (.+?)(?:,|\band\b) (.+)$/i)) || (m = p.match(/^search your library for (.+)$/i))) return [W({t:"search", what:m[1], rest:m[2] || ""})];
+  if((m = p.match(/^(?:look at|reveal) the top (a|one|two|three|four|five|six|seven|eight|nine|ten|x|\d+) cards? of your library(.*)$/i))) return [W({t:"dig", n:m[1], hint:m[2] ? m[2].trim() : ""})];
+  if((m = p.match(/^(scry|surveil) (\d+|x|one|two|three)$/i))) return [W({t:"dig", n:m[2], mode:m[1].toLowerCase()})];
+  if((m = p.match(/^mill (a card|one|two|three|four|five|\d+|x)(?: cards?)?$/i))) return [W({t:"mill", n:m[1] === "a card" ? 1 : m[1]})];
+  if((m = p.match(/^put the top (a|one|two|three|\d+|x) cards? of your library into your graveyard$/i))) return [W({t:"mill", n:m[1]})];
+  if(/^shuffle(?: your library)?$/i.test(p)) return [{t:"shuffle"}];
+  if((m = p.match(/^put (a|one|two|three|\d+) cards? from your hand on top of your library(?: in any order)?$/i))) return [W({t:"handTop", n:m[1]})];
+  if((m = p.match(new RegExp(`^put ${SELF} on top of its owner's library$`, "i")))) return [W({t:"selfTop"})];
+  if((m = p.match(new RegExp(`^sacrifice (${SELF}|it|this \\w+)$`, "i")))) return [W({t:"sacSelf"})];
+  if((m = p.match(/^sacrifice (an?|one|two) (.+)$/i))) return [W({t:"sacOther", n:m[1], who:m[2]})];
+  if((m = p.match(new RegExp(`^untap (${SELF}|it|this \\w+)$`, "i")))) return [W({t:"untapSelf"})];
+  if(/^you get an emblem/i.test(p)) return [W({t:"note", text:`Emblem: ${p}. Lege dir dafür einen Token oder eine Notiz hin.`})];
+  if(/^take an extra turn/i.test(p)) return [W({t:"note", text:"Zusätzlicher Zug: gib nach deinem Zug den Zug nicht weiter."})];
+  return out;
+}
+/* ---------- Kartenfilter für Suchen und Ziele ---------- */
+function cardFilter(desc, ctx){
+  let d = String(desc || "").toLowerCase().replace(/\bcards?\b/g, "").replace(/\b(an?|up to (one|two|three)|target|other|another)\b/g, " ").replace(/\s+/g, " ").trim();
+  const conds = [];
+  let m;
+  if((m = d.match(/with mana cost \{(\d+)\} or \{(\d+)\}/))){ const a = +m[1], b = +m[2]; conds.push(c => { const mc = String(c.mc || ""); return !isLand(c) && /^\{\d+\}$|^$/.test(mc) && [a, b].includes(c.cmc || 0); }); d = d.replace(m[0], ""); }
+  if((m = d.match(/with (mana value|power|toughness) (\d+|x) or (less|greater)/))){ const stat = m[1], n = m[2] === "x" ? (ctx && ctx.X || 0) : +m[2], dir = m[3]; conds.push(c => numCond(c, stat === "mana value" ? "mv" : stat, n, dir)); d = d.replace(m[0], ""); }
+  if((m = d.match(/with mana value (\d+|x)\b/))){ const n = m[1] === "x" ? (ctx && ctx.X || 0) : +m[1]; conds.push(c => (c.cmc || 0) === n); d = d.replace(m[0], ""); }
+  d = d.replace(/\bwith .*$/, "").replace(/\b(if|that|unless|until)\b.*$/, "");
+  d = d.replace(/\b(you control|an opponent controls|you don't control|from your graveyard|from a graveyard|in your graveyard|on the battlefield)\b/g, " ").replace(/\s+/g, " ").trim();
+  const alts = d ? d.split(/\s*,\s*(?:or\s+)?|\s+or\s+|\s+and\/or\s+/).map(x => x.trim()).filter(Boolean) : [];
+  const base = c => !alts.length || alts.every(a => /^(card|permanent|spell)$/.test(a)) || alts.some(a => descMatch(a.replace(/^(card|permanent)$/, ""), c));
+  return c => base(c) && conds.every(f => f(c));
+}
+/* ---------- Auswahlfenster ---------- */
+let ABIL_MID = 0;
+function abilModal(title, build){
+  return new Promise(res => {
+    modalState = {kind:"block"}; $("#modal").hidden = false;
+    const box = $("#modalBox"); box.innerHTML = "";
+    const id = String(++ABIL_MID); box.dataset.abil = id;
+    box.append(head(title));
+    const mark = document.createElement("i"); mark.hidden = true; mark.dataset.abm = id; box.append(mark);
+    let done = false;
+    const finish = v => { if(done) return; done = true; clearInterval(watch); res(v); };
+    // Wird das Fenster von einem anderen Dialog ersetzt oder geschlossen, gilt das als «Abbrechen»
+    const watch = setInterval(() => { if($("#modal").hidden || !box.querySelector(`[data-abm="${id}"]`)) finish(null); }, 400);
+    build(box, v => { if(done) return; closeModal(); finish(v); });
+  });
+}
+function miniCard(c, mine, onClick){
+  const el = mine ? cardEl(c, true, "hand") : cardEl({...c}, false, "bf");
+  el.style.setProperty("--w", "92px"); el.style.cursor = "pointer";
+  el.addEventListener("click", e => { e.stopPropagation(); onClick(); });
+  return el;
+}
+/* Ziel wählen: Spieler und/oder Karten im Spiel */
+function targetSpec(who){
+  const w = String(who || "").toLowerCase().replace(/^up to (one|two|three) /, "").replace(/\s+(if|until|unless|where|that|with the greatest|this turn)\b.*$/, "");
+  const any = /any target/.test(w);
+  const players = any || /\b(player|opponent)\b/.test(w);
+  const oppOnly = /opponent/.test(w) && !/creature|planeswalker|permanent/.test(w);
+  const cardsWanted = any || /creature|planeswalker|permanent|artifact|enchantment|land|battle/.test(w);
+  const mineOnly = /you control/.test(w), notMine = /you don't control|an opponent controls|opponent controls/.test(w);
+  let desc = w.replace(/^target\s+/, "").replace(/\b(any target)\b/, "creature or planeswalker").replace(/\b(player or planeswalker|opponent or planeswalker)\b/, "planeswalker").replace(/\b(you control|you don't control|an opponent controls)\b/, "").trim();
+  desc = desc.replace(/\bor (player|opponent)\b|\b(player|opponent) or\b/g, "").trim();
+  return {players, oppOnly, cardsWanted, mineOnly, notMine, filter: cardsWanted ? cardFilter(desc) : () => false};
+}
+function pickTarget(title, who, opt){
+  const sp = targetSpec(who);
+  return abilModal(title, (box, done) => {
+    if(sp.players){
+      const row = document.createElement("div"); row.className = "row";
+      if(!sp.oppOnly) row.append(btn(`Du (${S.life})`, () => done({kind:"player", pid:me.id}), "small"));
+      liveOpps().forEach(o => row.append(btn(`${o.name} (${Number((others[o.id] || {}).life) || 0})`, () => done({kind:"player", pid:o.id}), "small primary")));
+      box.append(Object.assign(document.createElement("h3"), {textContent:"Spieler"}), row);
+    }
+    if(sp.cardsWanted){
+      const groups = [];
+      if(!sp.notMine) groups.push({label:"Deine Karten", pid:me.id, cards:S.bf.filter(c => !c.fd && sp.filter(c)), mine:true});
+      if(!sp.mineOnly) liveOpps().forEach(o => groups.push({label:o.name, pid:o.id, cards:(Array.isArray(others[o.id].bf) ? others[o.id].bf : []).filter(c => c && !c.fd && sp.filter(c)), mine:false}));
+      groups.forEach(g => {
+        if(!g.cards.length) return;
+        box.append(Object.assign(document.createElement("h3"), {textContent:g.label}));
+        const grid = document.createElement("div"); grid.className = "grid z-modal";
+        g.cards.forEach(c => grid.append(miniCard(c, g.mine, () => done({kind:"card", pid:g.pid, card:c, mine:g.mine}))));
+        box.append(grid);
+      });
+    }
+    box.append(btn(opt ? "Kein Ziel" : "Abbrechen", () => done(null), "small"));
+  });
+}
+function pickCards(title, list, n, opts){
+  // mehrere Karten wählen; opts.min, opts.label
+  return abilModal(title, (box, done) => {
+    const chosen = new Set();
+    const grid = document.createElement("div"); grid.className = "grid z-modal";
+    if(!list.length) box.append(Object.assign(document.createElement("p"), {className:"muted", textContent:"Keine passende Karte."}));
+    list.forEach(c => {
+      const el = miniCard(c, true, () => {
+        if(chosen.has(c)) chosen.delete(c); else { if(n === 1){ done([c]); return; } if(chosen.size < n) chosen.add(c); }
+        el.classList.toggle("picked", chosen.has(c)); ok.textContent = `Fertig (${chosen.size})`;
+      });
+      grid.append(el);
+    });
+    box.append(grid);
+    const ok = btn(`Fertig (0)`, () => done([...chosen]), "primary");
+    const row = document.createElement("div"); row.className = "row";
+    if(n !== 1) row.append(ok);
+    row.append(btn((opts && opts.none) || "Keine", () => done([]), "small"));
+    box.append(row);
+  });
+}
+/* Oben ansehen / Hellsicht / Überwachen / «look at the top N» */
+function digDialog(title, cards, mode, hint){
+  return abilModal(title, (box, done) => {
+    if(hint) box.append(Object.assign(document.createElement("p"), {className:"stat", textContent:hint}));
+    const dests = mode === "scry" ? [["top", "Oben"], ["bottom", "Unten"]] : mode === "surveil" ? [["top", "Oben"], ["gy", "Friedhof"]] : [["hand", "Hand"], ["top", "Oben"], ["bottom", "Unten"], ["gy", "Friedhof"], ["ex", "Exil"], ["bf", "Spielfeld"]];
+    const def = mode ? "top" : "bottom";
+    const choice = new Map(cards.map(c => [c, def]));
+    const list = document.createElement("div"); list.className = "diglist";
+    cards.forEach(c => {
+      const row = document.createElement("div"); row.className = "row digrow";
+      const el = cardEl(c, true, "hand"); el.style.setProperty("--w", "80px");
+      const bs = document.createElement("div"); bs.className = "row";
+      const paint = () => bs.querySelectorAll("button").forEach(b => b.classList.toggle("primary", b.dataset.d === choice.get(c)));
+      dests.forEach(([d, l]) => { const b = btn(l, () => { choice.set(c, d); paint(); }, "small"); b.dataset.d = d; bs.append(b); });
+      paint();
+      row.append(el, bs); list.append(row);
+    });
+    box.append(list);
+    box.append(Object.assign(document.createElement("p"), {className:"stat", textContent:"Reihenfolge: Karten, die oben bleiben, liegen in der gezeigten Reihenfolge oben (die erste zuoberst)."}));
+    box.append(btn("Fertig", () => done(choice), "primary"));
+  });
+}
+/* ---------- Schritte ausführen ---------- */
+const MODALQ = {p:Promise.resolve()};
+function queued(fn){ MODALQ.p = MODALQ.p.then(fn).catch(e => console.error(e)); return MODALQ.p; }
+async function confirmMay(src, text){
+  return abilModal(`${src.n}`, (box, done) => {
+    box.append(Object.assign(document.createElement("p"), {textContent:`Möchtest du: ${text}?`}));
+    const row = document.createElement("div"); row.className = "row";
+    row.append(btn("Ja", () => done(true), "primary"), btn("Nein", () => done(false), "small"));
+    box.append(row);
+  });
+}
+async function manualNote(src, texts){
+  if(!texts.length) return;
+  await abilModal(`${src.n}: bitte selbst ausführen`, (box, done) => {
+    texts.forEach(t => box.append(Object.assign(document.createElement("p"), {textContent:"• " + t})));
+    box.append(btn("Erledigt", () => done(true), "primary"));
+  });
+}
+function oppByPid(pid){ return (others[pid] && others[pid].name) || (pid === "bot" ? "KI" : "Gegner"); }
+function damageTarget(t, n, src){
+  if(!t) return;
+  if(t.kind === "player"){
+    if(t.pid === me.id){ S.life -= n; act(`${src.n}: ${n} Schaden an dich`); }
+    else { hitOpponent(t.pid, {kind:"damage", amount:n, src:src.n}); act(`${src.n}: ${n} Schaden an ${oppByPid(t.pid)}`); }
+  } else if(t.mine){ const r = applyHitToCard(t.card, {kind:"damage", amount:n}, false); act(`${src.n}: ${r}`); }
+  else { hitOpponent(t.pid, {kind:"damage", amount:n, card:t.card.u, src:src.n}); }
+}
+function actOnTarget(t, a, src){
+  if(!t || t.kind !== "card") return;
+  if(t.mine){
+    const c = t.card;
+    if(a === "destroy"){ if(kwHas(c, "indestructible")) act(`${c.n} ist unzerstörbar`); else { moveCard(c.u, "gy"); act(`${src.n} zerstört ${c.n}`); } }
+    else if(a === "exile"){ moveCard(c.u, "ex"); act(`${src.n} verbannt ${c.n}`); }
+    else if(a === "bounce"){ moveCard(c.u, "hand"); act(`${src.n} schickt ${c.n} auf die Hand`); }
+    else if(a === "tap"){ c.tap = true; act(`${src.n} tappt ${c.n}`); }
+    else if(a === "untap"){ c.tap = false; act(`${src.n} enttappt ${c.n}`); }
+  } else {
+    if(a === "untap"){ act(`${src.n}: ${oppByPid(t.pid)} soll ${t.card.n} enttappen`); return; }
+    hitOpponent(t.pid, {kind:a, card:t.card.u, src:src.n});
+  }
+}
+async function searchStep(st, src, ctx){
+  const what = st.what, rest = st.rest || "";
+  const nm = what.match(/^up to (one|two|three|four|five|\d+) /i);
+  const n = nm ? nWord(nm[1]) : (/^(two|three) /i.test(what) ? nWord(what.split(" ")[0]) : 1);
+  const filt = cardFilter(what.replace(/^up to \w+ /i, ""), ctx);
+  const list = S.library.filter(filt);
+  const destTxt = rest.toLowerCase().replace(/reveal (it|that card|them)/g, "");
+  const dest = /onto the battlefield/.test(destTxt) ? "bf" : /on top|top of your library/.test(destTxt) ? "top" : /graveyard/.test(destTxt) ? "gy" : /exile/.test(destTxt) ? "ex" : "hand";
+  act(`durchsucht die Bibliothek (${src.n}: ${what})`);
+  const picked = await pickCards(`${src.n}: suche ${what}`, list, n, {none:"Nichts nehmen"});
+  S.library = shuffle(S.library.filter(c => !picked.includes(c)));
+  picked.forEach(c => {
+    if(dest === "top"){ S.library.unshift(c); }
+    else if(dest === "bf"){ S.bf.push(c); if(/tapped/.test(destTxt)) c.tap = true; markOnMove(c, "library", "bf", false); }
+    else S[dest].push(c);
+  });
+  act(picked.length ? `nimmt ${picked.map(c => c.n).join(", ")} (${{hand:"auf die Hand", bf:"ins Spiel", top:"oben auf die Bibliothek", gy:"in den Friedhof", ex:"ins Exil"}[dest]}) und mischt` : "findet nichts und mischt");
+  ctx.last = picked[0] || null;
+  commit();
+}
+async function runSteps(steps, src, ctx = {}){
+  const manual = [];
+  for(let i = 0; i < steps.length; i++){
+    const st = steps[i];
+    if(st.t === "skip") continue;
+    if(st.ifDid && ctx.mayNo) continue;
+    if(st.ifNot && !ctx.mayNo) continue;
+    if(st.may && st.t !== "unless"){ const yes = await confirmMay(src, st.text || describeStep(st)); ctx.mayNo = !yes; if(!yes) continue; }
+    const N = () => { const v = st.n === "that much" ? ctx.much : nWord(st.n, ctx); return v; };
+    if(st.xexpr){ const v = xExpr(st.xexpr, src); if(v != null) ctx.X = v; }
+    const needX = async () => {
+      let v = N();
+      if(v == null){ v = await askNumber(`${src.n}: Wert für X`, describeStep(st)); ctx.X = v; }
+      if(st.each){ const k = xExpr(st.each, src); if(k != null) v = (v || 0) * k; else { const q = await askNumber(`${src.n}: Anzahl`, `für jede(n) ${st.each}`); v = (v || 0) * (q || 0); } }
+      return v || 0;
+    };
+    switch(st.t){
+      case "draw": {
+        const n = await needX();
+        if(!st.who || st.who === "each player") draw(n);
+        if(st.who && st.who !== "you") act(`${src.n}: ${st.who === "each player" ? "jeder Spieler" : st.who} zieht ${n} (Mitspieler ziehen selbst)`);
+        break;
+      }
+      case "wheel": {
+        const counts = [S.hand.length, ...liveOpps().map(o => Number((others[o.id] || {}).handN) || 0)];
+        const n = st.n ? (/equal to/i.test(st.n) ? Math.max(...counts) : nWord(st.n)) : 0;
+        const k = S.hand.length; S.gy.push(...S.hand); S.hand = []; act(`${src.n}: wirft die Hand ab (${k})`);
+        if(n) draw(n);
+        act(`${src.n}: alle anderen werfen ihre Hand ab${n ? ` und ziehen ${n}` : ""}`);
+        break;
+      }
+      case "twister": {
+        const n = nWord(st.n) || 7;
+        S.library = shuffle([...S.library, ...S.hand, ...S.gy]); S.hand = []; S.gy = [];
+        act(`${src.n}: mischt Hand und Friedhof in die Bibliothek`); draw(n);
+        act(`${src.n}: alle anderen machen dasselbe und ziehen ${n}`);
+        break;
+      }
+      case "discard": {
+        const n = await needX();
+        if(st.random){ for(let k = 0; k < n && S.hand.length; k++){ const c = S.hand[Math.floor(Math.random() * S.hand.length)]; moveCard(c.u, "gy"); act(`wirft zufällig ${c.n} ab`); } break; }
+        const p = await pickCards(`${src.n}: ${n} Karte(n) abwerfen`, S.hand.slice(), n, {none:"Keine"});
+        p.forEach(c => moveCard(c.u, "gy")); if(p.length) act(`wirft ${p.map(c => c.n).join(", ")} ab`);
+        break;
+      }
+      case "discardHand": { const k = S.hand.length; S.gy.push(...S.hand); S.hand = []; act(`wirft die Hand ab (${k})`); break; }
+      case "askOpp": act(`${src.n}: ${st.text} – Mitspieler bitte ausführen`); toast(`<b>${esc(src.n)}:</b> ${esc(st.text)}. Das machen deine Mitspieler selbst.`); break;
+      case "gain": { const n = await needX(); S.life += n; act(`${src.n}: du erhältst ${n} Leben`); break; }
+      case "lose": { const n = await needX(); S.life -= n; act(`${src.n}: du verlierst ${n} Leben`); break; }
+      case "oppLoss": { const n = await needX(); liveOpps().forEach(o => hitOpponent(o.id, {kind:"loss", amount:n, src:src.n})); break; }
+      case "ctrlGainPower": {
+        const t = ctx.target; if(!t || t.kind !== "card") break;
+        const pw = Math.max(0, Number(t.card.pw ?? 0) + (t.mine ? (t.card.c || 0) : (Number(t.card.c) || 0)));
+        if(t.mine){ S.life += pw; act(`du erhältst ${pw} Leben (${t.card.n})`); } else hitOpponent(t.pid, {kind:"heal", amount:pw, src:src.n});
+        break;
+      }
+      case "damage": {
+        const n = st.n === "that much" ? (ctx.much ?? await askNumber(`${src.n}: Wie viel Schaden?`, "")) : await needX();
+        const who = st.who.toLowerCase();
+        if(/^each opponent$/.test(who)){ liveOpps().forEach(o => hitOpponent(o.id, {kind:"damage", amount:n, src:src.n})); break; }
+        if(/^(each|all) (other )?creatures?( and each (player|planeswalker))?/.test(who) || /^each creature/.test(who)){
+          S.bf.filter(c => isCreature(c) && !(/other/.test(who) && c === src)).forEach(c => applyHitToCard(c, {kind:"damage", amount:n}, false));
+          liveOpps().forEach(o => (Array.isArray(others[o.id].bf) ? others[o.id].bf : []).filter(c => /Creature/.test(c.type || "")).forEach(c => hitOpponent(o.id, {kind:"damage", amount:n, card:c.u, src:src.n})));
+          if(/each player/.test(who)){ S.life -= n; liveOpps().forEach(o => hitOpponent(o.id, {kind:"damage", amount:n, src:src.n})); }
+          act(`${src.n}: ${n} Schaden an ${who}`); break;
+        }
+        if(/^(that|the chosen) (permanent|creature|player)|^it$/.test(who) && ctx.target){ damageTarget(ctx.target, n, src); break; }
+        if(/divided|any number of target/.test(who)){
+          let left = n;
+          while(left > 0){
+            const t = await pickTarget(`${src.n}: noch ${left} Schaden verteilen`, who.replace(/^.*?(any number of )?target /, "target ").replace(/creatures and\/or planeswalkers/, "creature or planeswalker"), true);
+            if(!t) break;
+            const k = left === 1 ? 1 : (await askNumber(`${src.n}: wie viel davon an ${t.kind === "player" ? oppByPid(t.pid) : t.card.n}?`, `Noch ${left} zu verteilen.`)) || 0;
+            if(!k) break;
+            damageTarget(t, Math.min(k, left), src); left -= Math.min(k, left); commit();
+          }
+          break;
+        }
+        const t = await pickTarget(`${src.n}: ${n} Schaden an …`, who, /up to/.test(who));
+        if(t){ ctx.target = t; damageTarget(t, n, src); }
+        break;
+      }
+      case "choose": { const t = await pickTarget(`${src.n}: Ziel wählen`, st.who, st.opt); ctx.target = t; break; }
+      case "targetAct": {
+        const label = {destroy:"zerstören", exile:"verbannen", bounce:"auf die Hand", tap:"tappen", untap:"enttappen"}[st.act];
+        const t = await pickTarget(`${src.n}: ${label}`, st.who, st.opt);
+        if(t){ ctx.target = t; ctx.last = t.card; actOnTarget(t, st.act, src); }
+        break;
+      }
+      case "massAct": {
+        const f = cardFilter(st.who);
+        S.bf.filter(c => !c.fd && f(c)).forEach(c => actOnTarget({kind:"card", mine:true, card:c}, st.act, src));
+        liveOpps().forEach(o => (Array.isArray(others[o.id].bf) ? others[o.id].bf : []).filter(c => c && !c.fd && f(c)).forEach(c => hitOpponent(o.id, {kind:st.act, card:c.u, src:src.n})));
+        act(`${src.n}: ${st.act === "destroy" ? "zerstört" : "verbannt"} alle ${st.who}`);
+        break;
+      }
+      case "gyReturn": {
+        const f = cardFilter(st.who, ctx);
+        const p = await pickCards(`${src.n}: aus dem Friedhof (${st.who})`, S.gy.filter(f), st.n || 1, {none:"Keine"});
+        p.forEach(c => { moveCard(c.u, st.dest); if(st.tapped) c.tap = true; act(`holt ${c.n} aus dem Friedhof ${st.dest === "hand" ? "auf die Hand" : "ins Spiel"}`); });
+        break;
+      }
+      case "selfCounter": { const n = await needX(); if(S.bf.includes(src)){ src.c = (src.c || 0) + n; act(`${src.n}: +${n} Marke (jetzt ${src.c})`); } break; }
+      case "itCounter": { const n = await needX(); const c = ctx.last || (ctx.target && ctx.target.mine && ctx.target.card); if(c && S.bf.includes(c)){ c.c = (c.c || 0) + n; act(`${c.n}: +${n} Marke`); } break; }
+      case "allCounter": { const n = await needX(); S.bf.filter(isCreature).forEach(c => c.c = (c.c || 0) + n); act(`${src.n}: +${n} Marke auf jede deiner Kreaturen`); break; }
+      case "targetCounter": {
+        const n = await needX();
+        const t = await pickTarget(`${src.n}: +${n} Marke auf …`, st.who, false);
+        if(t && t.mine){ t.card.c = (t.card.c || 0) + n; act(`${src.n}: +${n} Marke auf ${t.card.n}`); ctx.last = t.card; }
+        else if(t) act(`${src.n}: ${oppByPid(t.pid)} legt ${n} Marke(n) auf ${t.card.n}`);
+        break;
+      }
+      case "ifIt": {
+        const c = ctx.last || (ctx.target && ctx.target.card);
+        if(c && descMatch(st.desc, c) && st.then.length) await runSteps(st.then, src, ctx);
+        break;
+      }
+      case "token": await makeTokens(st, src, ctx); break;
+      case "amass": {
+        const n = await needX();
+        let army = S.bf.find(c => /\bArmy\b/.test(c.type || ""));
+        if(!army){ army = newCard({n:`${st.kind} Army`, type:`Token Creature — ${st.kind} Army`, pw:0, tg:0, tok:true}); S.bf.push(army); markOnMove(army, null, "bf"); }
+        army.c = (army.c || 0) + n; act(`${src.n}: Amass ${st.kind} ${n} (Armee ${power(army)}/${tough(army)})`);
+        break;
+      }
+      case "search": await searchStep(st, src, ctx); break;
+      case "dig": {
+        const n = Math.min(await needX(), S.library.length); if(!n) break;
+        const cards = S.library.slice(0, n);
+        const choice = await digDialog(`${src.n}: ${st.mode === "scry" ? "Hellsicht" : st.mode === "surveil" ? "Überwachen" : "oberste Karten"} ${n}`, cards, st.mode, st.hint);
+        S.library = S.library.slice(n);
+        const tops = cards.filter(c => choice.get(c) === "top"), bottoms = cards.filter(c => choice.get(c) === "bottom");
+        S.library = [...tops, ...S.library, ...bottoms];
+        cards.forEach(c => { const d = choice.get(c); if(d === "hand" || d === "gy" || d === "ex"){ S[d].push(c); } if(d === "bf"){ S.bf.push(c); markOnMove(c, "library", "bf", false); } });
+        const sum = ["hand", "top", "bottom", "gy", "ex", "bf"].map(d => [d, cards.filter(c => choice.get(c) === d).length]).filter(x => x[1]).map(([d, k]) => `${k}× ${{hand:"Hand", top:"oben", bottom:"unten", gy:"Friedhof", ex:"Exil", bf:"Spielfeld"}[d]}`).join(", ");
+        act(`${src.n}: schaut ${n} Karte(n) an (${sum})`);
+        ctx.last = cards.find(c => choice.get(c) === "bf" || choice.get(c) === "hand") || null;
+        break;
+      }
+      case "mill": { const n = await needX(); const k = Math.min(n, S.library.length); S.gy.push(...S.library.splice(0, k)); act(`${src.n}: mahlt ${k} Karte(n)`); break; }
+      case "shuffle": S.library = shuffle(S.library); act("mischt die Bibliothek"); break;
+      case "handTop": {
+        const n = await needX();
+        const p = await pickCards(`${src.n}: ${n} Karte(n) aus der Hand oben auf die Bibliothek (in Klickreihenfolge, die letzte liegt zuoberst)`, S.hand.slice(), n, {none:"Abbrechen"});
+        p.forEach(c => { S.hand.splice(S.hand.indexOf(c), 1); S.library.unshift(c); });
+        if(p.length) act(`legt ${p.length} Karte(n) aus der Hand oben auf die Bibliothek`);
+        break;
+      }
+      case "selfTop": if(S.bf.includes(src)){ moveCard(src.u, "library", "top"); act(`legt ${src.n} oben auf die Bibliothek`); } break;
+      case "sacSelf": if(S.bf.includes(src)){ moveCard(src.u, "gy"); act(`opfert ${src.n}`); } break;
+      case "sacOther": {
+        const p = await pickCards(`${src.n}: opfere ${st.who}`, S.bf.filter(c => c !== src && cardFilter(st.who)(c)), nWord(st.n) || 1, {none:"Keine"});
+        p.forEach(c => { moveCard(c.u, "gy"); act(`opfert ${c.n}`); }); ctx.last = p[0] || null;
+        if(p[0]) ctx.much = power(p[0]);
+        break;
+      }
+      case "untapSelf": src.tap = false; act(`enttappt ${src.n}`); break;
+      case "adnauseam": await adNauseam(src); break;
+      case "revealTopHand": { const c = S.library.shift(); if(c){ S.hand.push(c); ctx.last = c; act(`${src.n}: deckt ${c.n} auf und nimmt sie auf die Hand`); } break; }
+      case "loseMV": { const c = ctx.last; if(c){ S.life -= (c.cmc || 0); act(`verliert ${c.cmc || 0} Leben (${c.n})`); } break; }
+      case "exileTop": {
+        const n = await needX(); const cards = S.library.splice(0, n);
+        cards.forEach(c => { if(st.fd) c.fd = true; S.ex.push(c); });
+        ctx.last = cards[0] || null; ctx.lastMany = cards;
+        act(`${src.n}: legt ${cards.length} Karte(n) oben von der Bibliothek ins Exil${st.fd ? " (verdeckt)" : ": " + cards.map(c => c.n).join(", ")}`);
+        break;
+      }
+      case "delayed": {
+        const cards = ctx.lastMany && ctx.lastMany.length ? ctx.lastMany : (ctx.last ? [ctx.last] : []);
+        S.delayed = Array.isArray(S.delayed) ? S.delayed : [];
+        if(st.action === "draw") S.delayed.push({when:st.when, action:"draw", src:src.n, mineOnly:!!st.mineOnly});
+        else cards.forEach(c => S.delayed.push({when:st.when, action:st.action, u:c.u, n:c.n, src:src.n, mineOnly:!!st.mineOnly}));
+        act(`${src.n}: vorgemerkt für ${st.when === "end" ? "die nächste Endphase" : "die nächste Versorgung"}`);
+        break;
+      }
+      case "oracleWin": {
+        const x = ctx.X ?? 0;
+        if(x >= S.library.length){ act(`${src.n}: X = ${x}, Bibliothek ${S.library.length} → gewinnt das Spiel!`); toast(`<b>${esc(src.n)}: Du gewinnst das Spiel!</b>`, 12000); }
+        else act(`${src.n}: X = ${x}, Bibliothek ${S.library.length} → noch nicht gewonnen`);
+        break;
+      }
+      case "putFromHand": {
+        const p = await pickCards(`${src.n}: ${st.who} aus der Hand ins Spiel`, S.hand.filter(cardFilter(st.who)), 1, {none:"Keine"});
+        p.forEach(c => { moveCard(c.u, "bf"); if(st.tapped) c.tap = true; act(`bringt ${c.n} aus der Hand ins Spiel`); });
+        ctx.last = p[0] || null; break;
+      }
+      case "payOrTop": {
+        const p = await pickCards(`${src.n}: Welche Karten legst du zurück? Für jede der ${st.n} anderen zahlst du ${st.life} Leben.`, S.hand.slice(), st.n, {none:"Keine zurücklegen"});
+        p.forEach(c => { S.hand.splice(S.hand.indexOf(c), 1); S.library.unshift(c); });
+        const pay = (st.n - p.length) * st.life; S.life -= pay;
+        act(`${src.n}: legt ${p.length} zurück, zahlt ${pay} Leben`); break;
+      }
+      case "unless": {
+        const opp = liveOpps();
+        const r = await abilModal(`${src.n}`, (box, done) => {
+          box.append(Object.assign(document.createElement("p"), {textContent:`${st.text}, ausser der Gegner bezahlt ${st.cost}.`}));
+          const row = document.createElement("div"); row.className = "row";
+          row.append(btn("Nicht bezahlt: ausführen", () => done("go"), "primary"), btn(`${opp.length === 1 ? opp[0].name : "Gegner"} hat bezahlt`, () => done("paid"), "small"));
+          if(st.may) row.append(btn("Nicht ausführen", () => done("no"), "small"));
+          box.append(row);
+        });
+        if(r === "go") await runSteps(st.sub.length ? st.sub : [{t:"manual", text:st.text}], src, ctx);
+        else if(r === "paid") act(`${src.n}: Gegner bezahlt ${st.cost}`);
+        break;
+      }
+      case "forPlayer": {
+        let pid = me.id;
+        if(st.who !== "each player"){ const t = await pickTarget(`${src.n}: welcher Spieler?`, st.who === "target opponent" ? "target opponent" : "target player", false); if(!t) break; pid = t.pid; }
+        if(pid === me.id || st.who === "each player"){ if(st.sub.length) await runSteps(st.sub, src, ctx); else manual.push(st.text); }
+        if(pid !== me.id || st.who === "each player"){ act(`${src.n}: ${st.who === "each player" ? "jeder andere Spieler" : oppByPid(pid)} – ${st.text}`); toast(`<b>${esc(src.n)}:</b> ${esc(st.text)} (macht der Mitspieler selbst)`); }
+        break;
+      }
+      case "note": manual.push(st.text); break;
+      case "manual": manual.push(st.text); break;
+    }
+    commit();
+  }
+  await manualNote(src, manual);
+  commit();
+}
+function describeStep(st){
+  const T = {draw:"Karten ziehen", discard:"abwerfen", gain:"Leben erhalten", damage:"Schaden zufügen", targetAct:st.act, search:"Bibliothek durchsuchen", dig:"oberste Karten ansehen", token:"Token erzeugen", gyReturn:"aus dem Friedhof holen", sacOther:"etwas opfern", selfCounter:"Marke legen", targetCounter:"Marke legen", mill:"mahlen", handTop:"Karten zurücklegen"};
+  if(st.src) return st.src;
+  return `${T[st.t] || st.t}${st.n ? " (" + st.n + ")" : ""}${st.who ? " – " + st.who : ""}${st.what ? " – " + st.what : ""}`;
+}
+/* Token: bekannte Token aus Scryfall, sonst aus dem Text gebaut */
+const LOCAL_TOKENS = {
+  treasure: {n:"Treasure", type:"Token Artifact — Treasure", o:"{T}, Sacrifice this token: Add one mana of any color."},
+  food: {n:"Food", type:"Token Artifact — Food", o:"{2}, {T}, Sacrifice this token: You gain 3 life."},
+  clue: {n:"Clue", type:"Token Artifact — Clue", o:"{2}, Sacrifice this token: Draw a card."},
+  blood: {n:"Blood", type:"Token Artifact — Blood", o:"{1}, {T}, Discard a card, Sacrifice this token: Draw a card."},
+  map: {n:"Map", type:"Token Artifact — Map", o:"{1}, {T}, Sacrifice this token: Target creature you control explores. Activate only as a sorcery."},
+  powerstone: {n:"Powerstone", type:"Token Artifact — Powerstone", o:"{T}: Add {C}. This mana can't be spent to cast a nonartifact spell."}
+};
+async function makeTokens(st, src, ctx){
+  let n = st.n === "that many" ? (ctx.much ?? 1) : nWord(st.n, ctx);
+  if(n == null){ n = await askNumber(`${src.n}: Wie viele Token?`, st.desc); ctx.X = n; }
+  if(!n) return;
+  const desc = st.desc.toLowerCase();
+  const key = Object.keys(LOCAL_TOKENS).find(k => new RegExp(`\\b${k}\\b`, "i").test(desc));
+  const tk = (src.tk || []).find(t => String(t.n).toLowerCase().split(" ").some(w => w.length > 2 && desc.includes(w)));
+  if(tk && !key){ await createTokenFromId(tk.id, tk.n, n, src); if(st.tapped) S.bf.slice(-n).forEach(c => c.tap = true); return; }
+  let t;
+  if(key) t = {...LOCAL_TOKENS[key]};
+  else {
+    const m = desc.match(/^(\d+|x)\/(\d+|x) (.*?)(?: (artifact|enchantment))? creature$/i) || desc.match(/^(\d+|x)\/(\d+|x) (.+)$/i);
+    if(m){
+      const words = m[3].split(" ");
+      const colors = words.filter(w => COLW[w] || w === "colorless");
+      const types = words.filter(w => !COLW[w] && w !== "colorless" && w !== "and" && w !== "creature").map(w => w[0].toUpperCase() + w.slice(1));
+      const pw = m[1] === "x" ? (ctx.X || 0) : +m[1], tg = m[2] === "x" ? (ctx.X || 0) : +m[2];
+      t = {n: types.filter(x => !/^(Artifact|Enchantment)$/.test(x)).join(" ") || "Token", type:`Token ${m[4] ? m[4][0].toUpperCase() + m[4].slice(1) + " " : ""}Creature — ${types.filter(x => !/^(Artifact|Enchantment)$/.test(x)).join(" ")}`, pw, tg,
+        kw: (st.extra.match(/\b(flying|haste|vigilance|trample|lifelink|deathtouch|menace|reach|first strike)\b/gi) || []).map(k => k[0].toUpperCase() + k.slice(1)), o: st.extra ? st.extra : "", mc: colors.map(cl => `{${COLW[cl] || ""}}`).join("")};
+    }
+  }
+  if(!t){ await manualNote(src, [`Token erzeugen: ${n}× ${st.desc}. Nutze dafür «Token» oben.`]); return; }
+  for(let i = 0; i < n; i++){ const c = newCard({...t, tok:true}); if(st.tapped) c.tap = true; S.bf.push(c); markOnMove(c, null, "bf"); }
+  act(`${src.n}: erzeugt ${n}× ${t.n}`);
+  commit();
+}
+/* Ad Nauseam: so lange Karten nehmen, wie du willst */
+function adNauseam(src){
+  return abilModal(`${src.n}`, (box, done) => {
+    const info = document.createElement("p"); const last = document.createElement("div"); last.className = "row";
+    let taken = 0, lost = 0;
+    const paint = () => { info.textContent = `Genommen: ${taken} Karte(n), ${lost} Leben verloren. Leben jetzt ${S.life}.`; };
+    const next = btn("Nächste Karte nehmen", () => {
+      if(!S.library.length){ toast("Die Bibliothek ist leer."); return; }
+      const c = S.library.shift(); S.hand.push(c); taken++; const mv = c.cmc || 0; lost += mv; S.life -= mv;
+      act(`${src.n}: deckt ${c.n} auf (Manawert ${mv}) und nimmt sie auf die Hand (Leben ${S.life})`);
+      last.innerHTML = ""; const el = cardEl(c, true, "hand"); el.style.setProperty("--w", "90px"); last.append(el);
+      paint(); commit();
+    }, "primary");
+    paint();
+    box.append(info, last, next, btn("Aufhören", () => done(true), "small"));
+  });
+}
+/* ---------- Auslöser verteilen ---------- */
+function trigMatches(ab, src, ev){
+  const SELF = selfPat(src);
+  const cond = ab.cond;
+  if(ev.kind === "phase"){
+    const m = cond.match(/^the beginning of (your|each|each opponent's|the|each player's)? ?(upkeep|end step|combat on your turn|each combat|draw step|precombat main phase|first main phase)/i);
+    if(!m) return false;
+    const whose = (m[1] || "").toLowerCase(), ph = m[2].toLowerCase();
+    const map = {"upkeep":"upkeep", "end step":"end", "combat on your turn":"combat", "each combat":"combat", "draw step":"draw", "precombat main phase":"main", "first main phase":"main"};
+    if(map[ph] !== ev.phase) return false;
+    if(/combat on your turn/.test(ph) && !ev.mine) return false;
+    if(whose === "your" && !ev.mine) return false;
+    if(whose === "each opponent's" && ev.mine) return false;
+    return true;
+  }
+  if(ev.kind === "oppCast"){
+    const m = cond.match(/^an opponent casts (?:their first |a |an )?(.*?)\s*spell(?: each turn)?$/i);
+    if(!m || (m[1] && !cardFilter(m[1])(ev.c))) return false;
+    if(/their first/i.test(cond)){ const k = `${src.u}|${turnKey()}|${ev.pid || "x"}`; src._firstSeen = src._firstSeen || {}; if(src._firstSeen[k]) return false; src._firstSeen[k] = true; }
+    return true;
+  }
+  if(ev.kind === "oppDraw") return /^an opponent draws a card/i.test(cond);
+  if(ev.kind === "castSelf") return /^you cast this spell$/i.test(cond) && ev.c === src;
+  if(ev.kind === "enter" || ev.kind === "die" || ev.kind === "attack" || ev.kind === "cast"){
+    if(ev.opp){
+      if(/\b(you control|under your control)\b/i.test(cond) || new RegExp(`^${SELF}\\b`, "i").test(cond)) return false;
+      return condFires(cond.replace(/\s*under an opponent's control/i, "").replace(/\s*an opponent controls/i, ""), src, ev);
+    }
+    if(/under an opponent's control|an opponent controls/i.test(cond)) return false;
+    return condFires(cond, src, ev);
+  }
+  return false;
+}
+/* Bedingung nach dem Komma: «if you gained 3 or more life this turn, …» */
+function interveningIf(text, src){
+  const m = text.match(/^if (.+?), (.+)$/i); if(!m) return {ok:true, text};
+  const c = m[1].toLowerCase(); let ok = null;
+  let k;
+  if((k = c.match(/^you gained (\d+|one|two|three) or more life this turn$/))) ok = lifeGainedThisTurn() >= nWord(k[1]);
+  else if(/^you gained life this turn$/.test(c)) ok = lifeGainedThisTurn() > 0;
+  else if((k = c.match(/^you control (\w+) or more (.+)$/))) ok = S.bf.filter(x => !x.fd && descMatch(k[2].replace(/s$/, ""), x)).length >= (nWord(k[1]) || 0);
+  else if((k = c.match(/^you control an? (.+)$/))) ok = S.bf.some(x => !x.fd && x !== src && descMatch(k[1], x));
+  else if(/^it's your turn$/.test(c)) ok = TURN.active === me.id;
+  else if(/^it's not your turn$/.test(c)) ok = TURN.active !== me.id;
+  else if((k = c.match(/^you have (\d+) or more life$/))) ok = S.life >= +k[1];
+  else if((k = c.match(/^you have (\d+) or less life$/))) ok = S.life <= +k[1];
+  else if((k = c.match(/^there are (\w+) or more cards in your graveyard$/))) ok = S.gy.length >= (nWord(k[1]) || 0);
+  return {ok, text:m[2], cond:m[1]};
+}
+/* Vorgemerkte Effekte: «at the beginning of the next end step» */
+function runDelayed(kind, myTurn){
+  const list = Array.isArray(S.delayed) ? S.delayed : [];
+  const due = list.filter(d => d.when === kind && (!d.mineOnly || myTurn));
+  if(!due.length) return;
+  S.delayed = list.filter(d => !due.includes(d));
+  due.forEach(d => {
+    if(d.action === "draw"){ draw(1); act(`${d.src}: zieht die vorgemerkte Karte`); return; }
+    const f = findCard(d.u); if(!f) return;
+    if(d.action === "hand"){ f.c.fd = false; moveCard(d.u, "hand"); act(`${d.src}: ${f.c.n} kommt auf die Hand`); }
+    else if(d.action === "sacrifice" && f.z === "bf"){ moveCard(d.u, "gy"); act(`${d.src}: opfert ${f.c.n}`); }
+    else if(d.action === "exile" && f.z === "bf"){ moveCard(d.u, "ex"); act(`${d.src}: verbannt ${f.c.n}`); }
+    else if(d.action === "bounce" && f.z === "bf"){ moveCard(d.u, "hand"); act(`${d.src}: ${f.c.n} geht auf die Hand`); }
+  });
+  commit();
+}
+function lifeGainedThisTurn(){ const k = `${TURN.n}|${TURN.active}`; return S.lifeGainKey === k ? (S.lifeGainTurn || 0) : 0; }
+function noteLifeGain(n){ const k = `${TURN.n}|${TURN.active}`; if(S.lifeGainKey !== k){ S.lifeGainKey = k; S.lifeGainTurn = 0; } S.lifeGainTurn += n; }
+function abilEvent(ev, extraSrc){
+  if(!abilAuto()) return;
+  const srcs = S.bf.filter(c => !c.fd);
+  (extraSrc || []).forEach(c => { if(c && !srcs.includes(c)) srcs.push(c); });
+  const fire = [];
+  srcs.forEach(src => parseAbilities(src).forEach(ab => {
+    if(ab.kind !== "trig") return;
+    if(trigMatches(ab, src, ev)) fire.push({src, ab});
+  }));
+  fire.forEach(({src, ab}) => queued(() => runTrigger(src, ab, ev)));
+  if(ev.kind === "enter" && ev.c && ev.c.evoked && !ev.opp){ queued(async () => { if(S.bf.includes(ev.c)){ moveCard(ev.c.u, "gy"); act(`opfert ${ev.c.n} (Evoke)`); commit(); } }); }
+}
+async function chooseModes(src, modal){
+  const upTo = /up to|one or more|any number/.test(modal.n);
+  const max = /one or more|any number/.test(modal.n) ? modal.modes.length : (nWord(modal.n.replace("up to ", "")) || 1);
+  return abilModal(`${src.n}: ${upTo ? "bis zu " : ""}${max} Modus${max > 1 ? "/Modi" : ""} wählen`, (box, done) => {
+    const chosen = new Set();
+    const ok = btn("Ausführen", () => done(modal.modes.filter((_, i) => chosen.has(i))), "primary");
+    const paint = () => { ok.disabled = upTo ? false : chosen.size !== max; };
+    modal.modes.forEach((m, i) => {
+      const b = btn(m, () => { if(chosen.has(i)) chosen.delete(i); else if(chosen.size < max) chosen.add(i); b.classList.toggle("primary", chosen.has(i)); paint(); }, "small");
+      b.style.textAlign = "left"; b.style.whiteSpace = "normal"; box.append(b);
+    });
+    paint();
+    box.append(ok, btn("Abbrechen", () => done(null), "small"));
+  });
+}
+async function runAbility(src, ab, ctx, text){
+  const t = text != null ? text : ab.text;
+  if(t) await runSteps(parseSteps(t, src), src, ctx);
+  if(ab.modal && ab.modal.modes.length){
+    const modes = await chooseModes(src, ab.modal);
+    for(const m of modes || []){ act(`${src.n}: Modus «${m.slice(0, 80)}»`); await runSteps(parseSteps(m, src), src, ctx); }
+  }
+}
+async function runTrigger(src, ab, ev){
+  const iff = interveningIf(ab.text, src);
+  if(iff.ok === false){ act(`${src.n}: Bedingung nicht erfüllt (${iff.cond})`); return; }
+  const steps = parseSteps(iff.text, src);
+  if(!steps.some(s => s.t !== "skip") && !(ab.modal && ab.modal.modes.length)) return;
+  if(iff.ok === null){
+    const go = await abilModal(`${src.n} löst aus`, (box, done) => {
+      box.append(Object.assign(document.createElement("p"), {textContent: ab.line}));
+      box.append(Object.assign(document.createElement("p"), {className:"stat", textContent:`Ist die Bedingung erfüllt: «${iff.cond}»?`}));
+      const r = document.createElement("div"); r.className = "row"; r.append(btn("Ja, ausführen", () => done(true), "primary"), btn("Nein", () => done(false), "small")); box.append(r);
+    });
+    if(!go) return;
+  }
+  act(`${src.n} löst aus: ${ab.line.slice(0, 140)}`);
+  await runAbility(src, ab, {much: ev.much}, iff.text);
+}
+/* ---------- Aktivierte Fähigkeiten, Loyalität, Kartenmenü ---------- */
+async function payAbilityCost(c, cost, opts = {}){
+  // gibt true zurück, wenn bezahlt
+  const mana = (cost.match(/\{(?!T\}|Q\}|E\})[^}]+\}/g) || []).join("");
+  if(/\{T\}/.test(cost) && c.tap){ toast(`${esc(c.n)} ist schon getappt.`); return false; }
+  const lifeM = cost.match(/pay (\d+) life/i);
+  const eM = (cost.match(/\{E\}/g) || []).length;
+  if(eM && marksOf().E < eM){ toast(`Zu wenig Energie (${marksOf().E} von ${eM}).`); return false; }
+  const rc = cost.match(/remove (an?|one|two|three|\d+) (\S+) counters? from/i);
+  if(rc && (c.c || 0) < (nWord(rc[1]) || 1)){ toast(`${esc(c.n)} hat zu wenig Marken.`); return false; }
+  const sacOther = cost.match(/sacrifice (an?|one|two|three) ([^,]+)/i);
+  let victims = [];
+  if(sacOther && !new RegExp(`sacrifice (${selfPat(c)}|this \\w+)`, "i").test(cost)){
+    victims = await pickCards(`${c.n}: opfere ${sacOther[2]}`, S.bf.filter(x => x !== c && cardFilter(sacOther[2])(x)), nWord(sacOther[1]) || 1, {none:"Abbrechen"});
+    if(victims.length < (nWord(sacOther[1]) || 1)) return false;
+  }
+  const discM = cost.match(/discard (an?|one|two) ([^,]*?)cards?/i);
+  let disc = [];
+  if(discM){
+    disc = await pickCards(`${c.n}: abwerfen`, S.hand.filter(x => x !== c && cardFilter(discM[2] || "card")(x)), nWord(discM[1]) || 1, {none:"Abbrechen"});
+    if(disc.length < (nWord(discM[1]) || 1)) return false;
+  }
+  const exM = cost.match(/exile (an?|one) (.+?) cards? from your (hand|graveyard)/i);
+  let exiled = [];
+  if(exM){
+    const zone = exM[3] === "hand" ? S.hand : S.gy;
+    exiled = await pickCards(`${c.n}: ins Exil (${exM[2]})`, zone.filter(x => x !== c && cardFilter(exM[2])(x)), 1, {none:"Abbrechen"});
+    if(!exiled.length) return false;
+  }
+  if(mana && !opts.free){ if(!(await payFor({n:`${c.n}: Fähigkeit`, mc:mana, cmc:0, type:"Ability", o:""}))) return false; }
+  if(/\{T\}/.test(cost)){ c.tap = true; c.mtap = null; }
+  if(/\{Q\}/.test(cost)) c.tap = false;
+  if(lifeM) S.life -= +lifeM[1];
+  if(eM) marksOf().E -= eM;
+  if(rc) c.c = Math.max(0, (c.c || 0) - (nWord(rc[1]) || 1));
+  victims.forEach(v => { moveCard(v.u, "gy"); act(`opfert ${v.n}`); });
+  disc.forEach(v => { moveCard(v.u, "gy"); act(`wirft ${v.n} ab`); });
+  exiled.forEach(v => { moveCard(v.u, "ex"); act(`legt ${v.n} ins Exil`); });
+  if(new RegExp(`sacrifice (${selfPat(c)}|this \\w+)`, "i").test(cost)){ moveCard(c.u, "gy"); act(`opfert ${c.n}`); }
+  if(new RegExp(`exile (${selfPat(c)}|this card)`, "i").test(cost) && !exM){ moveCard(c.u, "ex"); }
+  return {victims};
+}
+async function activateAbility(c, ab){
+  const paid = await payAbilityCost(c, ab.cost); if(!paid) return;
+  act(`aktiviert ${c.n}: ${ab.text.slice(0, 120)}`);
+  const ctx = {}; if(paid.victims && paid.victims[0]) ctx.much = power(paid.victims[0]);
+  await runAbility(c, ab, ctx);
+}
+function turnKey(){ return `${TURN.n}|${TURN.active}`; }
+async function activateLoyalty(c, ab){
+  if(c.loyUsed === turnKey() && TURN.active){ toast(`${esc(c.n)} hat diesen Zug schon eine Loyalitätsfähigkeit benutzt.`); return; }
+  let v = ab.cost;
+  let n;
+  if(/X/.test(v)){ const x = await askNumber(`${c.n}: Wert für X`, ab.line); if(x == null) return; n = v.startsWith("-") ? -x : x; }
+  else n = parseInt(v, 10);
+  if((c.c || 0) + n < 0){ toast(`${esc(c.n)} hat nur ${c.c || 0} Loyalität.`); return; }
+  c.c = (c.c || 0) + n; c.loyUsed = turnKey();
+  act(`${c.n}: ${n >= 0 ? "+" : ""}${n} (Loyalität ${c.c}): ${ab.text.slice(0, 120)}`);
+  commit();
+  await runAbility(c, ab, {X: /X/.test(v) ? Math.abs(n) : null});
+  if(S.bf.includes(c) && (c.c || 0) <= 0){ moveCard(c.u, "gy"); act(`${c.n} hat keine Loyalität mehr und kommt in den Friedhof`); commit(); }
+}
+function abilMenuItems(c, zone){
+  const items = [];
+  const abs = parseAbilities(c);
+  const short = t => t.length > 70 ? t.slice(0, 68) + " …" : t;
+  if(zone === "bf" && !c.fd){
+    abs.filter(a => a.kind === "loy").forEach(a => items.push({l:`${a.cost.startsWith("-") ? "−" + a.cost.slice(1) : a.cost === "0" ? "0" : (a.cost.startsWith("+") ? a.cost : "+" + a.cost)}: ${short(a.text)}`, f:() => queued(() => activateLoyalty(c, a))}));
+    abs.filter(a => a.kind === "act" && !/\{E\}/.test(a.cost)).forEach(a => items.push({l:`Fähigkeit: ${short(a.cost + ": " + a.text)}`, f:() => queued(() => activateAbility(c, a))}));
+    abs.filter(a => a.kind === "trig" && /deals (combat )?damage|blocks|becomes (blocked|tapped|the target|untapped)|leaves (your graveyard|the battlefield)|you discard|you draw|you sacrifice|turned face up|isn't blocked|you cycle|you activate|counters? (is|are) put|you scry|you surveil|explores|transforms|you expend|loses life|you search|attacks and|is dealt damage/i.test(a.cond))
+      .forEach(a => items.push({l:`Auslösen: ${short(a.cond)}`, f:() => queued(() => runTrigger(c, a, {kind:"manual"}))}));
+    abs.filter(a => a.kind === "equip").forEach(a => items.push({l:`Ausrüsten ${a.cost}`, f:() => queued(async () => { const t = await pickTarget(`${c.n} ausrüsten an …`, "target creature you control", false); if(!t) return; if(!(await payFor({n:`Ausrüsten ${c.n}`, mc:a.cost, type:"Ability"}))) return; c.eq = t.card.u; act(`rüstet ${t.card.n} mit ${c.n} aus`); commit(); })}));
+  }
+  if(zone === "hand"){
+    abs.filter(a => a.kind === "cycling").forEach(a => items.push({l:`Umwandeln (Cycling ${a.cost})`, f:() => queued(async () => {
+      const life = a.cost.match(/pay (\d+) life/i);
+      if(life){ S.life -= +life[1]; } else if(!(await payFor({n:`Cycling ${c.n}`, mc:a.cost, type:"Ability"}))) return;
+      moveCard(c.u, "gy"); act(`wandelt ${c.n} um`); draw(1);
+      abilEvent({kind:"cycle", c});
+    })}));
+    abs.filter(a => a.kind === "evoke").forEach(a => items.push({l:`Mit Evoke wirken (${a.cost})`, f:() => queued(async () => {
+      const mana = /^\{/.test(a.cost) ? a.cost.replace(/\s.*$/, "") : "";
+      if(!mana){ const paid = await payAbilityCost(c, a.cost, {free:true}); if(!paid) return; }
+      c.payMc = mana; c.evoked = true;
+      await play(c.u);
+      delete c.payMc;
+    })}));
+  }
+  if(zone === "gy"){
+    abs.filter(a => a.kind === "flashback").forEach(a => items.push({l:`Mit Flashback wirken (${a.cost})`, f:() => queued(async () => {
+      const mana = (a.cost.match(/\{[^}]+\}/g) || []).join("");
+      if(mana && !(await payFor({n:`Flashback ${c.n}`, mc:mana, type:"Ability"}))) return;
+      if(!mana){ const paid = await payAbilityCost(c, a.cost, {free:true}); if(!paid) return; }
+      act(`wirkt ${c.n} mit Flashback`); markOnCast(c);
+      moveCard(c.u, "ex");
+      await abilSpellResolve(c);
+    })}));
+  }
+  return items;
+}
+/* Zaubereffekte beim Verrechnen */
+async function abilSpellResolve(c){
+  if(!abilAuto() || !c) return;
+  const abs = parseAbilities(c).filter(a => a.kind === "spell");
+  if(!abs.length) return;
+  const ctx = {X: c.lastX ?? null, much: typeof LAST_E_PAID === "number" ? LAST_E_PAID : undefined};
+  for(const ab of abs) await runAbility(c, ab, ctx);
+}
+/* Planeswalker: Startloyalität */
+async function pwEnter(c){
+  if(!/Planeswalker/.test(c.type || "") || c.fd) return;
+  let l = c.loy != null ? +c.loy : null;
+  if(l == null || !Number.isFinite(l)) l = await askNumber(`${c.n}: Startloyalität`, "Die Startloyalität steht unten rechts auf der Karte. (Lade das Deck neu, dann kennt die App sie selbst.)");
+  if(l == null) return;
+  c.c = l; c.cn = "loyalty"; act(`${c.n} kommt mit ${l} Loyalität ins Spiel`); commit();
+}
+/* Gegner: Zauber gewirkt (Stapel) und Karten gezogen */
+const seenOppStack = new Set();
+function oppStackScan(){
+  (STACK || []).forEach(it => {
+    if(!it || seenOppStack.has(it.id)) return;
+    seenOppStack.add(it.id);
+    if(it.owner && it.owner !== me.id) abilEvent({kind:"oppCast", c:{n:it.n, type:it.type, mc:it.mc, cmc:it.cmc}, opp:true});
+  });
+}
+const OPP_HAND = {};
+function oppDrawScan(){
+  Object.entries(others).forEach(([id, o]) => {
+    if(id === me.id || !o) return;
+    const h = Number(o.handN) || 0, l = Number(o.libN) || 0, prev = OPP_HAND[id];
+    const key = `${TURN.n}|${TURN.active}`;
+    OPP_HAND[id] = {h, l, key, first: prev && prev.key === key ? prev.first : false};
+    if(!prev) return;
+    const drew = Math.min(Math.max(0, h - prev.h), Math.max(0, prev.l - l));
+    for(let i = 0; i < drew; i++){
+      // die erste Karte im eigenen Ziehschritt zählt nicht (Orcish Bowmasters)
+      if(TURN.active === id && !OPP_HAND[id].first && (TURN.phase || 0) <= 2){ OPP_HAND[id].first = true; continue; }
+      abilEvent({kind:"oppDraw", opp:true, pid:id});
+    }
+  });
+}
+
 /* ---------- Grafik: Animationen, Pfeile, Effekte ---------- */
 const SVGNS = "http://www.w3.org/2000/svg";
 const cssEsc = s => (window.CSS && CSS.escape) ? CSS.escape(String(s)) : String(s).replace(/[^a-zA-Z0-9_-]/g, ch => "\\" + ch);
@@ -3880,7 +4834,7 @@ function lifeFloats(){
     } else if(!(id in lastLife)) lifeLogAdd(id, v.name, v.life);
     lastLife[id] = v.life;
   }
-  oppBoardScan();
+  oppBoardScan(); oppStackScan(); oppDrawScan();
 }
 /* Ersatzeffekte beim Lebensgewinn: Rhox Faithmender, Boon Reflection, Alhammarret's Archive (doppelt),
    Angel of Vitality, Leyline of Hope (+1). Gibt zurück, wie viel Leben zusätzlich dazukommt. */
@@ -3909,8 +4863,8 @@ function oppBoardScan(){
     OPP_BF[id] = now;
     if(!prev) return;
     const gyU = new Set((Array.isArray(o.gy) ? o.gy : []).map(c => c && c.u));
-    now.forEach((c, u) => { if(!prev.has(u) && !c.fd) lifeEvent("enter", 1, c, true); });
-    prev.forEach((c, u) => { if(!now.has(u) && !c.fd && (gyU.has(u) || c.tok)) lifeEvent("die", 1, c, true); });
+    now.forEach((c, u) => { if(!prev.has(u) && !c.fd){ lifeEvent("enter", 1, c, true); abilEvent({kind:"enter", c, opp:true}); } });
+    prev.forEach((c, u) => { if(!now.has(u) && !c.fd && (gyU.has(u) || c.tok)){ lifeEvent("die", 1, c, true); abilEvent({kind:"die", c, opp:true}); } });
   });
 }
 function playerLifeEl(id){
@@ -4053,7 +5007,7 @@ const MATS = {
   blau:  {name:"Ozean", bg:"radial-gradient(120% 90% at 50% 0%, #1f4a5e 0%, #12293a 75%)"}
 };
 const SLEEVES = ["#7a5230", "#2f5d8a", "#8a2f3c", "#2f7a52", "#5b3f8a", "#b8892f", "#2b2b2b", "#d9d4c5"];
-let LOOK = Object.assign({mat:"filz", sleeve:"#7a5230", avatar:"", avatarName:"", sound:false, table:"auto", autoPool:true, autoPay:true, autoMarks:true, autoLife:true, autoSaga:true}, LS.get("kt-look", {}));
+let LOOK = Object.assign({mat:"filz", sleeve:"#7a5230", avatar:"", avatarName:"", sound:false, table:"auto", autoPool:true, autoPay:true, autoMarks:true, autoLife:true, autoSaga:true, autoAbil:true}, LS.get("kt-look", {}));
 function saveLook(){ LS.set("kt-look", LOOK); }
 const okColor = c => typeof c === "string" && /^#[0-9a-f]{6}$/i.test(c);
 const matBg = key => (MATS[key] || MATS.filz).bg;
@@ -4114,7 +5068,10 @@ function openLookDialog(){
     <h3>Lebens-Auslöser</h3>
     <label class="row stat"><input type="checkbox" id="autoLifePick"> Dina, Essence Warden, Rhox Faithmender, Sanguine Bond, Blood Artist und ähnliche Karten automatisch auslösen</label>
     <h3>Sagas</h3>
-    <label class="row stat"><input type="checkbox" id="autoSagaPick"> Kapitelmarken automatisch setzen und Kapitel anzeigen</label>`);
+    <label class="row stat"><input type="checkbox" id="autoSagaPick"> Kapitelmarken automatisch setzen und Kapitel anzeigen</label>
+    <h3>Kartenfähigkeiten</h3>
+    <label class="row stat"><input type="checkbox" id="autoAbilPick"> Auslöser und Zaubereffekte aus dem Kartentext ausführen (Ziele, Suchen, Ziehen, Token …)</label>`);
+  $("#autoAbilPick").checked = LOOK.autoAbil !== false; $("#autoAbilPick").onchange = () => { LOOK.autoAbil = $("#autoAbilPick").checked; saveLook(); };
   $("#autoSagaPick").checked = LOOK.autoSaga !== false; $("#autoSagaPick").onchange = () => { LOOK.autoSaga = $("#autoSagaPick").checked; saveLook(); };
   $("#autoLifePick").checked = LOOK.autoLife !== false; $("#autoLifePick").onchange = () => { LOOK.autoLife = $("#autoLifePick").checked; saveLook(); };
   $("#autoMarksPick").checked = LOOK.autoMarks !== false; $("#autoMarksPick").onchange = () => { LOOK.autoMarks = $("#autoMarksPick").checked; saveLook(); };
@@ -4298,7 +5255,7 @@ function historyAdd(win){
 /* ---------- Automatische Updates ---------- */
 // Liegt die App im Web, prüft sie regelmässig version.json im selben Ordner und lädt sich bei einer neuen Version neu.
 // Alles Wichtige (Spielstand, Deck, Tisch) liegt im Browser-Speicher und ist nach dem Neuladen wieder da.
-const APP_VERSION = "2026.11.06-9";
+const APP_VERSION = "2026.11.07-1";
 const ONLINE = /^https?:$/.test(location.protocol);
 let updPending = null, updTimer = null, updSnoozeUntil = 0;
 function busyForUpdate(){ return botBusy || (!$("#modal").hidden && modalState && ["block","deck"].includes(modalState.kind)); }
