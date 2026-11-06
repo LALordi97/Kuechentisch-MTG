@@ -460,6 +460,7 @@ function moveCard(u, to, where){
   const c = f.c, from = f.z, wasFd = c.fd;
   moveCardRaw(u, to, where);
   markOnMove(c, from, to, wasFd);
+  if(from === "bf" && to === "gy" && !wasFd) lifeEvent("die", 1, c);
 }
 function moveCardRaw(u, to, where){
   const f = findCard(u); if(!f) return;
@@ -2550,6 +2551,7 @@ function receiveHit(m){
     txt = applyHitToCard(c, m, false);
   } else if(m.kind === "poison"){ S.poison += amt; txt = `${amt} Giftmarke${amt > 1 ? "n" : ""} an ${me.name || "dich"} (jetzt ${S.poison})`; }
   else if(m.kind === "heal"){ S.life += amt; txt = `${me.name || "du"} erhält ${amt} Leben (jetzt ${S.life})`; }
+  else if(m.kind === "loss"){ S.life -= amt; txt = `${me.name || "du"} verliert ${amt} Leben (jetzt ${S.life})`; }
   else { S.life -= amt; txt = `${amt} Schaden an ${me.name || "dich"} (Leben ${S.life})`; }
   if(txt) sendLog({from:"", text: hitText(m, txt), sys:true});
   commit();
@@ -2561,6 +2563,7 @@ function receiveHitBot(m){
   if(m.card){ const c = BOT.bf.find(x => x.u === m.card); if(!c) return; txt = applyHitToCard(c, m, true); }
   else if(m.kind === "poison"){ BOT.poison += amt; txt = `${amt} Giftmarke(n) an die KI (jetzt ${BOT.poison})`; }
   else if(m.kind === "heal"){ BOT.life += amt; txt = `die KI erhält ${amt} Leben`; }
+  else if(m.kind === "loss"){ BOT.life -= amt; txt = `die KI verliert ${amt} Leben (Leben ${BOT.life})`; if(BOT.life <= 0) botLog(`verliert das Spiel (Leben ${BOT.life})`); }
   else { BOT.life -= amt; txt = `${amt} Schaden an die KI (Leben ${BOT.life})`; if(BOT.life <= 0) botLog(`verliert das Spiel (Leben ${BOT.life})`); }
   if(txt) sendLog({from:"", text: hitText(m, txt), sys:true});
   botChanged();
@@ -3038,9 +3041,9 @@ function condFires(cond, src, ev){
   if(anotherOnly && ev.c === src) return false;
   let m;
   if(ev.kind === "die"){
-    m = s.match(/^(?:another|a|an|one or more)\s+(.*?)\s*(creature|permanent|artifact|enchantment)s?(?:\s+you control)?\s+(?:dies|die|is put into a graveyard from the battlefield|are put into a graveyard from the battlefield)$/i);
+    m = s.match(/^(?:another|a|an|one or more)\s+(.*?)\s*(creature|permanent|artifact|enchantment|planeswalker)s?(?:\s+you control)?\s+(?:dies|die|is put into a graveyard from the battlefield|are put into a graveyard from the battlefield)$/i);
     if(!m) return false;
-    return descMatch(m[1] + " " + m[2], ev.c);
+    return (m[1] + " " + m[2]).split(/\s+or\s+/).some(x => descMatch(x, ev.c));
   }
   if(ev.kind === "enter"){
     m = s.match(/^(?:another|a|an|one or more)\s+(.*?)\s*(creature|artifact|enchantment|land|permanent|planeswalker)s?(?:\s+(?:card|token)s?)?(?:\s+you control)?(?:\s+with\s+(power|toughness|mana value)\s+(\d+)\s+or\s+(less|greater))?(?:\s+you control)?\s+enters?(?:\s+the battlefield)?(?:\s+under your control)?$/i);
@@ -3341,6 +3344,125 @@ function renderCompanion(){
   b.classList.toggle("ready", companionCanCast());
 }
 
+/* ---------- Lebens-Auslöser: Dina, Sanguine Bond, Exquisite Blood, Blood Artist … ---------- */
+// Die App merkt jede Lebensänderung (eigene und der Gegner) und prüft die eigenen Karten im Spiel auf
+// «Whenever you gain life», «Whenever an opponent loses life», «Whenever … dies» und führt einfache Folgen aus:
+// Gegner verlieren Leben, du erhältst Leben, eine +1/+1-Marke auf die Karte selbst.
+const LT_NUM = {a:1, an:1, one:1, two:2, three:3, four:4, five:5};
+function ltNum(s, much){
+  if(/^that much$/i.test(s) || /^x$/i.test(s)) return much;
+  if(/^\d+$/.test(s)) return +s;
+  return LT_NUM[String(s).toLowerCase()] ?? null;
+}
+/* Lebens-Auslöser einer Karte lesen */
+function lifeTriggers(c){
+  if(!c || !c.o) return [];
+  if(c._ltO === c.o && c._lt) return c._lt;
+  const out = [];
+  String(c.o).split("\n").forEach(raw => {
+    const line = raw.replace(/\([^)]*\)/g, "").replace(/\s+/g, " ").trim();
+    const h = line.match(/^Whenever ([^,]+), (.*)$/i); if(!h) return;
+    const cond = h[1].trim(), eff = h[2].trim();
+    let ev = null;
+    if(/^you gain life$/i.test(cond)) ev = "gain";
+    else if(/^an opponent loses life$/i.test(cond)) ev = "oppLose";
+    else if(/^you lose life$/i.test(cond)) ev = "lose";
+    else if(/\bdies?$/i.test(cond) || /put into a graveyard from the battlefield$/i.test(cond)) ev = "die";
+    if(!ev) return;
+    const first = eff.split(/\.\s+/)[0];
+    if(/\b(may|if|unless|choose|instead)\b/i.test(first)) return;
+    const fx = [];
+    let m;
+    if((m = first.match(/\beach opponent loses (\d+|one|two|three|that much|x) life/i))) fx.push({t:"oppAll", n:m[1]});
+    else if((m = first.match(/\b(?:target|that) (opponent|player) loses (\d+|one|two|three|that much|x) life/i))) fx.push({t:"oppOne", n:m[2]});
+    if((m = first.match(/\byou gain (\d+|one|two|three|that much|x) life/i))) fx.push({t:"gain", n:m[1]});
+    else if(/\byou gain life equal to the life lost this way/i.test(first)) fx.push({t:"gainLost"});
+    if((m = first.match(/\bput (an?|one|two|three|\d+) \+1\/\+1 counters? on (this creature|this permanent|it)\b/i)) && (m[2] !== "it" || /^(you gain life|an opponent loses life)$/i.test(cond)))
+      fx.push({t:"selfCounter", n:m[1]});
+    else if((m = first.match(new RegExp(`\\bput (an?|one|two|three|\\d+) \\+1\\/\\+1 counters? on ${selfPat(c)}\\b`, "i")))) fx.push({t:"selfCounter", n:m[1]});
+    if(!fx.length) return;
+    out.push({ev, cond, fx, text:line.slice(0, 160)});
+  });
+  c._ltO = c.o; c._lt = out;
+  return out;
+}
+const liveOpps = () => Object.entries(others).filter(([id, o]) => id !== me.id && o && !o.off && !o.left).map(([id, o]) => ({id, name: o.name || (id === "bot" ? "KI" : "Gegner")}));
+/* Schleifenschutz: Sanguine Bond + Exquisite Blood würden sonst ewig laufen */
+const LT_GUARD = {stamps:[], stopped:false};
+function ltGuard(){
+  const now = Date.now();
+  LT_GUARD.stamps = LT_GUARD.stamps.filter(t => now - t < 15000);
+  if(LT_GUARD.stopped) return false;
+  LT_GUARD.stamps.push(now);
+  if(LT_GUARD.stamps.length > 40){
+    LT_GUARD.stopped = true;
+    act("Endlosschleife bei den Lebens-Auslösern erkannt, die Automatik pausiert");
+    toast(`<b>Endlosschleife erkannt.</b> Die Lebens-Auslöser laufen ohne Ende (z. B. Sanguine Bond + Exquisite Blood). Die Automatik pausiert. Nach den Regeln endet so eine Schleife meist mit dem Sieg. <button class="small" id="ltResume">Weiter automatisch</button>`, 15000);
+    const b = document.getElementById("ltResume"); if(b) b.onclick = () => { LT_GUARD.stopped = false; LT_GUARD.stamps = []; $("#toast").hidden = true; };
+    return false;
+  }
+  return true;
+}
+function ltAutoOn(){ return LOOK.autoLife !== false; }
+/* Ein Gegner auswählen, wenn mehrere da sind */
+function pickOpponent(title){
+  const opps = liveOpps();
+  if(opps.length <= 1) return Promise.resolve(opps[0] ? opps[0].id : null);
+  return new Promise(res => {
+    modalState = {kind:"block"}; $("#modal").hidden = false;
+    const box = $("#modalBox"); box.innerHTML = "";
+    box.append(head(title));
+    const row = document.createElement("div"); row.className = "row";
+    opps.forEach(o => row.append(btn(o.name, () => { modalState = null; closeModal(); res(o.id); }, "primary")));
+    row.append(btn("Keiner", () => { closeModal(); res(null); }, "small"));
+    box.append(row);
+  });
+}
+async function runLifeFx(src, trig, much){
+  const parts = [];
+  let lost = 0;
+  for(const f of trig.fx){
+    if(f.t === "oppAll" || f.t === "oppOne"){
+      const n = ltNum(f.n, much); if(!n) continue;
+      const ids = f.t === "oppAll" ? liveOpps().map(o => o.id) : [await pickOpponent(`${src.n}: Welcher Gegner verliert ${n} Leben?`)].filter(Boolean);
+      ids.forEach(id => { hitOpponent(id, {kind:"loss", amount:n, src:src.n}); lost += n; });
+      if(ids.length) parts.push(f.t === "oppAll" ? `jeder Gegner verliert ${n} Leben` : `${(others[ids[0]] || {}).name || "Gegner"} verliert ${n} Leben`);
+    } else if(f.t === "gain" || f.t === "gainLost"){
+      const n = f.t === "gainLost" ? lost : ltNum(f.n, much); if(!n) continue;
+      S.life += n; parts.push(`du erhältst ${n} Leben`);
+    } else if(f.t === "selfCounter"){
+      const n = ltNum(f.n, much) || 1;
+      if(S.bf.includes(src)){ src.c = (src.c || 0) + n; parts.push(`+${n} Marke auf ${src.n}`); }
+    }
+  }
+  if(parts.length){ act(`${src.n}: ${parts.join(", ")}`); commit(); }
+}
+/* Ereignis verteilen; läuft entkoppelt vom Zeichnen */
+function lifeEvent(kind, amount, diedCard){
+  if(!ltAutoOn() || !amount) return;
+  const srcs = S.bf.filter(c => !c.fd);
+  if(diedCard && !srcs.includes(diedCard)) srcs.push(diedCard);
+  const todo = [];
+  srcs.forEach(src => lifeTriggers(src).forEach(tr => {
+    if(tr.ev !== kind) return;
+    if(kind === "die" && !condFires(tr.cond, src, {kind:"die", c:diedCard})) return;
+    todo.push({src, tr});
+  }));
+  if(!todo.length) return;
+  setTimeout(async () => {
+    for(const {src, tr} of todo){
+      if(!ltGuard()) return;
+      await runLifeFx(src, tr, amount);
+    }
+  }, 0);
+}
+/* Aus lifeFloats: Lebensänderung bei mir oder einem Gegner */
+function lifeChanged(id, delta){
+  if(!delta) return;
+  if(id === me.id){ if(delta > 0) lifeEvent("gain", delta); else lifeEvent("lose", -delta); }
+  else if(delta < 0) lifeEvent("oppLose", -delta);
+}
+
 /* ---------- Grafik: Animationen, Pfeile, Effekte ---------- */
 const SVGNS = "http://www.w3.org/2000/svg";
 const cssEsc = s => (window.CSS && CSS.escape) ? CSS.escape(String(s)) : String(s).replace(/[^a-zA-Z0-9_-]/g, ch => "\\" + ch);
@@ -3378,6 +3500,8 @@ function lifeFloats(){
   Object.entries(others).forEach(([id, o]) => cur[id] = {life: Number(o.life) || 0, el: playerLifeEl(id), name: o.name});
   for(const [id, v] of Object.entries(cur)){
     if(id in lastLife && lastLife[id] !== v.life){
+      // neues Spiel beim Gegner (Zug 0, wieder 20 oder 40 Leben) ist kein Lebensverlust
+      if(id === me.id || !(Number((others[id] || {}).turn) === 0 && (v.life === 20 || v.life === 40))) lifeChanged(id, v.life - lastLife[id]);
       if(v.el) floatNum(v.el, v.life - lastLife[id]);
       lifeLogAdd(id, v.name, v.life);
     } else if(!(id in lastLife)) lifeLogAdd(id, v.name, v.life);
@@ -3524,7 +3648,7 @@ const MATS = {
   blau:  {name:"Ozean", bg:"radial-gradient(120% 90% at 50% 0%, #1f4a5e 0%, #12293a 75%)"}
 };
 const SLEEVES = ["#7a5230", "#2f5d8a", "#8a2f3c", "#2f7a52", "#5b3f8a", "#b8892f", "#2b2b2b", "#d9d4c5"];
-let LOOK = Object.assign({mat:"filz", sleeve:"#7a5230", avatar:"", avatarName:"", sound:false, table:"auto", autoPool:true, autoPay:true, autoMarks:true}, LS.get("kt-look", {}));
+let LOOK = Object.assign({mat:"filz", sleeve:"#7a5230", avatar:"", avatarName:"", sound:false, table:"auto", autoPool:true, autoPay:true, autoMarks:true, autoLife:true}, LS.get("kt-look", {}));
 function saveLook(){ LS.set("kt-look", LOOK); }
 const okColor = c => typeof c === "string" && /^#[0-9a-f]{6}$/i.test(c);
 const matBg = key => (MATS[key] || MATS.filz).bg;
@@ -3581,7 +3705,10 @@ function openLookDialog(){
     <label class="row stat"><input type="checkbox" id="autoPoolPick"> Beim Tappen einer Manaquelle das Mana in den Pool legen</label>
     <label class="row stat"><input type="checkbox" id="autoPayPick"> Beim Wirken automatisch bezahlen und fehlendes Mana selbst tappen</label>
     <h3>Spielermarken</h3>
-    <label class="row stat"><input type="checkbox" id="autoMarksPick"> Energie, Erfahrung und Strahlung aus dem Kartentext automatisch zählen</label>`);
+    <label class="row stat"><input type="checkbox" id="autoMarksPick"> Energie, Erfahrung und Strahlung aus dem Kartentext automatisch zählen</label>
+    <h3>Lebens-Auslöser</h3>
+    <label class="row stat"><input type="checkbox" id="autoLifePick"> Dina, Sanguine Bond, Blood Artist und ähnliche Karten automatisch auslösen</label>`);
+  $("#autoLifePick").checked = LOOK.autoLife !== false; $("#autoLifePick").onchange = () => { LOOK.autoLife = $("#autoLifePick").checked; saveLook(); };
   $("#autoMarksPick").checked = LOOK.autoMarks !== false; $("#autoMarksPick").onchange = () => { LOOK.autoMarks = $("#autoMarksPick").checked; saveLook(); };
   $("#autoPoolPick").checked = LOOK.autoPool !== false; $("#autoPoolPick").onchange = () => { LOOK.autoPool = $("#autoPoolPick").checked; saveLook(); };
   $("#autoPayPick").checked = LOOK.autoPay !== false; $("#autoPayPick").onchange = () => { LOOK.autoPay = $("#autoPayPick").checked; saveLook(); renderPool(); };
@@ -3763,7 +3890,7 @@ function historyAdd(win){
 /* ---------- Automatische Updates ---------- */
 // Liegt die App im Web, prüft sie regelmässig version.json im selben Ordner und lädt sich bei einer neuen Version neu.
 // Alles Wichtige (Spielstand, Deck, Tisch) liegt im Browser-Speicher und ist nach dem Neuladen wieder da.
-const APP_VERSION = "2026.11.06-4";
+const APP_VERSION = "2026.11.06-5";
 const ONLINE = /^https?:$/.test(location.protocol);
 let updPending = null, updTimer = null, updSnoozeUntil = 0;
 function busyForUpdate(){ return botBusy || (!$("#modal").hidden && modalState && ["block","deck"].includes(modalState.kind)); }
