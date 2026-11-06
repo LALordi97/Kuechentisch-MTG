@@ -232,6 +232,12 @@ table.stats th{color:var(--muted);font-weight:500;font-size:12px;text-transform:
 .card.picked{outline:3px solid var(--brass);outline-offset:2px}
 .diglist{display:flex;flex-direction:column;gap:8px;max-height:60vh;overflow:auto}
 .digrow{align-items:center;gap:12px}
+.card.tokstack{box-shadow:4px 4px 0 -1px var(--felt),4px 4px 0 0 var(--line),8px 8px 0 -1px var(--felt),8px 8px 0 0 var(--line)}
+.stackbadge{position:absolute;left:4px;bottom:4px;z-index:3;display:flex;flex-direction:column;align-items:flex-start;gap:0;padding:2px 7px;border-radius:8px;
+  background:rgba(14,22,18,.88);color:#f3ead2;font:600 13px/1.15 var(--f-body);pointer-events:none;box-shadow:0 1px 3px rgba(0,0,0,.5)}
+.stackbadge b{font-family:var(--f-display);font-size:17px}
+.card.tapped .stackbadge{transform:rotate(-90deg);transform-origin:50% 50%;bottom:14px;left:2px}
+.stackbadge small{font-size:11px;color:#e9c547}
 .update-bar{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom, 0px));z-index:80;display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:center;background:var(--panel);border:1px solid var(--brass);border-radius:10px;padding:10px 14px;box-shadow:0 10px 30px rgba(0,0,0,.5);max-width:calc(100% - 32px)}
 .mybar{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center}
 .zones{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;margin-top:8px}
@@ -701,6 +707,40 @@ function makeDraggable(el, c, zone){
   });
 }
 
+/* Gleiche Token (Food, Treasure, 1/1 Soldat …) als Stapel mit Anzahl zeigen */
+function tokenGroups(list){
+  const out = [], byKey = new Map();
+  list.forEach(c => {
+    if(LOOK.groupTokens === false || !c || !c.tok || c.fd || c.groupOff){ out.push({members:[c]}); return; }
+    const k = [c.n, c.type, c.pw ?? "", c.tg ?? "", c.pwO ?? "", c.tgO ?? "", c.c || 0, (c.kw || []).join(","), c.flip ? 1 : 0].join("|");
+    let g = byKey.get(k);
+    if(!g){ g = {members:[]}; byKey.set(k, g); out.push(g); }
+    g.members.push(c);
+  });
+  return out;
+}
+function addStackBadge(el, members){
+  const n = members.length, t = members.filter(m => m.tap).length;
+  el.classList.add("tokstack");
+  const b = document.createElement("span"); b.className = "stackbadge";
+  b.innerHTML = `<b>${n}×</b>${t ? `<small>${t} getappt</small>` : ""}`;
+  b.title = `${n} gleiche Token, davon ${t} getappt`;
+  el.append(b);
+}
+function groupMenu(members){
+  const n = members.length, tapped = members.filter(m => m.tap), free = members.filter(m => !m.tap);
+  const rep = free[0] || members[0];
+  const items = [{t:`${n}× ${rep.n} (${tapped.length} getappt)`}];
+  if(free.length) items.push({l:"Einen tappen", f:() => toggleTap(free[0])});
+  if(tapped.length) items.push({l:"Einen enttappen", f:() => toggleTap(tapped[0])});
+  if(free.length > 1) items.push({l:`Alle ${free.length} tappen`, f:() => { free.forEach(m => { m.tap = true; m.mtap = null; }); act(`tappt ${free.length}× ${rep.n}`); commit(); }});
+  if(tapped.length > 1) items.push({l:`Alle ${tapped.length} enttappen`, f:() => { tapped.forEach(m => { m.tap = false; m.mtap = null; }); act(`enttappt ${tapped.length}× ${rep.n}`); commit(); }});
+  items.push({l:"Einen opfern / entfernen", f:() => { const m = tapped[0] || members[members.length - 1]; moveCard(m.u, "gy"); act(`opfert ${m.n}`); commit(); }});
+  items.push({l:"Alle entfernen", f:() => { members.slice().forEach(m => moveCard(m.u, "gy")); act(`entfernt ${n}× ${rep.n}`); commit(); }});
+  items.push({l:"Einen vom Stapel lösen", f:() => { const m = members[members.length - 1]; m.groupOff = true; m.x = (m.x || 0) + 30; m.y = (m.y || 0) + 30; commit(); }});
+  items.push("-");
+  return items.concat(cardMenu(rep, "bf").slice(1));
+}
 function renderMine(){
   $("#myName").textContent = me.name || "Du";
   $("#myLife").textContent = S.life;
@@ -721,13 +761,21 @@ function renderMine(){
   field.querySelectorAll(".card").forEach(e => e.remove());
   const {w, h} = cardSize(), W = fieldW();
   let placed = false;
-  S.bf.forEach(c => {
-    if(c.x == null || c.y == null){ autoPlace(c); placed = true; }
-    const el = cardEl(c, true, "bf");
-    el.style.left = Math.max(0, Math.min(c.x, W - w)) + "px";
-    el.style.top = Math.max(0, Math.min(c.y, FIELD_H - h)) + "px";
-    bindCard(el, e => toggleTap(c, e), e => openMenu(e, cardMenu(c, "bf")));
-    makeDraggable(el, c, "bf");
+  tokenGroups(S.bf).forEach(g => {
+    const first = g.members[0];
+    if(first.x == null || first.y == null){ autoPlace(first); placed = true; }
+    // Gruppe: alle liegen am Platz der ersten; angezeigt wird ein ungetappter, falls vorhanden
+    g.members.forEach(m => { if(m !== first){ m.x = first.x; m.y = first.y; } });
+    const c = g.members.find(m => !m.tap) || first;
+    const el = cardEl({...c, x:first.x, y:first.y}, true, "bf");
+    el.dataset.u = first.u;
+    el.style.left = Math.max(0, Math.min(first.x, W - w)) + "px";
+    el.style.top = Math.max(0, Math.min(first.y, FIELD_H - h)) + "px";
+    if(g.members.length > 1){
+      addStackBadge(el, g.members);
+      bindCard(el, e => { const free = g.members.find(m => !m.tap); toggleTap(free || g.members[g.members.length - 1], e); }, e => openMenu(e, groupMenu(g.members)));
+    } else bindCard(el, e => toggleTap(c, e), e => openMenu(e, cardMenu(c, "bf")));
+    makeDraggable(el, first, "bf");
     field.append(el);
   });
   if(placed) save();
@@ -801,7 +849,13 @@ function renderOpps(){
     [["Spielfeld", all.filter(c=>!isLand(c))], ["Länder", all.filter(isLand)]].forEach(([lab, cards]) => {
       const l = document.createElement("div"); l.className = "lane";
       if(o.mat && MATS[o.mat]) l.style.background = matBg(o.mat);
-      cards.forEach(c => { const el = cardEl(okColor(o.sleeve) ? {...c, sl:o.sleeve} : c, false, "bf"); bindCard(el, () => bigView(c), e => openMenu(e, oppCardMenu(id, c))); l.append(el); });
+      tokenGroups(cards).forEach(g => {
+        const c = g.members.find(m => !m.tap) || g.members[0];
+        const el = cardEl(okColor(o.sleeve) ? {...c, sl:o.sleeve} : c, false, "bf");
+        if(g.members.length > 1) addStackBadge(el, g.members);
+        bindCard(el, () => bigView(c), e => openMenu(e, oppCardMenu(id, c)));
+        l.append(el);
+      });
       if(!cards.length){ l.innerHTML = `<span class="muted" style="font-size:12px;padding:4px">${lab}: leer</span>`; }
       p.append(l);
     });
@@ -5027,7 +5081,7 @@ const MATS = {
   blau:  {name:"Ozean", bg:"radial-gradient(120% 90% at 50% 0%, #1f4a5e 0%, #12293a 75%)"}
 };
 const SLEEVES = ["#7a5230", "#2f5d8a", "#8a2f3c", "#2f7a52", "#5b3f8a", "#b8892f", "#2b2b2b", "#d9d4c5"];
-let LOOK = Object.assign({mat:"filz", sleeve:"#7a5230", avatar:"", avatarName:"", sound:false, table:"auto", autoPool:true, autoPay:true, autoMarks:true, autoLife:true, autoSaga:true, autoAbil:true}, LS.get("kt-look", {}));
+let LOOK = Object.assign({mat:"filz", sleeve:"#7a5230", avatar:"", avatarName:"", sound:false, table:"auto", autoPool:true, autoPay:true, autoMarks:true, autoLife:true, autoSaga:true, autoAbil:true, groupTokens:true}, LS.get("kt-look", {}));
 function saveLook(){ LS.set("kt-look", LOOK); }
 const okColor = c => typeof c === "string" && /^#[0-9a-f]{6}$/i.test(c);
 const matBg = key => (MATS[key] || MATS.filz).bg;
@@ -5089,8 +5143,11 @@ function openLookDialog(){
     <label class="row stat"><input type="checkbox" id="autoLifePick"> Dina, Essence Warden, Rhox Faithmender, Sanguine Bond, Blood Artist und ähnliche Karten automatisch auslösen</label>
     <h3>Sagas</h3>
     <label class="row stat"><input type="checkbox" id="autoSagaPick"> Kapitelmarken automatisch setzen und Kapitel anzeigen</label>
+    <h3>Token</h3>
+    <label class="row stat"><input type="checkbox" id="groupTokPick"> Gleiche Token stapeln und Anzahl zeigen</label>
     <h3>Kartenfähigkeiten</h3>
     <label class="row stat"><input type="checkbox" id="autoAbilPick"> Auslöser und Zaubereffekte aus dem Kartentext ausführen (Ziele, Suchen, Ziehen, Token …)</label>`);
+  $("#groupTokPick").checked = LOOK.groupTokens !== false; $("#groupTokPick").onchange = () => { LOOK.groupTokens = $("#groupTokPick").checked; saveLook(); renderAll(); };
   $("#autoAbilPick").checked = LOOK.autoAbil !== false; $("#autoAbilPick").onchange = () => { LOOK.autoAbil = $("#autoAbilPick").checked; saveLook(); };
   $("#autoSagaPick").checked = LOOK.autoSaga !== false; $("#autoSagaPick").onchange = () => { LOOK.autoSaga = $("#autoSagaPick").checked; saveLook(); };
   $("#autoLifePick").checked = LOOK.autoLife !== false; $("#autoLifePick").onchange = () => { LOOK.autoLife = $("#autoLifePick").checked; saveLook(); };
@@ -5275,7 +5332,7 @@ function historyAdd(win){
 /* ---------- Automatische Updates ---------- */
 // Liegt die App im Web, prüft sie regelmässig version.json im selben Ordner und lädt sich bei einer neuen Version neu.
 // Alles Wichtige (Spielstand, Deck, Tisch) liegt im Browser-Speicher und ist nach dem Neuladen wieder da.
-const APP_VERSION = "2026.11.07-2";
+const APP_VERSION = "2026.11.07-3";
 const ONLINE = /^https?:$/.test(location.protocol);
 let updPending = null, updTimer = null, updSnoozeUntil = 0;
 function busyForUpdate(){ return botBusy || (!$("#modal").hidden && modalState && ["block","deck"].includes(modalState.kind)); }

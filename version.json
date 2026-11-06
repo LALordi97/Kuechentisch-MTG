@@ -1,4 +1,4 @@
 {
-  "version": "2026.11.07-2",
-  "notes": "Korrigiert: Sheoldred, the Apocalypse und Great Hall of the Citadel (zwei verschiedene Farben)"
+  "version": "2026.11.07-3",
+  "notes": "Neu: Gleiche Token werden gestapelt, mit Anzahl und wie viele getappt sind"
 }
