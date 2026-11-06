@@ -2664,6 +2664,7 @@ function passTurn(){
 function onMyTurnStart(){
   S.turn = (S.turn || 0) + 1;
   if(S.turn === 1) pregameFirstTurnReminder();
+  setTimeout(sagaAdvanceAll, 0); // Sagas: Kapitelmarke nach dem Ziehen
   emptyPool("neuer Zug");
   S.bf.forEach(c => c.tap = false);
   const skipDraw = S.turn === 1 && TURN.starter === me.id;
@@ -2924,6 +2925,9 @@ const MARKS = {
   RAD: {name:"Strahlung", icon:"☢", uses:/\brad counter/i}
 };
 const MARK_ORDER = ["E", "XP", "RAD"];
+// «Dr. Crusher»: Punkt nach Abkürzungen ist kein Satzende
+const abbr = s => String(s).replace(/\b(Dr|Mr|Mrs|Ms|St|Lt|Cpt|Capt|Gen|Sgt)\. /g, "$1\u00a7 ");
+const unAbbr = s => String(s).replace(/\u00a7 /g, ". ");
 const NUMW = {a:1, an:1, one:1, two:2, three:3, four:4, five:5, six:6, seven:7, eight:8, nine:9, ten:10};
 const COLW = {white:"W", blue:"U", black:"B", red:"R", green:"G"};
 const reEscM = s => String(s).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -2957,7 +2961,7 @@ function markClauses(c){
   String(c.o).split("\n").forEach(raw => {
     const line = raw.replace(/\([^)]*\)/g, "").replace(/\s+/g, " ").trim();
     if(!line) return;
-    const sentences = line.split(/(?<=\.)\s+(?=[A-Z])/);
+    const sentences = abbr(line).split(/(?<=\.)\s+(?=[A-Z])/).map(unAbbr);
     const lineHead = line.match(/^(When|Whenever|At) ([^,]+),\s*(.*)$/i);
     const act = line.match(/^([^:"]{1,120}):\s+(.*)$/);
     sentences.forEach((sen, si) => {
@@ -2999,7 +3003,9 @@ function energyCosts(c){
 const paysAnyEnergy = c => /pay (any amount of|an amount of|one or more|x) \{E\}|pay \{E\} any number of times/i.test(String(c && c.o || ""));
 function selfPat(src){
   const full = String(src.n || "").split(" // ")[0].trim();
-  const names = [full, full.split(",")[0].trim()].filter(Boolean).map(reEscM);
+  const w = full.split(",")[0].trim().split(/\s+/);
+  // Kurzformen wie «Dr. Crusher» für «Dr. Beverly Crusher»
+  const names = [full, full.split(",")[0].trim(), w.length >= 3 ? w[0] + " " + w[w.length - 1] : ""].filter(Boolean).map(reEscM);
   return `(?:this (?:creature|artifact|enchantment|land|permanent|vehicle|card|spacecraft|planeswalker|battle)|${names.join("|")})`;
 }
 /* Prüft eine Beschreibung wie «nontoken green creature» gegen eine Karte */
@@ -3107,7 +3113,8 @@ function markEvent(ev, extraSources){
   if(gains.length) gainMarks(gains);
 }
 function markOnMove(c, from, to, wasFd){
-  if(c && to === "bf" && from !== "bf" && !c.fd) lifeEvent("enter", 1, c);
+  if(c && to === "bf" && from !== "bf" && !c.fd){ lifeEvent("enter", 1, c); sagaEnter(c); }
+  if(c && from === "bf" && to !== "bf") sagaLeave(c);
   if(!c || !markAutoOn()) return;
   if(to === "bf" && from !== "bf" && !c.fd) markEvent({kind:"enter", c});
   else if(from === "bf" && to === "gy" && !wasFd) markEvent({kind:"die", c}, [c]);
@@ -3372,7 +3379,7 @@ function lifeTriggers(c){
     else if(/\benters?(?: the battlefield)?(?: under (?:your|an opponent's) control)?$/i.test(cond)) ev = "enter";
     if(!ev) return;
     // «you may gain 1 life» sagt man praktisch immer ja
-    const first = eff.split(/\.\s+/)[0].replace(/\byou may gain\b/i, "you gain");
+    const first = unAbbr(abbr(eff).split(/\.\s+/)[0]).replace(/\byou may gain\b/i, "you gain");
     if(/\b(may|if|unless|choose|instead)\b/i.test(first)) return;
     const fx = [];
     let m;
@@ -3460,7 +3467,9 @@ function lifeEvent(kind, amount, card, opp){
       else if(opp && /\b(you control|under your control)\b/i.test(cond)) return;
       if(!condFires(cond, src, {kind, c:card})) return;
     }
-    todo.push({src, tr});
+    // Dr. Beverly Crusher: Auslöser durch Lebensgewinn zählen doppelt
+    const reps = kind === "gain" ? 1 + lifeTrigDoublers() : 1;
+    for(let r = 0; r < reps; r++) todo.push({src, tr});
   }));
   if(!todo.length) return;
   setTimeout(async () => {
@@ -3475,6 +3484,84 @@ function lifeChanged(id, delta){
   if(!delta) return;
   if(id === me.id){ if(delta > 0) lifeEvent("gain", delta); else lifeEvent("lose", -delta); }
   else if(delta < 0) lifeEvent("oppLose", -delta);
+}
+
+/* ---------- Sagas: Kapitelmarken und Kapitel ---------- */
+// Beim Eintreten und nach deinem Ziehschritt kommt eine Kapitelmarke dazu (die normale Marke der Karte).
+// Das passende Kapitel erscheint als Fenster mit Knöpfen. Nach dem letzten Kapitel wird die Saga geopfert.
+const ROMAN = {I:1, II:2, III:3, IV:4, V:5, VI:6, VII:7};
+const isSaga = c => !!c && /\bSaga\b/.test(c.type || "");
+function sagaChapters(c){
+  const ch = {};
+  String(c.o0 || c.o || "").split("\n").forEach(raw => {
+    const m = raw.trim().match(/^((?:VII|VI|IV|V|III|II|I)(?:\s*,\s*(?:VII|VI|IV|V|III|II|I))*)\s*[—-]\s*(.+)$/);
+    if(!m) return;
+    m[1].split(/\s*,\s*/).forEach(r => { ch[ROMAN[r]] = (ch[ROMAN[r]] ? ch[ROMAN[r]] + "\n" : "") + m[2].trim(); });
+  });
+  return ch;
+}
+const sagaFinal = c => Math.max(0, ...Object.keys(sagaChapters(c)).map(Number));
+const sagaAutoOn = () => LOOK.autoSaga !== false;
+function sagaEnter(c){
+  if(!sagaAutoOn() || !isSaga(c) || !sagaFinal(c)) return;
+  if(c.o0 == null) c.o0 = c.o;
+  c.c = 1; c.cn = "lore";
+  setTimeout(() => sagaChapter(c, 1), 0);
+}
+function sagaLeave(c){
+  if(c && c.o0 != null){ c.o = c.o0; delete c.o0; delete c._mk; delete c._lt; }
+}
+function sagaAdvanceAll(){
+  if(!sagaAutoOn()) return;
+  const list = S.bf.filter(c => isSaga(c) && !c.fd && sagaFinal(c));
+  list.forEach(c => { c.c = (c.c || 0) + 1; c.cn = "lore"; });
+  if(list.length) act(`Kapitelmarke auf ${list.map(c => `${c.n} (${c.c})`).join(", ")}`);
+  (async () => { for(const c of list) await sagaChapter(c, c.c); })();
+}
+/* Ein Kapitel ausführen bzw. anzeigen */
+function sagaChapter(c, n){
+  return new Promise(res => {
+    const ch = sagaChapters(c), txt = ch[n], fin = sagaFinal(c);
+    if(!txt && n < fin){ res(); return; }
+    // «X gains "{T}: Add {C}."» wird direkt auf die Karte geschrieben, damit Mana und Menüs es kennen
+    const granted = [];
+    String(txt || "").replace(/gains? "([^"]+)"/gi, (m, a) => { granted.push(a.replace(/'/g, '"')); return m; });
+    if(granted.length && S.bf.includes(c)){
+      if(c.o0 == null) c.o0 = c.o;
+      c.o = c.o + "\n" + granted.join("\n");
+      delete c._mk; delete c._lt;
+    }
+    act(`${c.n}, Kapitel ${Object.keys(ROMAN)[n - 1] || n}: ${String(txt || "keine Fähigkeit").replace(/\n/g, " / ")}`);
+    commit();
+    modalState = {kind:"block"}; $("#modal").hidden = false;
+    const box = $("#modalBox"); box.innerHTML = "";
+    box.append(head(`${c.n} · Kapitel ${Object.keys(ROMAN)[n - 1] || n}${n >= fin ? " (letztes)" : ""}`));
+    const p = document.createElement("p"); p.textContent = txt || "Dieses Kapitel hat keine Fähigkeit."; box.append(p);
+    if(granted.length) box.append(Object.assign(document.createElement("p"), {className:"stat", textContent:`Schon eingetragen: ${c.n} hat jetzt ${granted.map(g => `«${g}»`).join(" und ")}.`}));
+    const row = document.createElement("div"); row.className = "row";
+    const t = String(txt || "");
+    if(/\bcreate\b/i.test(t)) (c.tk || []).forEach(tk => row.append(btn(`Token: ${tk.n}`, () => createTokenFromId(tk.id, tk.n, 1, c), "small")));
+    const dr = t.match(/\bdraw (a|one|two|three|\d+) cards?/i);
+    if(dr) row.append(btn(`${dr[1] === "a" || dr[1] === "one" ? 1 : (NUMW[dr[1]] || +dr[1])} Karte(n) ziehen`, () => draw(dr[1] === "a" || dr[1] === "one" ? 1 : (NUMW[dr[1]] || +dr[1])), "small"));
+    if(/search your library/i.test(t)) row.append(btn("Bibliothek durchsuchen", () => { act(`durchsucht die Bibliothek (${c.n})`); modalState = null; openModal({kind:"zone", zone:"library"}); res(); }, "small"));
+    if(/return .* from your graveyard|from your graveyard to/i.test(t)) row.append(btn("Friedhof öffnen", () => { modalState = null; openModal({kind:"zone", zone:"gy"}); res(); }, "small"));
+    if(row.children.length) box.append(row);
+    const fin2 = document.createElement("div"); fin2.className = "row";
+    const transforms = /exile this saga, then return it to the battlefield transformed|exile it, then return it to the battlefield transformed/i.test(t);
+    if(n >= fin){
+      fin2.append(btn(transforms ? "Fertig (Saga verwandelt sich, selbst umdrehen)" : "Fertig, Saga opfern", () => {
+        closeModal();
+        if(!transforms && S.bf.includes(c)){ moveCard(c.u, "gy"); act(`opfert ${c.n} (letztes Kapitel)`); commit(); }
+        res();
+      }, "primary"));
+      fin2.append(btn("Saga behalten", () => { closeModal(); res(); }, "small"));
+    } else fin2.append(btn("Weiter", () => { closeModal(); res(); }, "primary"));
+    box.append(fin2);
+  });
+}
+/* Dr. Beverly Crusher: Lebens-Auslöser lösen ein weiteres Mal aus */
+function lifeTrigDoublers(){
+  return S.bf.filter(c => !c.fd && /gaining life causes a triggered ability of a permanent you control to trigger, that ability triggers an additional time/i.test(String(c.o || "").replace(/\s+/g, " "))).length;
 }
 
 /* ---------- Grafik: Animationen, Pfeile, Effekte ---------- */
@@ -3677,7 +3764,7 @@ const MATS = {
   blau:  {name:"Ozean", bg:"radial-gradient(120% 90% at 50% 0%, #1f4a5e 0%, #12293a 75%)"}
 };
 const SLEEVES = ["#7a5230", "#2f5d8a", "#8a2f3c", "#2f7a52", "#5b3f8a", "#b8892f", "#2b2b2b", "#d9d4c5"];
-let LOOK = Object.assign({mat:"filz", sleeve:"#7a5230", avatar:"", avatarName:"", sound:false, table:"auto", autoPool:true, autoPay:true, autoMarks:true, autoLife:true}, LS.get("kt-look", {}));
+let LOOK = Object.assign({mat:"filz", sleeve:"#7a5230", avatar:"", avatarName:"", sound:false, table:"auto", autoPool:true, autoPay:true, autoMarks:true, autoLife:true, autoSaga:true}, LS.get("kt-look", {}));
 function saveLook(){ LS.set("kt-look", LOOK); }
 const okColor = c => typeof c === "string" && /^#[0-9a-f]{6}$/i.test(c);
 const matBg = key => (MATS[key] || MATS.filz).bg;
@@ -3736,7 +3823,10 @@ function openLookDialog(){
     <h3>Spielermarken</h3>
     <label class="row stat"><input type="checkbox" id="autoMarksPick"> Energie, Erfahrung und Strahlung aus dem Kartentext automatisch zählen</label>
     <h3>Lebens-Auslöser</h3>
-    <label class="row stat"><input type="checkbox" id="autoLifePick"> Dina, Essence Warden, Sanguine Bond, Blood Artist und ähnliche Karten automatisch auslösen</label>`);
+    <label class="row stat"><input type="checkbox" id="autoLifePick"> Dina, Essence Warden, Sanguine Bond, Blood Artist und ähnliche Karten automatisch auslösen</label>
+    <h3>Sagas</h3>
+    <label class="row stat"><input type="checkbox" id="autoSagaPick"> Kapitelmarken automatisch setzen und Kapitel anzeigen</label>`);
+  $("#autoSagaPick").checked = LOOK.autoSaga !== false; $("#autoSagaPick").onchange = () => { LOOK.autoSaga = $("#autoSagaPick").checked; saveLook(); };
   $("#autoLifePick").checked = LOOK.autoLife !== false; $("#autoLifePick").onchange = () => { LOOK.autoLife = $("#autoLifePick").checked; saveLook(); };
   $("#autoMarksPick").checked = LOOK.autoMarks !== false; $("#autoMarksPick").onchange = () => { LOOK.autoMarks = $("#autoMarksPick").checked; saveLook(); };
   $("#autoPoolPick").checked = LOOK.autoPool !== false; $("#autoPoolPick").onchange = () => { LOOK.autoPool = $("#autoPoolPick").checked; saveLook(); };
@@ -3919,7 +4009,7 @@ function historyAdd(win){
 /* ---------- Automatische Updates ---------- */
 // Liegt die App im Web, prüft sie regelmässig version.json im selben Ordner und lädt sich bei einer neuen Version neu.
 // Alles Wichtige (Spielstand, Deck, Tisch) liegt im Browser-Speicher und ist nach dem Neuladen wieder da.
-const APP_VERSION = "2026.11.06-6";
+const APP_VERSION = "2026.11.06-7";
 const ONLINE = /^https?:$/.test(location.protocol);
 let updPending = null, updTimer = null, updSnoozeUntil = 0;
 function busyForUpdate(){ return botBusy || (!$("#modal").hidden && modalState && ["block","deck"].includes(modalState.kind)); }
