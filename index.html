@@ -228,6 +228,7 @@ table.stats th{color:var(--muted);font-weight:500;font-size:12px;text-transform:
 .mark-E .micon{color:#e9c547}.mark-XP .micon{color:#9cc8f2}.mark-RAD .micon{color:#93d36b}
 .mnum{cursor:pointer;text-decoration:underline dotted;text-underline-offset:3px}
 .pregame{gap:6px;flex-wrap:wrap;align-items:center;padding:6px 8px;margin:6px 0;border:1px dashed var(--brass);border-radius:8px;background:rgba(201,163,90,.08)}
+.comp{border-color:var(--brass)}.comp.ready{background:rgba(201,163,90,.18)}
 .update-bar{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom, 0px));z-index:80;display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:center;background:var(--panel);border:1px solid var(--brass);border-radius:10px;padding:10px 14px;box-shadow:0 10px 30px rgba(0,0,0,.5);max-width:calc(100% - 32px)}
 .mybar{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center}
 .zones{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;margin-top:8px}
@@ -349,6 +350,7 @@ textarea{width:100%;min-height:240px;resize:vertical;font-size:14px}
       <div class="row" style="justify-content:space-between">
         <div class="lane-label" style="margin:0">Hand · <span class="num" id="nHand">0</span> Karten</div>
         <div class="row">
+          <button class="small comp" id="bComp" hidden></button>
           <button class="small" id="bMull">Mulligan</button>
           <button class="small" id="bReveal">Hand zeigen</button>
           <button class="small" id="bSide">Sideboard</button>
@@ -513,11 +515,14 @@ function draw(n=1){
 }
 function startGame(){
   const lib = [], cz = [];
-  S.deck.forEach(t => { if(t.sb) return; (t.cmdr ? cz : lib).push(newCard(t)); });
-  Object.assign(S, {library:shuffle(lib), hand:[], bf:[], gy:[], ex:[], cz, st:[], poison:0, cmd:{}, turn:0, life: cz.length ? 40 : 20, pool:emptyPoolObj(), marks:{E:0, XP:0, RAD:0}, pregameDone:false, pregameRev:[]});
+  const comps = companionCandidates();
+  S.deck.forEach(t => { if(t.sb || comps.includes(t)) return; (t.cmdr ? cz : lib).push(newCard(t)); });
+  Object.assign(S, {library:shuffle(lib), hand:[], bf:[], gy:[], ex:[], cz, st:[], poison:0, cmd:{}, turn:0, life: cz.length ? 40 : 20, pool:emptyPoolObj(), marks:{E:0, XP:0, RAD:0}, pregameDone:false, pregameRev:[], compUsed:false});
   lifeLogReset();
+  pickCompanion(comps[0] || null, false);
   const sbN = S.deck.filter(t => t.sb).length;
   act(`startet ein neues Spiel (${lib.length} Karten${sbN ? `, Sideboard ${sbN}` : ""}${cz.length ? ", Commander: " + cz.map(c=>c.n).join(" & ") : ""})`);
+  if(S.companion) pickCompanion(comps[0]);
   draw(7);
 }
 function mulligan(){
@@ -698,6 +703,7 @@ function renderMine(){
   renderPool();
   renderMarks();
   renderPregame();
+  renderCompanion();
   const mt = S.match || {w:0, l:0}; $("#myMatch").textContent = `${mt.w}–${mt.l}`;
   $("#bSide").hidden = !S.deck.some(t => t.sb) && !S.deck.length;
   $("#nLib").textContent = S.library.length;
@@ -757,6 +763,7 @@ function renderOpps(){
       <span class="lifebox-opp row" style="gap:8px"><span class="life num">${Number(o.life)||0}</span></span>
       ${o.poison ? `<span class="stat poison">Gift <b class="num">${Number(o.poison)}</b></span>` : ""}
       ${oppMarksHtml(o.marks)}
+      ${typeof o.companion === "string" && o.companion ? `<span class="stat">Begleiter <b>${esc(o.companion.slice(0, 80))}</b></span>` : ""}
       <span class="stat">Hand <b class="num">${Number(o.handN)||0}</b></span>
       <span class="stat">Bib <b class="num">${Number(o.libN)||0}</b></span>
       ${typeof o.pool === "string" && /^[WUBRGC]{1,60}$/.test(o.pool) ? `<span class="stat">Pool ${manaHtml(o.pool.split("").map(s => "{" + s + "}").join(""))}</span>` : ""}
@@ -974,15 +981,18 @@ function parseDeck(text, cmdText){
   };
   text.split(/\r?\n/).forEach(raw => {
     const l = raw.trim();
-    if(!l){ if(section === "cmdr") section = "main"; return; }
+    if(!l){ if(section === "cmdr" || section === "comp") section = "main"; return; }
     if(/^(\/\/|#)/.test(l)) { if(/commander/i.test(l)) section = "cmdr"; else if(/side/i.test(l)) section = "side"; else if(/maybe/i.test(l)) section = "skip"; return; }
-    if(/^(commander|commanders|companion)\s*:?\s*$/i.test(l)){ section = "cmdr"; return; }
+    if(/^(commander|commanders)\s*:?\s*$/i.test(l)){ section = "cmdr"; return; }
+    if(/^(companion|companions)\s*:?\s*$/i.test(l)){ section = "comp"; return; }
     if(/^(deck|main|mainboard|maindeck)\s*:?\s*$/i.test(l)){ section = "main"; return; }
     if(/^sideboard\s*:?\s*$/i.test(l)){ section = "side"; return; }
     if(/^(maybeboard|considering|tokens?)\s*:?\s*$/i.test(l)){ section = "skip"; return; }
     if(/^SB:\s*/i.test(l)){ add(l.replace(/^SB:\s*/i, ""), false, true); return; }
     if(section === "skip") return;
-    add(l, section === "cmdr", section === "side");
+    const n0 = out.length;
+    add(l, section === "cmdr", section === "side" || section === "comp");
+    if(section === "comp" && out.length > n0) out[out.length - 1].comp = true;
   });
   (cmdText||"").split(/\r?\n|;/).forEach(l => add(l, true));
   return out;
@@ -1025,7 +1035,7 @@ async function fetchCards(entries, onProgress){
   entries.forEach(e => {
     const t = found.get(keyOf(e)) || found.get(`n|${e.name.toLowerCase()}`);
     if(!t) return;
-    for(let q=0;q<e.qty;q++) deck.push({...t, cmdr: e.cmdr, sb: !!e.sb});
+    for(let q=0;q<e.qty;q++) deck.push({...t, cmdr: e.cmdr, sb: !!e.sb, comp: !!e.comp});
   });
   return {deck, missing: [...new Set(missing)], netErr};
 }
@@ -1156,9 +1166,9 @@ async function importDeckUrl(url){
     let j;
     try{ const r = await fetch(`https://api2.moxfield.com/v3/decks/all/${m[1]}`); if(!r.ok) throw 0; j = await r.json(); }catch(e){ throw fail("Moxfield"); }
     const board = b => Object.values((j.boards && j.boards[b] && j.boards[b].cards) || {}).map(x => ({q:x.quantity || 1, n: x.card && x.card.name})).filter(x => x.n);
-    const main = board("mainboard"), side = board("sideboard"), cmd = [...board("commanders"), ...board("companions")];
+    const main = board("mainboard"), side = board("sideboard"), cmd = board("commanders"), comp = board("companions");
     if(!main.length) throw new Error("Im Moxfield-Deck wurden keine Karten gefunden. Ist es öffentlich?");
-    return {name: j.name || "", text: main.map(x => `${x.q} ${x.n}`).join("\n") + (side.length ? "\n\nSideboard\n" + side.map(x => `${x.q} ${x.n}`).join("\n") : ""), cmd: cmd.map(x => x.n).join("\n")};
+    return {name: j.name || "", text: main.map(x => `${x.q} ${x.n}`).join("\n") + (side.length ? "\n\nSideboard\n" + side.map(x => `${x.q} ${x.n}`).join("\n") : "") + (comp.length ? "\n\nCompanion\n" + comp.map(x => `1 ${x.n}`).join("\n") : ""), cmd: cmd.map(x => x.n).join("\n")};
   }
   throw new Error("Unterstützt werden Links von moxfield.com und archidekt.com.");
 }
@@ -1280,7 +1290,7 @@ function pub(){
   const m = S.match || {w:0, l:0};
   return {name: me.name, life:S.life, poison:S.poison, turn:S.turn, handN:S.hand.length, libN:S.library.length,
     bf:S.bf.map(strip), gy:S.gy.map(strip), ex:S.ex.map(strip), cz:S.cz.map(strip), match: (m.w || m.l) ? `${m.w}–${m.l}` : "",
-    pool: poolStr(poolOf()), marks: marksPub(), mat: LOOK.mat, sleeve: okColor(LOOK.sleeve) ? LOOK.sleeve : "", avatar: okImg(LOOK.avatar) ? LOOK.avatar : "", deckName: String(S.deckName || "").slice(0, 40)};
+    pool: poolStr(poolOf()), marks: marksPub(), companion: S.companion ? String(S.companion.n).slice(0, 80) : "", mat: LOOK.mat, sleeve: okColor(LOOK.sleeve) ? LOOK.sleeve : "", avatar: okImg(LOOK.avatar) ? LOOK.avatar : "", deckName: String(S.deckName || "").slice(0, 40)};
 }
 let pushTimer = null;
 function schedulePush(){ clearTimeout(pushTimer); pushTimer = setTimeout(pushState, 120); }
@@ -3272,6 +3282,65 @@ function renderPregame(){
   bar.append(btn("Fertig", () => { S.pregameDone = true; commit(); }, "small"));
 }
 
+/* ---------- Begleiter (Companion) ---------- */
+// Der Begleiter liegt ausserhalb des Spiels. Einmal pro Spiel darfst du ihn für {3} auf die Hand nehmen,
+// wenn du eine Hexerei wirken könntest (deine Hauptphase, Stapel leer).
+const isCompanionCard = t => /(^|\n)Companion\s*[—-]/.test(String(t && t.o || ""));
+const companionCond = t => (String(t && t.o || "").match(/Companion\s*[—-]\s*([^(\n]*)/) || [, ""])[1].trim();
+function companionCandidates(){
+  const mainN = S.deck.filter(t => !t.sb && !t.cmdr).length;
+  const out = [];
+  S.deck.forEach(t => {
+    if(!isCompanionCard(t) && !t.comp) return;
+    if(t.sb || (t.cmdr && mainN < 90)) if(!out.some(x => x.n === t.n)) out.push(t);
+  });
+  return out;
+}
+function pickCompanion(t, announce){
+  S.companion = t ? newCard({...t, cmdr:false}) : null;
+  if(t && announce !== false){
+    const cond = companionCond(t);
+    act(`zeigt Begleiter ${t.n}${cond ? ": " + cond : ""}`);
+  }
+}
+function companionCanCast(){
+  if(!TURN.active) return true;
+  return TURN.active === me.id && (TURN.phase === 2 || TURN.phase === 4) && !STACK.length;
+}
+async function companionToHand(){
+  const c = S.companion; if(!c) return;
+  if(!companionCanCast()){ toast("Den Begleiter nimmst du wie eine Hexerei auf die Hand: in <b>deiner Hauptphase</b> und wenn der Stapel leer ist."); return; }
+  const fee = {n:`Begleiter ${c.n} auf die Hand`, mc:"{3}", cmc:3, type:"", o:""};
+  if(!(await payFor(fee))) return;
+  if(S.companion !== c) return;
+  S.companion = null; S.compUsed = true;
+  S.hand.push(c);
+  act(`bezahlt {3} und nimmt den Begleiter ${c.n} auf die Hand`);
+  commit();
+}
+function companionMenu(e){
+  const c = S.companion; if(!c) return;
+  const items = [{t:`Begleiter: ${c.n}`}];
+  const cond = companionCond(c);
+  if(cond) items.push({t:cond.length > 90 ? cond.slice(0, 88) + " …" : cond});
+  items.push({l:"Gross ansehen", f:() => bigView(c, true)});
+  items.push({h:`Auf die Hand nehmen (bezahle ${manaHtml("{3}")})`, f:companionToHand});
+  if((S.turn || 0) === 0){
+    companionCandidates().filter(t => t.n !== c.n).forEach(t => items.push({l:`Stattdessen ${t.n} als Begleiter`, f:() => { pickCompanion(t); commit(); }}));
+    items.push({l:"Ohne Begleiter spielen", f:() => { S.companion = null; act("spielt ohne Begleiter"); commit(); }});
+  }
+  openMenu(e, items);
+}
+function renderCompanion(){
+  const b = document.getElementById("bComp"); if(!b) return;
+  const c = S.companion;
+  b.hidden = !c;
+  if(!c) return;
+  b.textContent = `Begleiter: ${c.n}`;
+  b.title = `${companionCond(c) || ""}\nEinmal pro Spiel für {3} auf die Hand, in deiner Hauptphase bei leerem Stapel.`.trim();
+  b.classList.toggle("ready", companionCanCast());
+}
+
 /* ---------- Grafik: Animationen, Pfeile, Effekte ---------- */
 const SVGNS = "http://www.w3.org/2000/svg";
 const cssEsc = s => (window.CSS && CSS.escape) ? CSS.escape(String(s)) : String(s).replace(/[^a-zA-Z0-9_-]/g, ch => "\\" + ch);
@@ -3694,7 +3763,7 @@ function historyAdd(win){
 /* ---------- Automatische Updates ---------- */
 // Liegt die App im Web, prüft sie regelmässig version.json im selben Ordner und lädt sich bei einer neuen Version neu.
 // Alles Wichtige (Spielstand, Deck, Tisch) liegt im Browser-Speicher und ist nach dem Neuladen wieder da.
-const APP_VERSION = "2026.11.06-3";
+const APP_VERSION = "2026.11.06-4";
 const ONLINE = /^https?:$/.test(location.protocol);
 let updPending = null, updTimer = null, updSnoozeUntil = 0;
 function busyForUpdate(){ return botBusy || (!$("#modal").hidden && modalState && ["block","deck"].includes(modalState.kind)); }
@@ -3790,6 +3859,7 @@ $("#bMull").onclick = mulligan;
 $("#bMenu").onclick = () => { const open = !$("#hActions").classList.contains("open"); $("#hActions").classList.toggle("open", open); $("#bMenu").setAttribute("aria-expanded", open); };
 $("#hActions").addEventListener("click", e => { if(e.target.tagName === "BUTTON" && window.matchMedia && window.matchMedia("(max-width:640px)").matches){ $("#hActions").classList.remove("open"); $("#bMenu").setAttribute("aria-expanded", "false"); } });
 $("#bSide").onclick = openSideboard;
+$("#bComp").onclick = e => companionMenu(e);
 $("#bWin").onclick = () => recordGame(true);
 $("#bLoss").onclick = () => recordGame(false);
 $("#bMatchReset").onclick = () => { S.match = {w:0, l:0}; act("setzt den Match-Stand zurück"); commit(); };
