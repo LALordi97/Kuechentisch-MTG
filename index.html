@@ -515,6 +515,7 @@ async function castSpell(u){
 function draw(n=1){
   let k = 0;
   for(let i=0;i<n;i++){ if(!S.library.length) break; S.hand.push(S.library.shift()); k++; }
+  for(let i = 0; i < k; i++) if(typeof abilEvent === "function") abilEvent({kind:"youDraw"});
   if(k) act(`zieht ${k} Karte${k>1?"n":""}`); else act("versucht zu ziehen, aber die Bibliothek ist leer");
   commit();
 }
@@ -3639,6 +3640,8 @@ function manaChoices(c){
     if(/any of the exiled card'?s colou?rs/i.test(addTxt)){
       (c.imprintCols || []).forEach(col => opts.push({...o, add:[col]})); return;
     }
+    const combo = addTxt.match(/^(two|three|four|five) mana in any combination of colou?rs/i);
+    if(combo){ const n = NUMW2[combo[1].toLowerCase()]; opts.push({...o, add:Array(n).fill("C"), combo:n}); return; }
     parseAddClause(addTxt).forEach(add => opts.push({...o, add}));
   });
   if(!opts.length && isLand(c)){
@@ -3661,7 +3664,7 @@ function optHtml(o){
   const extra = [o.noTap ? "ohne Tappen" : "", o.cost ? `kostet ${o.cost} Mana` : "", o.pain ? `${o.pain} Schaden an dir` : "", o.life ? `${o.life} Leben` : "",
     o.sac ? "wird geopfert" : "", o.sacOther ? `opfere ${o.sacOther}` : "", o.tapOthers ? `tappe ${o.tapOthers.n} ${o.tapOthers.desc}` : "", o.discardHand ? "Hand abwerfen" : "", o.removeCtr ? `−${o.removeCtr} Marke` : "",
     o.extra || "", o.restrict ? `nur für ${o.restrict}` : ""].filter(Boolean);
-  return `${o.add.length ? manaHtml(symStr(o.add)) : "kein Mana"}${extra.length ? ` <span class="stat">(${esc(extra.join(", "))})</span>` : ""}`;
+  return `${o.combo ? `${o.combo} Mana in beliebigen Farben` : o.add.length ? manaHtml(symStr(o.add)) : "kein Mana"}${extra.length ? ` <span class="stat">(${esc(extra.join(", "))})</span>` : ""}`;
 }
 /* Darf dieses Mana für diesen Zauber verwendet werden? */
 function manaAllowedFor(o, spell){
@@ -3675,7 +3678,7 @@ function manaAllowedFor(o, spell){
   return false;
 }
 /* Für automatisches Bezahlen nur Quellen ohne Zusatzkosten */
-const autoOpt = (o, spell) => !o.cost && !o.sac && !o.life && !o.noTap && !o.sacOther && !o.tapOthers && !o.discardHand && !o.extra && o.add.length && manaAllowedFor(o, spell);
+const autoOpt = (o, spell) => !o.combo && !o.cost && !o.sac && !o.life && !o.noTap && !o.sacOther && !o.tapOthers && !o.discardHand && !o.extra && o.add.length && manaAllowedFor(o, spell);
 /* Kartenauswahl für Opferkosten (Phyrexian Tower, Ashnod's Altar) */
 function pickFromBf(title, filter){
   return new Promise(res => {
@@ -3713,7 +3716,13 @@ async function tapForMana(c, o){
     if(!victim) return;
     moveCard(victim.u, "gy"); act(`opfert ${victim.n} für ${c.n}`);
   }
-  if(o.cost && !poolTakeGeneric(o.cost)){ toast(`Für ${esc(c.n)} brauchst du zuerst ${o.cost} Mana im Pool.`); return; }
+  if(o.cost && poolTotal(poolOf()) < o.cost){ toast(`Für ${esc(c.n)} brauchst du zuerst ${o.cost} Mana im Pool.`); return; }
+  if(o.combo){
+    const add = [];
+    for(let i = 0; i < o.combo; i++){ const col = await pickColor(`${c.n}: Farbe für Mana ${i + 1} von ${o.combo}`, COLORS); if(!col) return; add.push(col); }
+    o = {...o, add};
+  }
+  if(o.cost && !poolTakeGeneric(o.cost)) return;
   if(!o.noTap){ c.tap = true; c.mtap = o.sac ? null : [...o.add]; }
   poolAdd(o.add);
   manaSideEffects(c, o);
@@ -4036,6 +4045,8 @@ function matchStep2(p, src, full, SELF){
   if((m = p.match(/^(?:you )?lose life equal to (.+)$/i))) return [W({t:"lose", n:"x", xexpr:m[1]})];
   if((m = p.match(/^each opponent loses (\d+|x) life(?: for each (.+))?$/i))) return [W({t:"oppLoss", n:m[1], each:m[2] || null})];
   if((m = p.match(/^each opponent loses life equal to (.+)$/i))) return [W({t:"oppLoss", n:"x", xexpr:m[1]})];
+  if((m = p.match(/^(?:they|that player|that opponent) loses? (\d+|x) life$/i))) return [W({t:"pidLoss", n:m[1]})];
+  if((m = p.match(/^(?:they|that player|that opponent) gains? (\d+|x) life$/i))) return [W({t:"pidGain", n:m[1]})];
   if((m = p.match(/^(?:its|that creature's|that permanent's) controller gains life equal to its power$/i))) return [W({t:"ctrlGainPower"})];
   // Schaden
   if((m = p.match(new RegExp(`^(?:${SELF}|it|this \\w+) deals (\\d+|x|that much) damage (?:divided as you choose among |to )?(.+)$`, "i")))) return [W({t:"damage", n:m[1], who:m[2]})];
@@ -4301,6 +4312,13 @@ async function runSteps(steps, src, ctx = {}){
       case "askOpp": act(`${src.n}: ${st.text} – Mitspieler bitte ausführen`); toast(`<b>${esc(src.n)}:</b> ${esc(st.text)}. Das machen deine Mitspieler selbst.`); break;
       case "gain": { const n = await needX(); S.life += n; act(`${src.n}: du erhältst ${n} Leben`); break; }
       case "lose": { const n = await needX(); S.life -= n; act(`${src.n}: du verlierst ${n} Leben`); break; }
+      case "pidLoss": case "pidGain": {
+        const n = await needX(); const pid = ctx.pid;
+        if(!pid){ manual.push(st.src || "Spieler verliert/erhält Leben"); break; }
+        hitOpponent(pid, {kind: st.t === "pidLoss" ? "loss" : "heal", amount:n, src:src.n});
+        act(`${src.n}: ${oppByPid(pid)} ${st.t === "pidLoss" ? "verliert" : "erhält"} ${n} Leben`);
+        break;
+      }
       case "oppLoss": { const n = await needX(); liveOpps().forEach(o => hitOpponent(o.id, {kind:"loss", amount:n, src:src.n})); break; }
       case "ctrlGainPower": {
         const t = ctx.target; if(!t || t.kind !== "card") break;
@@ -4550,7 +4568,8 @@ function trigMatches(ab, src, ev){
     if(/their first/i.test(cond)){ const k = `${src.u}|${turnKey()}|${ev.pid || "x"}`; src._firstSeen = src._firstSeen || {}; if(src._firstSeen[k]) return false; src._firstSeen[k] = true; }
     return true;
   }
-  if(ev.kind === "oppDraw") return /^an opponent draws a card/i.test(cond);
+  if(ev.kind === "oppDraw") return /^an opponent draws a card/i.test(cond) && !(ev.first && /except the first/i.test(cond));
+  if(ev.kind === "youDraw") return /^you draw a card$/i.test(cond);
   if(ev.kind === "castSelf") return /^you cast this spell$/i.test(cond) && ev.c === src;
   if(ev.kind === "enter" || ev.kind === "die" || ev.kind === "attack" || ev.kind === "cast"){
     if(ev.opp){
@@ -4645,7 +4664,7 @@ async function runTrigger(src, ab, ev){
     if(!go) return;
   }
   act(`${src.n} löst aus: ${ab.line.slice(0, 140)}`);
-  await runAbility(src, ab, {much: ev.much}, iff.text);
+  await runAbility(src, ab, {much: ev.much, pid: ev.pid}, iff.text);
 }
 /* ---------- Aktivierte Fähigkeiten, Loyalität, Kartenmenü ---------- */
 async function payAbilityCost(c, cost, opts = {}){
@@ -4716,7 +4735,7 @@ function abilMenuItems(c, zone){
   if(zone === "bf" && !c.fd){
     abs.filter(a => a.kind === "loy").forEach(a => items.push({l:`${a.cost.startsWith("-") ? "−" + a.cost.slice(1) : a.cost === "0" ? "0" : (a.cost.startsWith("+") ? a.cost : "+" + a.cost)}: ${short(a.text)}`, f:() => queued(() => activateLoyalty(c, a))}));
     abs.filter(a => a.kind === "act" && !/\{E\}/.test(a.cost)).forEach(a => items.push({l:`Fähigkeit: ${short(a.cost + ": " + a.text)}`, f:() => queued(() => activateAbility(c, a))}));
-    abs.filter(a => a.kind === "trig" && /deals (combat )?damage|blocks|becomes (blocked|tapped|the target|untapped)|leaves (your graveyard|the battlefield)|you discard|you draw|you sacrifice|turned face up|isn't blocked|you cycle|you activate|counters? (is|are) put|you scry|you surveil|explores|transforms|you expend|loses life|you search|attacks and|is dealt damage/i.test(a.cond))
+    abs.filter(a => a.kind === "trig" && /deals (combat )?damage|blocks|becomes (blocked|tapped|the target|untapped)|leaves (your graveyard|the battlefield)|you discard|you sacrifice|turned face up|isn't blocked|you cycle|you activate|counters? (is|are) put|you scry|you surveil|explores|transforms|you expend|loses life|you search|attacks and|is dealt damage/i.test(a.cond))
       .forEach(a => items.push({l:`Auslösen: ${short(a.cond)}`, f:() => queued(() => runTrigger(c, a, {kind:"manual"}))}));
     abs.filter(a => a.kind === "equip").forEach(a => items.push({l:`Ausrüsten ${a.cost}`, f:() => queued(async () => { const t = await pickTarget(`${c.n} ausrüsten an …`, "target creature you control", false); if(!t) return; if(!(await payFor({n:`Ausrüsten ${c.n}`, mc:a.cost, type:"Ability"}))) return; c.eq = t.card.u; act(`rüstet ${t.card.n} mit ${c.n} aus`); commit(); })}));
   }
@@ -4783,8 +4802,9 @@ function oppDrawScan(){
     const drew = Math.min(Math.max(0, h - prev.h), Math.max(0, prev.l - l));
     for(let i = 0; i < drew; i++){
       // die erste Karte im eigenen Ziehschritt zählt nicht (Orcish Bowmasters)
-      if(TURN.active === id && !OPP_HAND[id].first && (TURN.phase || 0) <= 2){ OPP_HAND[id].first = true; continue; }
-      abilEvent({kind:"oppDraw", opp:true, pid:id});
+      let first = false;
+      if(TURN.active === id && !OPP_HAND[id].first && (TURN.phase || 0) <= 2){ OPP_HAND[id].first = true; first = true; }
+      abilEvent({kind:"oppDraw", opp:true, pid:id, first});
     }
   });
 }
@@ -5255,7 +5275,7 @@ function historyAdd(win){
 /* ---------- Automatische Updates ---------- */
 // Liegt die App im Web, prüft sie regelmässig version.json im selben Ordner und lädt sich bei einer neuen Version neu.
 // Alles Wichtige (Spielstand, Deck, Tisch) liegt im Browser-Speicher und ist nach dem Neuladen wieder da.
-const APP_VERSION = "2026.11.07-1";
+const APP_VERSION = "2026.11.07-2";
 const ONLINE = /^https?:$/.test(location.protocol);
 let updPending = null, updTimer = null, updSnoozeUntil = 0;
 function busyForUpdate(){ return botBusy || (!$("#modal").hidden && modalState && ["block","deck"].includes(modalState.kind)); }
