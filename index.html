@@ -227,6 +227,7 @@ table.stats th{color:var(--muted);font-weight:500;font-size:12px;text-transform:
 .mark .micon{margin-right:3px;font-size:1.05em}
 .mark-E .micon{color:#e9c547}.mark-XP .micon{color:#9cc8f2}.mark-RAD .micon{color:#93d36b}
 .mnum{cursor:pointer;text-decoration:underline dotted;text-underline-offset:3px}
+.pregame{gap:6px;flex-wrap:wrap;align-items:center;padding:6px 8px;margin:6px 0;border:1px dashed var(--brass);border-radius:8px;background:rgba(201,163,90,.08)}
 .update-bar{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom, 0px));z-index:80;display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:center;background:var(--panel);border:1px solid var(--brass);border-radius:10px;padding:10px 14px;box-shadow:0 10px 30px rgba(0,0,0,.5);max-width:calc(100% - 32px)}
 .mybar{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center}
 .zones{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;margin-top:8px}
@@ -353,6 +354,7 @@ textarea{width:100%;min-height:240px;resize:vertical;font-size:14px}
           <button class="small" id="bSide">Sideboard</button>
         </div>
       </div>
+      <div class="pregame row" id="pregame" hidden></div>
       <div class="handrow z-hand" id="myHand"></div>
     </div>
   </section>
@@ -512,7 +514,7 @@ function draw(n=1){
 function startGame(){
   const lib = [], cz = [];
   S.deck.forEach(t => { if(t.sb) return; (t.cmdr ? cz : lib).push(newCard(t)); });
-  Object.assign(S, {library:shuffle(lib), hand:[], bf:[], gy:[], ex:[], cz, st:[], poison:0, cmd:{}, turn:0, life: cz.length ? 40 : 20, pool:emptyPoolObj(), marks:{E:0, XP:0, RAD:0}});
+  Object.assign(S, {library:shuffle(lib), hand:[], bf:[], gy:[], ex:[], cz, st:[], poison:0, cmd:{}, turn:0, life: cz.length ? 40 : 20, pool:emptyPoolObj(), marks:{E:0, XP:0, RAD:0}, pregameDone:false, pregameRev:[]});
   lifeLogReset();
   const sbN = S.deck.filter(t => t.sb).length;
   act(`startet ein neues Spiel (${lib.length} Karten${sbN ? `, Sideboard ${sbN}` : ""}${cz.length ? ", Commander: " + cz.map(c=>c.n).join(" & ") : ""})`);
@@ -520,7 +522,7 @@ function startGame(){
 }
 function mulligan(){
   S.library.push(...S.hand); S.hand = []; shuffle(S.library);
-  act("nimmt einen Mulligan");
+  act("nimmt einen Mulligan"); S.pregameDone = false;
   draw(7);
 }
 /* Freie Positionen auf dem Spielfeld */
@@ -695,6 +697,7 @@ function renderMine(){
   $("#myTurn").textContent = S.turn;
   renderPool();
   renderMarks();
+  renderPregame();
   const mt = S.match || {w:0, l:0}; $("#myMatch").textContent = `${mt.w}–${mt.l}`;
   $("#bSide").hidden = !S.deck.some(t => t.sb) && !S.deck.length;
   $("#nLib").textContent = S.library.length;
@@ -2647,6 +2650,7 @@ function passTurn(){
 }
 function onMyTurnStart(){
   S.turn = (S.turn || 0) + 1;
+  if(S.turn === 1) pregameFirstTurnReminder();
   emptyPool("neuer Zug");
   S.bf.forEach(c => c.tap = false);
   const skipDraw = S.turn === 1 && TURN.starter === me.id;
@@ -2737,7 +2741,9 @@ function manaChoices(c){
     const sac = /sacrifice/i.test(cost);
     const lifeM = cost.match(/pay (\d+) life/i);
     const painM = m[3].match(/deals (\d+) damage to you/i);
-    parseAddClause(m[2]).forEach(add => opts.push({add, cost: gen, sac, life: lifeM ? +lifeM[1] : 0, pain: painM ? +painM[1] : 0}));
+    // Gemstone Caverns: «If … has a luck counter on it, instead add one mana of any color»
+    const inst = m[3].match(/If [^,]+ has an? \w+ counter on it, instead add ([^.]*)/i);
+    parseAddClause(inst && (c.c || 0) > 0 ? inst[1] : m[2]).forEach(add => opts.push({add, cost: gen, sac, life: lifeM ? +lifeM[1] : 0, pain: painM ? +painM[1] : 0}));
   });
   if(!opts.length && isLand(c)){
     let cols = (c.pm || []).filter(x => POOL_ORDER.includes(x));
@@ -3171,6 +3177,101 @@ function oppMarksHtml(m){
   return MARK_ORDER.filter(k => Number.isFinite(+m[k]) && +m[k] > 0).map(k => `<span class="stat mark mark-${k}" title="${MARKS[k].name}"><span class="micon" aria-hidden="true">${MARKS[k].icon}</span>${MARKS[k].name} <b class="num">${Math.min(999, Math.floor(+m[k]))}</b></span>`).join("");
 }
 
+/* ---------- Vor dem Spiel: Karten aus der Starthand ---------- */
+// Leylines, Gemstone Caverns, Chancellor-Zyklus, Serum Powder: Solange das Spiel noch nicht begonnen hat
+// (dein Zugzähler steht auf 0), zeigt die App über der Hand, was diese Karten erlauben.
+function pregameKind(c){
+  const o = String(c && c.o || "").replace(/\([^)]*\)/g, " ").replace(/[ \t]+/g, " ");
+  if(!o) return null;
+  const SELF = selfPat(c);
+  if(new RegExp(`If ${SELF} is in your opening hand(?: and you(?:'re| are) not the starting player)?, you may begin the game with (?:it|${SELF}) on the battlefield`, "i").test(o)){
+    const notFirst = /not the starting player/i.test(o);
+    const ctr = o.match(/on the battlefield with an? (\w+) counter on it/i);
+    const exile = /If you do, exile a card from your hand/i.test(o);
+    return {kind:"begin", notFirst, counter: ctr ? ctr[1].toLowerCase() : null, exile};
+  }
+  const rev = o.match(new RegExp(`You may reveal ${SELF} from your opening hand\\. If you do, (.*?)(?:$|\\n)`, "i"));
+  if(rev) return {kind:"reveal", effect: rev[1].trim().slice(0, 220)};
+  if(/mulligan/i.test(o) && /exile all (?:the )?cards from your hand, then draw that many/i.test(o)) return {kind:"powder"};
+  return null;
+}
+const COUNTER_DE = {luck:"Glücksmarke"};
+function pregameActive(){ return (S.turn || 0) === 0 && !S.pregameDone && S.hand.some(c => pregameKind(c)); }
+function pregameBegin(c, k){
+  if(!S.hand.includes(c)) return;
+  if(k.notFirst && TURN.starter === me.id){ toast(`${esc(c.n)} geht nur, wenn du <b>nicht</b> beginnst.`); return; }
+  moveCardRaw(c.u, "bf");
+  if(k.counter){ c.c = (c.c || 0) + 1; c.cn = k.counter; }
+  act(`beginnt das Spiel mit ${c.n} im Spiel${k.counter ? ` (mit einer ${COUNTER_DE[k.counter] || k.counter + "-Marke"})` : ""}`);
+  markOnMove(c, "hand", "bf", false);
+  commit();
+  if(k.exile && S.hand.length) pregameExileDialog(c);
+}
+function pregameExileDialog(src){
+  modalState = {kind:"ask"}; $("#modal").hidden = false;
+  const box = $("#modalBox"); box.innerHTML = "";
+  box.append(head(`${src.n}: eine Karte aus der Hand ins Exil`));
+  box.append(Object.assign(document.createElement("p"), {className:"muted", textContent:"Wähle die Karte, die du dafür ins Exil legst."}));
+  const g = document.createElement("div"); g.className = "grid z-modal";
+  S.hand.forEach(c => {
+    const el = cardEl(c, true, "hand"); el.style.setProperty("--w", "100px"); el.style.cursor = "pointer";
+    el.addEventListener("click", () => { closeModal(); moveCardRaw(c.u, "ex"); act(`legt ${c.n} für ${src.n} ins Exil`); commit(); });
+    g.append(el);
+  });
+  box.append(g);
+}
+function pregameReveal(c, k){
+  S.pregameRev = Array.isArray(S.pregameRev) ? S.pregameRev : [];
+  if(S.pregameRev.some(r => r.u === c.u)) return;
+  S.pregameRev.push({u:c.u, n:c.n, effect:k.effect});
+  act(`zeigt ${c.n} aus der Starthand: ${k.effect}`);
+  toast(`<b>${esc(c.n)} gezeigt.</b> Die App erinnert dich zu Beginn deines ersten Zuges daran.`);
+  commit();
+}
+function serumPowder(c){
+  const n = S.hand.length;
+  S.ex.push(...S.hand); S.hand = [];
+  for(let i = 0; i < n && S.library.length; i++) S.hand.push(S.library.shift());
+  act(`benutzt ${c.n}: legt die Hand (${n} Karten) ins Exil und zieht ${S.hand.length} neue`);
+  commit();
+}
+function pregameFirstTurnReminder(){
+  const r = Array.isArray(S.pregameRev) ? S.pregameRev : [];
+  if(!r.length) return;
+  toast(`<b>Aus der Starthand gezeigt:</b> ${r.map(x => `${esc(x.n)}: ${esc(x.effect)}`).join("<br>")}`, 12000);
+  addLog({from:"Erinnerung", text:`Starthand: ${r.map(x => `${x.n} (${x.effect})`).join("; ")}`, sys:true});
+  S.pregameRev = [];
+}
+function renderPregame(){
+  const bar = document.getElementById("pregame"); if(!bar) return;
+  if(!pregameActive()){ bar.hidden = true; bar.innerHTML = ""; return; }
+  bar.hidden = false; bar.innerHTML = "";
+  bar.append(Object.assign(document.createElement("b"), {textContent:"Vor dem Spiel:"}));
+  const seenPowder = new Set();
+  S.hand.forEach(c => {
+    const k = pregameKind(c); if(!k) return;
+    if(k.kind === "begin"){
+      const b = btn(`${c.n} ins Spiel legen${k.counter ? " (mit Marke)" : ""}`, () => pregameBegin(c, k), "small primary");
+      if(k.notFirst){
+        if(TURN.starter === me.id){ b.disabled = true; b.title = "Nur möglich, wenn du nicht beginnst"; }
+        else if(!TURN.starter) b.title = "Nur erlaubt, wenn du nicht beginnst. Lose zuerst aus, wer beginnt.";
+      }
+      bar.append(b);
+    } else if(k.kind === "reveal"){
+      const done = (S.pregameRev || []).some(r => r.u === c.u);
+      const b = btn(done ? `${c.n} gezeigt ✓` : `${c.n} zeigen`, () => pregameReveal(c, k), "small");
+      b.disabled = done; b.title = k.effect;
+      bar.append(b);
+    } else if(k.kind === "powder" && !seenPowder.has(c.n)){
+      seenPowder.add(c.n);
+      const b = btn(`${c.n}: Hand exilen, neu ziehen`, () => serumPowder(c), "small");
+      b.title = "Statt eines Mulligans: ganze Hand ins Exil, gleich viele Karten neu ziehen";
+      bar.append(b);
+    }
+  });
+  bar.append(btn("Fertig", () => { S.pregameDone = true; commit(); }, "small"));
+}
+
 /* ---------- Grafik: Animationen, Pfeile, Effekte ---------- */
 const SVGNS = "http://www.w3.org/2000/svg";
 const cssEsc = s => (window.CSS && CSS.escape) ? CSS.escape(String(s)) : String(s).replace(/[^a-zA-Z0-9_-]/g, ch => "\\" + ch);
@@ -3593,7 +3694,7 @@ function historyAdd(win){
 /* ---------- Automatische Updates ---------- */
 // Liegt die App im Web, prüft sie regelmässig version.json im selben Ordner und lädt sich bei einer neuen Version neu.
 // Alles Wichtige (Spielstand, Deck, Tisch) liegt im Browser-Speicher und ist nach dem Neuladen wieder da.
-const APP_VERSION = "2026.11.06-2";
+const APP_VERSION = "2026.11.06-3";
 const ONLINE = /^https?:$/.test(location.protocol);
 let updPending = null, updTimer = null, updSnoozeUntil = 0;
 function busyForUpdate(){ return botBusy || (!$("#modal").hidden && modalState && ["block","deck"].includes(modalState.kind)); }
