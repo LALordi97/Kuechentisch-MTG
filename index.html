@@ -3601,6 +3601,7 @@ function lifeFloats(){
   Object.entries(others).forEach(([id, o]) => cur[id] = {life: Number(o.life) || 0, el: playerLifeEl(id), name: o.name});
   for(const [id, v] of Object.entries(cur)){
     if(id in lastLife && lastLife[id] !== v.life){
+      if(id === me.id && v.life > lastLife[id]){ const nl = lifeGainReplace(v.life - lastLife[id]); if(nl){ S.life += nl; v.life = S.life; } }
       // neues Spiel beim Gegner (Zug 0, wieder 20 oder 40 Leben) ist kein Lebensverlust
       if(id === me.id || !(Number((others[id] || {}).turn) === 0 && (v.life === 20 || v.life === 40))) lifeChanged(id, v.life - lastLife[id]);
       if(v.el) floatNum(v.el, v.life - lastLife[id]);
@@ -3609,6 +3610,23 @@ function lifeFloats(){
     lastLife[id] = v.life;
   }
   oppBoardScan();
+}
+/* Ersatzeffekte beim Lebensgewinn: Rhox Faithmender, Boon Reflection, Alhammarret's Archive (doppelt),
+   Angel of Vitality, Leyline of Hope (+1). Gibt zurück, wie viel Leben zusätzlich dazukommt. */
+function lifeGainReplace(gain){
+  if(!ltAutoOn() || gain <= 0) return 0;
+  const txt = c => String(c.o || "").replace(/\s+/g, " ");
+  const live = S.bf.filter(c => !c.fd);
+  const dbl = live.filter(c => /If you would gain life, you gain twice that much life instead/i.test(txt(c)));
+  const plus = live.filter(c => /If you would gain life, you gain that much life plus (1|one) instead/i.test(txt(c)));
+  if(!dbl.length && !plus.length) return 0;
+  // Reihenfolge wählst du nach den Regeln selbst; zuerst +1, dann verdoppeln gibt am meisten
+  const total = (gain + plus.length) * Math.pow(2, dbl.length);
+  const extra = Math.min(999, total) - gain;
+  if(extra <= 0) return 0;
+  const names = [...plus, ...dbl].map(c => c.n).join(", ");
+  setTimeout(() => { act(`${names}: Lebensgewinn ${gain} wird zu ${gain + extra} (jetzt ${S.life})`); commit(); }, 0);
+  return extra;
 }
 /* Karten der Gegner: neu im Spiel (Essence Warden) oder gestorben (Blood Artist) */
 const OPP_BF = {};
@@ -3823,7 +3841,7 @@ function openLookDialog(){
     <h3>Spielermarken</h3>
     <label class="row stat"><input type="checkbox" id="autoMarksPick"> Energie, Erfahrung und Strahlung aus dem Kartentext automatisch zählen</label>
     <h3>Lebens-Auslöser</h3>
-    <label class="row stat"><input type="checkbox" id="autoLifePick"> Dina, Essence Warden, Sanguine Bond, Blood Artist und ähnliche Karten automatisch auslösen</label>
+    <label class="row stat"><input type="checkbox" id="autoLifePick"> Dina, Essence Warden, Rhox Faithmender, Sanguine Bond, Blood Artist und ähnliche Karten automatisch auslösen</label>
     <h3>Sagas</h3>
     <label class="row stat"><input type="checkbox" id="autoSagaPick"> Kapitelmarken automatisch setzen und Kapitel anzeigen</label>`);
   $("#autoSagaPick").checked = LOOK.autoSaga !== false; $("#autoSagaPick").onchange = () => { LOOK.autoSaga = $("#autoSagaPick").checked; saveLook(); };
@@ -4009,7 +4027,7 @@ function historyAdd(win){
 /* ---------- Automatische Updates ---------- */
 // Liegt die App im Web, prüft sie regelmässig version.json im selben Ordner und lädt sich bei einer neuen Version neu.
 // Alles Wichtige (Spielstand, Deck, Tisch) liegt im Browser-Speicher und ist nach dem Neuladen wieder da.
-const APP_VERSION = "2026.11.06-7";
+const APP_VERSION = "2026.11.06-8";
 const ONLINE = /^https?:$/.test(location.protocol);
 let updPending = null, updTimer = null, updSnoozeUntil = 0;
 function busyForUpdate(){ return botBusy || (!$("#modal").hidden && modalState && ["block","deck"].includes(modalState.kind)); }
