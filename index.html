@@ -505,7 +505,7 @@ async function castSpell(u){
   act(`wirkt ${f.c.n}`);
   const card = f.c;
   if(typeof botRespond === "function" && await botRespond(f.c)){ act(`${f.c.n} wurde gekontert`); }
-  else markOnResolve(card);
+  else { markOnResolve(card); ritualResolve(card); }
   moveCard(u, "gy");
 }
 function draw(n=1){
@@ -821,7 +821,10 @@ function cardMenu(c, zone){
   items.push({l:"Gross ansehen", f:() => bigView(c, true)});
   if(zone === "bf"){
     items.push({l: c.tap ? "Enttappen" : "Tappen", f:() => toggleTap(c)});
-    if(!c.tap && (manaChoices(c) || []).length > 1) (manaChoices(c) || []).forEach(o => items.push({h:`Tappen für ${optHtml(o)}`, f:() => tapForMana(c, o)}));
+    { const mo = manaChoices(c) || [], tapO = mo.filter(o => !o.noTap), freeO = mo.filter(o => o.noTap);
+      if(!c.tap && tapO.length > 1) tapO.forEach(o => items.push({h:`Tappen für ${optHtml(o)}`, f:() => tapForMana(c, o)}));
+      freeO.forEach(o => items.push({h:`Mana: ${optHtml(o)}`, f:() => tapForMana(c, o)}));
+      if(c.imprint) items.push({t:`Eingeprägt: ${c.imprint}`}); }
     if(c.back) items.push({l:"Auf andere Seite drehen", f:() => { c.flip=!c.flip; act(`dreht ${c.n} um`); commit(); }});
     items.push({l: c.fd ? "Aufdecken" : "Verdecken", f:() => { c.fd=!c.fd; act(c.fd ? "verdeckt eine Karte" : `deckt ${c.n} auf`); commit(); }});
     items.push({l:"Marke +1", f:() => { c.c++; commit(); }});
@@ -840,6 +843,7 @@ function cardMenu(c, zone){
     items.push({l:"Wirken (Spontanzauber/Hexerei → Friedhof)", f:() => castSpell(c.u)});
     items.push({l:"Verdeckt ausspielen", f:() => play(c.u, true)});
     items.push({l:"Zeigen", f:() => act(`zeigt ${c.n}`)});
+    handManaItems(c).forEach(it => items.push(it));
     items.push("-");
   } else if(zone !== "bf"){
     if(zone === "gy" && /\b(Instant|Sorcery)\b/.test(c.type || "")) markMenuItems(c).forEach(it => items.push(it));
@@ -1588,7 +1592,7 @@ function stackResolveMine(m){
   const c = S.st[i];
   if(m.cancelled){ S.st.splice(i, 1); S.hand.push(c); act(`nimmt ${c.n} zurück auf die Hand`); commit(); return; }
   if(it.countered){ moveCard(c.u, "gy"); return; }
-  if(it.dest !== "bf") markOnResolve(c);
+  if(it.dest !== "bf"){ markOnResolve(c); ritualResolve(c); }
   moveCard(c.u, it.dest === "bf" ? "bf" : "gy");
 }
 async function botStackReact(it){
@@ -2743,35 +2747,6 @@ function parseAddClause(cl){
   }
   const s = syms(cl); return s.length ? [s] : [];
 }
-function manaChoices(c){
-  if(!c || c.fd) return null;
-  const opts = [];
-  String(c.o || "").split("\n").forEach(raw => {
-    const line = raw.replace(/^\(|\)$/g, "").trim();
-    const m = line.match(/^([^:]*\{T\}[^:]*):\s*Add ([^.]*)\.?(.*)$/i);
-    if(!m) return;
-    const cost = m[1];
-    const gen = (cost.match(/\{(\d+)\}/g) || []).reduce((s, x) => s + parseInt(x.slice(1), 10), 0);
-    const sac = /sacrifice/i.test(cost);
-    const lifeM = cost.match(/pay (\d+) life/i);
-    const painM = m[3].match(/deals (\d+) damage to you/i);
-    // Gemstone Caverns: «If … has a luck counter on it, instead add one mana of any color»
-    const inst = m[3].match(/If [^,]+ has an? \w+ counter on it, instead add ([^.]*)/i);
-    parseAddClause(inst && (c.c || 0) > 0 ? inst[1] : m[2]).forEach(add => opts.push({add, cost: gen, sac, life: lifeM ? +lifeM[1] : 0, pain: painM ? +painM[1] : 0}));
-  });
-  if(!opts.length && isLand(c)){
-    let cols = (c.pm || []).filter(x => POOL_ORDER.includes(x));
-    if(!cols.length) Object.keys(BASIC).forEach(b => { if(new RegExp("\\b" + b + "\\b").test(c.type || "")) cols.push(BASIC[b]); });
-    [...new Set(cols)].forEach(col => opts.push({add:[col], cost:0, sac:false, life:0, pain:0}));
-  }
-  // gleiche Optionen nur einmal
-  const seen = new Set();
-  return opts.filter(o => { const k = o.add.join("") + "|" + o.cost + o.sac + o.life + o.pain; if(seen.has(k)) return false; seen.add(k); return true; });
-}
-function optHtml(o){
-  const extra = [o.cost ? `kostet ${o.cost} Mana` : "", o.pain ? `${o.pain} Schaden an dir` : "", o.life ? `${o.life} Leben` : "", o.sac ? "wird geopfert" : ""].filter(Boolean);
-  return `${manaHtml(symStr(o.add))}${extra.length ? ` <span class="stat">(${esc(extra.join(", "))})</span>` : ""}`;
-}
 function poolAdd(syms){ const p = poolOf(); syms.forEach(s => { if(POOL_ORDER.includes(s)) p[s]++; }); }
 function poolTakeGeneric(n){
   const p = poolOf(); if(poolTotal(p) < n) return false;
@@ -2782,31 +2757,6 @@ function cardPoint(c){
   const el = document.querySelector(`#myField .card[data-u="${cssEsc(c.u)}"]`);
   const r = el ? el.getBoundingClientRect() : {left: innerWidth / 2, top: innerHeight / 2, width:0, height:0};
   return {clientX: r.left + r.width / 2, clientY: r.top + r.height / 2};
-}
-function tapForMana(c, o){
-  if(o.cost && !poolTakeGeneric(o.cost)){ toast(`Für ${esc(c.n)} brauchst du zuerst ${o.cost} Mana im Pool.`); return; }
-  c.tap = true; c.mtap = o.sac ? null : [...o.add];
-  poolAdd(o.add);
-  if(o.pain) S.life -= o.pain;
-  if(o.life) S.life -= o.life;
-  act(`tappt ${c.n} für ${symStr(o.add)}${o.pain ? ` (${o.pain} Schaden)` : ""}${o.life ? ` (${o.life} Leben)` : ""}`);
-  if(o.sac){ moveCard(c.u, "gy"); return; }
-  commit();
-}
-function toggleTap(c, e){
-  if(c.tap){
-    c.tap = false;
-    if(Array.isArray(c.mtap) && c.mtap.length){
-      const p = poolOf(); const back = [];
-      c.mtap.forEach(s => { if(p[s] > 0){ p[s]--; back.push(s); } });
-      if(back.length) act(`enttappt ${c.n}, ${symStr(back)} geht aus dem Pool zurück`);
-    }
-    c.mtap = null; commit(); return;
-  }
-  const opts = LOOK.autoPool !== false ? manaChoices(c) : null;
-  if(!opts || !opts.length){ c.tap = true; commit(); return; }
-  if(opts.length === 1) return tapForMana(c, opts[0]);
-  openMenu(e && e.clientX != null ? e : cardPoint(c), [{t:`${c.n}: welches Mana?`}, ...opts.map(o => ({h: optHtml(o), f: () => tapForMana(c, o)})), "-", {l:"Nur tappen (kein Mana)", f: () => { c.tap = true; c.mtap = null; commit(); }}]);
 }
 function emptyPool(why){
   const p = poolOf(); const n = poolTotal(p);
@@ -2823,17 +2773,22 @@ function playerPayPlan(c, X){
   const pool = {...poolOf()};
   const taps = []; const usedSrc = new Set(); const missing = []; let life = 0;
   const auto = LOOK.autoPay !== false;
-  const sources = () => S.bf.filter(s => !s.tap && !s.fd && !usedSrc.has(s.u)).map(s => ({s, opts:(manaChoices(s) || []).filter(o => !o.cost && !o.sac && !o.life)})).filter(x => x.opts.length)
+  const mods = costMods(c);
+  gen = Math.max(0, gen + mods.more - mods.less);
+  if(mods.tri){ const tot = gen + req.length; if(tot < 3){ gen += 3 - tot; mods.why.push(`Trinisphere +${3 - tot}`); } }
+  const sources = () => S.bf.filter(s => !s.tap && !s.fd && !usedSrc.has(s.u)).map(s => ({s, opts:(manaChoices(s) || []).filter(o => autoOpt(o, c))})).filter(x => x.opts.length)
     .sort((a, b) => (isCreature(a.s) - isCreature(b.s)) || (!isLand(a.s) - !isLand(b.s)) || (new Set(a.opts.flatMap(o => o.add)).size - new Set(b.opts.flatMap(o => o.add)).size));
   const tap = (src, o) => { usedSrc.add(src.u); taps.push({c:src, o}); o.add.forEach(s => pool[s] = (pool[s] || 0) + 1); };
   for(const opts of [...req].sort((a, b) => a.length - b.length)){
     const cols = opts.filter(x => POOL_ORDER.includes(x));
     let col = cols.filter(x => pool[x] > 0).sort((a, b) => pool[b] - pool[a])[0];
     if(!col && auto){
-      for(const x of sources()){
-        const o = x.opts.filter(o => o.add.some(s => cols.includes(s))).sort((a, b) => a.pain - b.pain)[0];
-        if(o){ tap(x.s, o); col = cols.find(s => pool[s] > 0); break; }
-      }
+      // passende Quelle; bei mehreren Möglichkeiten die mit der Menge, die zum restlichen Bedarf passt (Eldrazi Temple {C}{C})
+      const need = gen + req.length;
+      const cand = sources().map(x => ({x, o:x.opts.filter(o => o.add.some(s => cols.includes(s))).sort((a, b) => (a.pain - b.pain) || ((b.add.length <= need ? b.add.length : -b.add.length) - (a.add.length <= need ? a.add.length : -a.add.length)))[0]})).filter(y => y.o);
+      cand.sort((a, b) => (a.o.pain - b.o.pain) || (Math.abs(a.o.add.length - 1) - Math.abs(b.o.add.length - 1)) * (need > 1 ? 0 : 1));
+      const pick = cand[0];
+      if(pick){ tap(pick.x.s, pick.o); col = cols.find(s => pool[s] > 0); }
     }
     if(col){ pool[col]--; continue; }
     if(opts.includes("LIFE")){ life += 2; continue; }
@@ -2843,23 +2798,25 @@ function playerPayPlan(c, X){
   const takeGen = () => { while(gen > 0){ const col = ["C", ...POOL_ORDER.filter(x => x !== "C").sort((a, b) => pool[b] - pool[a])].find(x => pool[x] > 0); if(!col) break; pool[col]--; gen--; } };
   takeGen();
   if(gen > 0 && auto){
-    for(const x of sources()){
-      if(gen <= 0) break;
-      const o = [...x.opts].sort((a, b) => (a.pain - b.pain) || (b.add.length - a.add.length) || ((b.add[0] === "C") - (a.add[0] === "C")))[0];
-      tap(x.s, o); takeGen();
+    // die Quelle wählen, deren Menge am besten zum Rest passt (Sol Ring für {2}, Land für {1}, Gaea's Cradle nicht für {1})
+    for(let guard = 0; gen > 0 && guard < 60; guard++){
+      const cand = sources().map(x => ({x, o:[...x.opts].sort((a, b) => (a.pain - b.pain) || ((b.add[0] === "C") - (a.add[0] === "C")))[0]})).filter(y => y.o);
+      if(!cand.length) break;
+      cand.sort((a, b) => (a.o.pain - b.o.pain) || (Math.abs(a.o.add.length - gen) - Math.abs(b.o.add.length - gen)) || (isCreature(a.x.s) - isCreature(b.x.s)) || (!isLand(a.x.s) - !isLand(b.x.s)));
+      tap(cand[0].x.s, cand[0].o); takeGen();
     }
   }
   if(gen > 0) missing.push(`{${gen}}`);
-  return {ok: !missing.length, pool, taps, life, missing, fromCz};
+  return {ok: !missing.length, pool, taps, life, missing, fromCz, why: mods.why};
 }
 function applyPayment(c, plan){
-  plan.taps.forEach(({c:src, o}) => { src.tap = true; src.mtap = null; if(o.pain) S.life -= o.pain; });
+  plan.taps.forEach(({c:src, o}) => { src.tap = true; src.mtap = null; manaSideEffects(src, o); });
   POOL_ORDER.forEach(k => plan.pool[k] = Math.max(0, plan.pool[k] || 0));
   S.pool = plan.pool;
   S.life -= plan.life;
   if(plan.fromCz) c.casts = (c.casts || 0) + 1;
   const tapped = plan.taps.map(t => t.c.n);
-  if(costOf(c) || plan.taps.length) act(`bezahlt ${c.mc || "die Kosten"} für ${c.n}${tapped.length ? ` (tappt ${tapped.join(", ")})` : ""}${plan.life ? `, ${plan.life} Leben` : ""}`);
+  if(costOf(c) || plan.taps.length) act(`bezahlt ${c.mc || "die Kosten"} für ${c.n}${plan.why && plan.why.length ? ` [${plan.why.join(", ")}]` : ""}${tapped.length ? ` (tappt ${tapped.join(", ")})` : ""}${plan.life ? `, ${plan.life} Leben` : ""}`);
 }
 function askNumber(title, text){
   return new Promise(resolve => {
@@ -3113,13 +3070,13 @@ function markEvent(ev, extraSources){
   if(gains.length) gainMarks(gains);
 }
 function markOnMove(c, from, to, wasFd){
-  if(c && to === "bf" && from !== "bf" && !c.fd){ lifeEvent("enter", 1, c); sagaEnter(c); }
+  if(c && to === "bf" && from !== "bf" && !c.fd){ manaEnter(c); lifeEvent("enter", 1, c); sagaEnter(c); }
   if(c && from === "bf" && to !== "bf") sagaLeave(c);
   if(!c || !markAutoOn()) return;
   if(to === "bf" && from !== "bf" && !c.fd) markEvent({kind:"enter", c});
   else if(from === "bf" && to === "gy" && !wasFd) markEvent({kind:"die", c}, [c]);
 }
-function markOnCast(c){ if(c && !isLand(c)) markEvent({kind:"cast", c}); }
+function markOnCast(c){ if(c && !isLand(c)){ noteSpellCast(); markEvent({kind:"cast", c}); } }
 function markOnAttack(attackers){ attackers.forEach((c, i) => markEvent({kind:"attack", c, first: i === 0})); }
 /* Spontanzauber und Hexereien: «You get {E}{E}{E}» beim Verrechnen */
 async function markOnResolve(c){
@@ -3562,6 +3519,320 @@ function sagaChapter(c, n){
 /* Dr. Beverly Crusher: Lebens-Auslöser lösen ein weiteres Mal aus */
 function lifeTrigDoublers(){
   return S.bf.filter(c => !c.fd && /gaining life causes a triggered ability of a permanent you control to trigger, that ability triggers an additional time/i.test(String(c.o || "").replace(/\s+/g, " "))).length;
+}
+
+/* ---------- Manaquellen lesen (erweitert) ---------- */
+// Liest jede Fähigkeit «Kosten: Add …» und versteht dabei:
+// zählende Länder (Gaea's Cradle), Tron, Chrome Mox / Mox Diamond / Mox Opal / Mox Amber, Zählmarken (Gemstone Mine),
+// Opfer- und Abwerfkosten (Phyrexian Tower, Ashnod's Altar, Lion's Eye Diamond), Einschränkungen («Spend this mana only …»),
+// Blood Moon, Urborg und Yavimaya.
+const normName = s => String(s || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+const NUMW2 = {a:1, an:1, one:1, two:2, three:3, four:4, five:5, six:6, seven:7, eight:8, nine:9, ten:10};
+/* Alle Karten im Spiel (eigene mit Text, die der anderen nur mit Name und Typ) */
+function allBfNames(){
+  const out = S.bf.filter(c => !c.fd).map(c => ({n:c.n, type:c.type, tap:c.tap, mine:true}));
+  Object.entries(others).forEach(([id, o]) => (Array.isArray(o && o.bf) ? o.bf : []).forEach(c => { if(c && !c.fd && c.n) out.push({n:c.n, type:c.type, tap:c.tap, mine:false}); }));
+  return out;
+}
+const onAnyBf = names => allBfNames().some(c => names.includes(c.n));
+const moonActive = () => onAnyBf(["Blood Moon", "Magus of the Moon"]);
+function landTypeExtras(){
+  const ex = [];
+  if(onAnyBf(["Urborg, Tomb of Yawgmoth"])) ex.push("B");
+  if(onAnyBf(["Yavimaya, Cradle of Growth"])) ex.push("G");
+  return ex;
+}
+const colorsOfMc = mc => [...new Set((String(mc || "").toUpperCase().match(/[WUBRG]/g) || []))];
+function countMine(desc, self){
+  const d = String(desc).replace(/\byou control\b/i, "").trim();
+  return S.bf.filter(x => !(x.fd && !/creature/i.test(d)) && descMatch(d.replace(/s$/, ""), x.fd ? {...x, type:"Creature"} : x)).length;
+}
+const ZERO_OPT = {cost:0, sac:false, life:0, pain:0};
+function manaChoices(c){
+  if(!c || c.fd) return null;
+  const opts = [];
+  // Blood Moon: nichtstandard Länder sind Gebirge und haben nur noch «{T}: Add {R}»
+  if(isLand(c) && !/\bBasic\b/.test(c.type || "") && moonActive()) return [{add:["R"], ...ZERO_OPT}];
+  const SELF = selfPat(c);
+  const txt = String(c.o || "");
+  const tapPain = txt.match(new RegExp(`Whenever ${SELF} becomes tapped, it deals (\\d+) damage to you`, "i"));
+  txt.split("\n").forEach(raw => {
+    let line = raw.replace(/^\(|\)$/g, "").trim();
+    line = line.replace(/^[A-Z][\w' ]+ — (?=[^"]*:)/, ""); // «Metalcraft — {T}: …», «Imprint — …»
+    const fe = line.match(/^(\{T\}):\s*For each colou?r among permanents you control, add one mana of that colou?r/i);
+    if(fe){
+      const cols = [...new Set(S.bf.filter(x => !x.fd).flatMap(x => colorsOfMc(x.mc)))];
+      opts.push({add:cols, ...ZERO_OPT});
+      return;
+    }
+    const m = line.match(/^([^:"]*):\s*Add ([^.]*)\.?(.*)$/i);
+    if(!m) return;
+    const cost = m[1];
+    if(!/\{T\}|sacrifice|discard|remove|exile|pay|put|tap an untapped/i.test(cost)) return;
+    const o = {cost:0, sac:false, life:0, pain:0};
+    o.cost = (cost.match(/\{(\d+)\}/g) || []).reduce((s, x) => s + parseInt(x.slice(1), 10), 0);
+    o.noTap = !/\{T\}/.test(cost);
+    o.sac = new RegExp(`Sacrifice (?:${SELF}|this \\w+|it)\\b`, "i").test(cost);
+    const sacOther = cost.match(/Sacrifice (an?|two|three) ([^,]+?)(?:,|$)/i);
+    if(sacOther && !o.sac) o.sacOther = sacOther[2].trim();
+    const lifeM = cost.match(/pay (\d+) life/i); o.life = lifeM ? +lifeM[1] : 0;
+    if(/discard your hand/i.test(cost)) o.discardHand = true;
+    else if(/discard (an?|one) /i.test(cost)) o.extra = "eine Karte abwerfen";
+    const rc = cost.match(/remove (an?|one|two|three) (\S+) counters? from/i);
+    if(rc){ o.removeCtr = NUMW2[rc[1].toLowerCase()] || 1; if((c.c || 0) < o.removeCtr) return; }
+    if(/exile/i.test(cost)) o.extra = (cost.match(/exile [^,]+/i) || ["etwas ins Exil legen"])[0];
+    if(/tap an untapped/i.test(cost)) o.extra = (cost.match(/tap an untapped [^,]+/i) || [""])[0];
+    if(/put an? [-+]\d+\/[-+]\d+ counter/i.test(cost)) o.extra = "Marke auf die Karte legen";
+    const rest = m[3] || "";
+    const painM = rest.match(/deals (\d+) damage to you/i); o.pain = painM ? +painM[1] : (tapPain && !o.noTap ? +tapPain[1] : 0);
+    const restr = rest.match(/Spend this mana only to cast ([^.]*)/i); if(restr) o.restrict = restr[1].trim();
+    // Bedingungen
+    const metal = rest.match(/Activate only if you control (three|\w+) or more artifacts/i);
+    if(metal && S.bf.filter(x => !x.fd && /Artifact/.test(x.type || "")).length < (NUMW2[metal[1].toLowerCase()] || 3)) return;
+    let addTxt = m[2];
+    // «instead»-Sätze: Gemstone Caverns (Marke), Tron (andere Teile im Spiel), Threshold
+    const inst = rest.match(/If [^,]+ has an? \w+ counter on it, instead add ([^.]*)/i);
+    if(inst && (c.c || 0) > 0) addTxt = inst[1];
+    const tron = rest.match(/If you control an? (.+?) and an? (.+?), add ([^.]*?) instead/i);
+    if(tron){
+      const have = x => S.bf.some(b => !b.fd && (normName(b.n).includes(normName(x)) || normName(b.type).includes(normName(x).replace(/^urzas/, "urzas"))));
+      if(have(tron[1]) && have(tron[2])) addTxt = tron[3];
+    }
+    // Mengen
+    const each = addTxt.match(/^((?:\{[WUBRGC]\})+) for each (.+)$/i);
+    if(each){
+      const n = countMine(each[2], c); const sym = (each[1].match(/[WUBRGC]/g) || []);
+      const add = []; for(let i = 0; i < n; i++) add.push(...sym);
+      opts.push({...o, add}); return;
+    }
+    const xg = addTxt.match(/^X mana (?:of any one colou?r|in any combination of colou?rs), where X is the greatest power among creatures you control/i);
+    if(xg){
+      const n = Math.max(0, ...S.bf.filter(x => isCreature(x) && !x.fd).map(x => power(x)));
+      COLORS.forEach(col => opts.push({...o, add:Array(n).fill(col)})); return;
+    }
+    if(/any colou?r among legendary creatures and planeswalkers you control/i.test(addTxt)){
+      const cols = [...new Set(S.bf.filter(x => x !== c && !x.fd && /Legendary/.test(x.type || "") && /Creature|Planeswalker/.test(x.type || "")).flatMap(x => colorsOfMc(x.mc)))];
+      cols.forEach(col => opts.push({...o, add:[col]})); return;
+    }
+    if(/any of the exiled card'?s colou?rs/i.test(addTxt)){
+      (c.imprintCols || []).forEach(col => opts.push({...o, add:[col]})); return;
+    }
+    parseAddClause(addTxt).forEach(add => opts.push({...o, add}));
+  });
+  if(!opts.length && isLand(c)){
+    let cols = (c.pm || []).filter(x => POOL_ORDER.includes(x));
+    if(!cols.length) Object.keys(BASIC).forEach(b => { if(new RegExp("\\b" + b + "\\b").test(c.type || "")) cols.push(BASIC[b]); });
+    [...new Set(cols)].forEach(col => opts.push({add:[col], ...ZERO_OPT}));
+  }
+  // Cryptolith Rite: «Creatures you control have "{T}: Add one mana of any color."»
+  if(isCreature(c) && S.bf.some(x => !x.fd && /Creatures you control have "\{T\}: Add one mana of any colou?r\."/i.test(x.o || "")))
+    COLORS.forEach(col => { if(!opts.some(o => !o.noTap && o.add.join("") === col)) opts.push({add:[col], ...ZERO_OPT}); });
+  // Urborg / Yavimaya: jedes Land ist zusätzlich Sumpf bzw. Wald
+  if(isLand(c)) landTypeExtras().forEach(col => { if(!opts.some(o => !o.noTap && o.add.length === 1 && o.add[0] === col)) opts.push({add:[col], ...ZERO_OPT, viaType:true}); });
+  const seen = new Set();
+  return opts.filter(o => o.add.length || /for each|among/i.test(txt)).filter(o => {
+    const k = o.add.join("") + "|" + o.cost + o.sac + o.life + o.pain + !!o.noTap + (o.sacOther || "") + (o.restrict || "") + (o.extra || "");
+    if(seen.has(k)) return false; seen.add(k); return true;
+  });
+}
+function optHtml(o){
+  const extra = [o.noTap ? "ohne Tappen" : "", o.cost ? `kostet ${o.cost} Mana` : "", o.pain ? `${o.pain} Schaden an dir` : "", o.life ? `${o.life} Leben` : "",
+    o.sac ? "wird geopfert" : "", o.sacOther ? `opfere ${o.sacOther}` : "", o.discardHand ? "Hand abwerfen" : "", o.removeCtr ? `−${o.removeCtr} Marke` : "",
+    o.extra || "", o.restrict ? `nur für ${o.restrict}` : ""].filter(Boolean);
+  return `${o.add.length ? manaHtml(symStr(o.add)) : "kein Mana"}${extra.length ? ` <span class="stat">(${esc(extra.join(", "))})</span>` : ""}`;
+}
+/* Darf dieses Mana für diesen Zauber verwendet werden? */
+function manaAllowedFor(o, spell){
+  if(!o.restrict) return true;
+  const r = o.restrict.toLowerCase(), t = String(spell && spell.type || "");
+  if(/colorless eldrazi/.test(r)) return /Eldrazi/.test(t) && !colorsOfMc(spell.mc).length;
+  if(/artifact/.test(r)) return /Artifact/.test(t);
+  if(/creature/.test(r)) return /Creature/.test(t);
+  if(/legendary/.test(r)) return /Legendary/.test(t);
+  if(/instant or sorcery/.test(r)) return /Instant|Sorcery/.test(t);
+  return false;
+}
+/* Für automatisches Bezahlen nur Quellen ohne Zusatzkosten */
+const autoOpt = (o, spell) => !o.cost && !o.sac && !o.life && !o.noTap && !o.sacOther && !o.discardHand && !o.extra && o.add.length && manaAllowedFor(o, spell);
+/* Kartenauswahl für Opferkosten (Phyrexian Tower, Ashnod's Altar) */
+function pickFromBf(title, filter){
+  return new Promise(res => {
+    const list = S.bf.filter(filter);
+    if(!list.length){ toast(`Nichts zum Opfern da: ${esc(title)}`); res(null); return; }
+    modalState = {kind:"block"}; $("#modal").hidden = false;
+    const box = $("#modalBox"); box.innerHTML = "";
+    box.append(head(title));
+    const g = document.createElement("div"); g.className = "grid z-modal";
+    list.forEach(x => { const el = cardEl(x, true, "bf"); el.style.setProperty("--w", "100px"); el.style.cursor = "pointer"; el.addEventListener("click", () => { closeModal(); res(x); }); g.append(el); });
+    box.append(g, btn("Abbrechen", () => { closeModal(); res(null); }, "small"));
+  });
+}
+/* Nebenwirkungen einer Manafähigkeit (gilt auch beim automatischen Bezahlen) */
+function manaSideEffects(c, o){
+  if(o.pain) S.life -= o.pain;
+  if(o.life) S.life -= o.life;
+  if(o.removeCtr){
+    c.c = Math.max(0, (c.c || 0) - o.removeCtr);
+    if(c.c === 0 && /If there are no \S+ counters on .+?, sacrifice it/i.test(c.o || "")){ setTimeout(() => { if(S.bf.includes(c)){ moveCard(c.u, "gy"); act(`opfert ${c.n} (keine Marken mehr)`); commit(); } }, 0); }
+  }
+  if(o.discardHand && S.hand.length){ const n = S.hand.length; S.gy.push(...S.hand); S.hand = []; act(`wirft die Hand ab (${n} Karten)`); }
+}
+async function tapForMana(c, o){
+  if(o.sacOther){
+    const desc = o.sacOther;
+    const victim = await pickFromBf(`${c.n}: Was opferst du (${desc})?`, x => x !== c && descMatch(desc.replace(/s$/, ""), x));
+    if(!victim) return;
+    moveCard(victim.u, "gy"); act(`opfert ${victim.n} für ${c.n}`);
+  }
+  if(o.cost && !poolTakeGeneric(o.cost)){ toast(`Für ${esc(c.n)} brauchst du zuerst ${o.cost} Mana im Pool.`); return; }
+  if(!o.noTap){ c.tap = true; c.mtap = o.sac ? null : [...o.add]; }
+  poolAdd(o.add);
+  manaSideEffects(c, o);
+  act(`${o.noTap ? "benutzt" : "tappt"} ${c.n} für ${symStr(o.add) || "kein Mana"}${o.pain ? ` (${o.pain} Schaden)` : ""}${o.life ? ` (${o.life} Leben)` : ""}${o.extra ? ` (${o.extra})` : ""}`);
+  if(o.sac){ moveCard(c.u, "gy"); return; }
+  commit();
+}
+function toggleTap(c, e){
+  if(c.tap){
+    c.tap = false;
+    if(Array.isArray(c.mtap) && c.mtap.length){
+      const p = poolOf(); const back = [];
+      c.mtap.forEach(s => { if(p[s] > 0){ p[s]--; back.push(s); } });
+      if(back.length) act(`enttappt ${c.n}, ${symStr(back)} geht aus dem Pool zurück`);
+    }
+    c.mtap = null; commit(); return;
+  }
+  const opts = LOOK.autoPool !== false ? (manaChoices(c) || []).filter(o => !o.noTap) : [];
+  if(!opts.length){ c.tap = true; commit(); return; }
+  if(opts.length === 1 && !opts[0].sacOther && !opts[0].discardHand && !opts[0].sac) return tapForMana(c, opts[0]);
+  openMenu(e && e.clientX != null ? e : cardPoint(c), [{t:`${c.n}: welches Mana?`}, ...opts.map(o => ({h: optHtml(o), f: () => tapForMana(c, o)})), "-", {l:"Nur tappen (kein Mana)", f: () => { c.tap = true; c.mtap = null; commit(); }}]);
+}
+/* Mana aus der Hand: Simian Spirit Guide, Elvish Spirit Guide */
+function handManaItems(c){
+  const out = [];
+  String(c.o || "").split("\n").forEach(raw => {
+    const m = raw.trim().match(new RegExp(`^Exile (?:${selfPat(c)}|this card) from your hand:\\s*Add ([^.]*)`, "i"));
+    if(m) parseAddClause(m[1]).forEach(add => out.push({h:`Ins Exil für ${manaHtml(symStr(add))}`, f:() => { moveCard(c.u, "ex"); poolAdd(add); act(`legt ${c.n} aus der Hand ins Exil für ${symStr(add)}`); commit(); }}));
+  });
+  return out;
+}
+/* Rituale: Dark Ritual, Seething Song, Cabal Ritual, Rite of Flame, Manamorphose … */
+async function ritualResolve(c){
+  if(!c || !/\b(Instant|Sorcery)\b/.test(c.type || "") || LOOK.autoPool === false) return;
+  const lines = String(c.o || "").split("\n").map(l => l.replace(/\([^)]*\)/g, "").trim()).filter(l => !/^[^:"]*\{T\}[^:"]*:/.test(l));
+  const t = lines.join(" ");
+  if(/choose (one|two|one or more)/i.test(t)) return;
+  let m = t.match(/(?:^|\.\s*)Add ([^.]*?)(?:\.|$)/i); if(!m) return;
+  let clause = m[1];
+  const thr = t.match(/Threshold\s*[—-]\s*Add ([^.]*?) instead if seven or more cards are in your graveyard/i);
+  if(thr && S.gy.length >= 7) clause = thr[1];
+  let add = [];
+  const then = clause.match(/^((?:\{[WUBRGC]\})+), then add (\{[WUBRGC]\}) for each card named (.+?) in each graveyard/i);
+  if(then){
+    add = (then[1].match(/[WUBRGC]/g) || []);
+    const nm = then[3].trim(); const n = S.gy.filter(x => x.n === nm).length + Object.values(others).reduce((s, o) => s + (Array.isArray(o && o.gy) ? o.gy.filter(x => x && x.n === nm).length : 0), 0);
+    for(let i = 0; i < n; i++) add.push(then[2][1]);
+  } else if(/^(?:\{[WUBRGC]\})+$/.test(clause.trim())) add = clause.match(/[WUBRGC]/g);
+  else {
+    let n = /\bX\b|for each/i.test(clause) ? await askNumber(`${c.n}: Wie viel Mana?`, clause) : (/\bthree mana\b/i.test(clause) ? 3 : /\btwo mana\b/i.test(clause) ? 2 : /\bfour mana\b/i.test(clause) ? 4 : 1);
+    if(!n) return;
+    const per = clause.match(/^(\{[WUBRGC]\}) or (\{[WUBRGC]\}) for each/i);
+    let cols = /any|combination/i.test(clause) ? COLORS.slice() : (clause.match(/\{([WUBRGC])\}/g) || []).map(x => x[1]);
+    if(per) cols = [per[1][1], per[2][1]];
+    if(!cols.length) return;
+    for(let i = 0; i < n; i++){
+      const col = cols.length === 1 ? cols[0] : await pickColor(`${c.n}: Farbe für Mana ${i + 1} von ${n}`, cols);
+      if(!col) break; add.push(col);
+    }
+  }
+  if(!add.length) return;
+  poolAdd(add);
+  act(`${c.n}: ${symStr(add)} in den Manapool`);
+  commit();
+}
+function pickColor(title, cols){
+  return new Promise(res => {
+    modalState = {kind:"block"}; $("#modal").hidden = false;
+    const box = $("#modalBox"); box.innerHTML = "";
+    box.append(head(title));
+    const row = document.createElement("div"); row.className = "row";
+    cols.forEach(col => { const b = document.createElement("button"); b.innerHTML = `${manaHtml(`{${col}}`)} ${MANA_NAME[col]}`; b.onclick = () => { closeModal(); res(col); }; row.append(b); });
+    box.append(row, btn("Abbrechen", () => { closeModal(); res(null); }, "small"));
+  });
+}
+/* Beim Eintreten: Marken (Gemstone Mine, Dark Depths), Chrome Mox, Mox Diamond */
+function manaEnter(c){
+  if(!c || c.fd) return;
+  const t = String(c.o || "");
+  const ctr = t.match(/enters(?: the battlefield)? with (an?|one|two|three|four|five|six|seven|eight|nine|ten|\d+) ([^ ]+) counters? on it/i);
+  if(ctr && (!isCreature(c) || /^\+1\/\+1$/.test(ctr[2]))){ c.c = /^\d+$/.test(ctr[1]) ? +ctr[1] : (NUMW2[ctr[1].toLowerCase()] || 1); c.cn = ctr[2]; }
+  if(/Imprint\s*[—-]\s*When .+? enters, you may exile a nonartifact, nonland card from your hand/i.test(t)){
+    setTimeout(async () => {
+      const pick = await pickFromHand(`${c.n}: Welche Karte prägst du ein?`, x => !isLand(x) && !/Artifact/.test(x.type || ""));
+      if(!pick) return;
+      moveCard(pick.u, "ex"); c.imprintCols = colorsOfMc(pick.mc); c.imprint = pick.n;
+      act(`prägt ${pick.n} auf ${c.n} ein (${c.imprintCols.map(x => MANA_NAME[x]).join(", ") || "farblos"})`); commit();
+    }, 0);
+  }
+  if(/If .+? would enter, you may discard a land card instead/i.test(t)){
+    setTimeout(async () => {
+      const pick = await pickFromHand(`${c.n}: Welches Land wirfst du ab?`, x => isLand(x), "Keins (Mox kommt in den Friedhof)");
+      if(!pick){ if(S.bf.includes(c)){ moveCard(c.u, "gy"); act(`${c.n} kommt ohne abgeworfenes Land in den Friedhof`); commit(); } return; }
+      moveCard(pick.u, "gy"); act(`wirft ${pick.n} für ${c.n} ab`); commit();
+    }, 0);
+  }
+}
+function pickFromHand(title, filter, noneLabel){
+  return new Promise(res => {
+    const list = S.hand.filter(filter);
+    modalState = {kind:"block"}; $("#modal").hidden = false;
+    const box = $("#modalBox"); box.innerHTML = "";
+    box.append(head(title));
+    if(!list.length) box.append(Object.assign(document.createElement("p"), {className:"muted", textContent:"Keine passende Karte auf der Hand."}));
+    const g = document.createElement("div"); g.className = "grid z-modal";
+    list.forEach(x => { const el = cardEl(x, true, "hand"); el.style.setProperty("--w", "100px"); el.style.cursor = "pointer"; el.addEventListener("click", () => { closeModal(); res(x); }); g.append(el); });
+    box.append(g, btn(noneLabel || "Keine", () => { closeModal(); res(null); }, "small"));
+  });
+}
+/* Kosten ändern: Ruby Medallion (−1), Sphere of Resistance, Trinisphere, Defense Grid, Damping Sphere, Thalia (+) */
+function spellsThisTurn(){
+  const key = `${TURN.n}|${TURN.active}`;
+  if(S.spellTurnKey !== key){ S.spellTurnKey = key; S.spellsCast = 0; }
+  return S.spellsCast || 0;
+}
+function noteSpellCast(){ spellsThisTurn(); S.spellsCast = (S.spellsCast || 0) + 1; }
+function costMods(spell){
+  const t = String(spell.type || ""), mc = String(spell.mc || "");
+  const isType = w => {
+    w = w.toLowerCase();
+    if(COLW[w]) return mc.toUpperCase().includes(COLW[w]);
+    if(w === "colorless") return !colorsOfMc(mc).length;
+    if(w.startsWith("non")) return !new RegExp(w.slice(3), "i").test(t);
+    return new RegExp(w.replace(/s$/, ""), "i").test(t);
+  };
+  let less = 0, more = 0; const why = [];
+  S.bf.filter(c => !c.fd).forEach(c => String(c.o || "").split("\n").forEach(line => {
+    // «Red spells», «Colorless Eldrazi spells», «Instant and sorcery spells you cast cost {1} less»
+    const m = line.match(/^(.*?)\s*spells you cast cost \{(\d+)\} less to cast(.*)$/i);
+    if(!m) return;
+    const desc = m[1].trim();
+    const ok = !desc || (/ and | or /i.test(desc) ? desc.split(/\s+(?:and|or)\s+/i).some(isType) : desc.split(/\s+/).every(isType));
+    if(!ok) return;
+    let v = +m[2];
+    if(/for each/i.test(m[3])){ if(/experience counter/i.test(m[3])) v *= marksOf().XP; else return; }
+    if(v){ less += v; why.push(`${c.n} −${v}`); }
+  }));
+  const TAX = {
+    "Sphere of Resistance": () => 1,
+    "Thalia, Guardian of Thraben": () => /Creature/.test(t) ? 0 : 1,
+    "Defense Grid": () => (TURN.active && TURN.active !== me.id) ? 3 : 0,
+    "Damping Sphere": () => spellsThisTurn(),
+    "Lodestone Golem": () => /Artifact/.test(t) ? 0 : 1,
+    "Thorn of Amethyst": () => /Creature/.test(t) ? 0 : 1
+  };
+  allBfNames().forEach(c => { const f = TAX[c.n]; if(f){ const v = f(); if(v){ more += v; why.push(`${c.n} +${v}`); } } });
+  const tri = allBfNames().some(c => c.n === "Trinisphere" && !c.tap);
+  return {less, more, tri, why};
 }
 
 /* ---------- Grafik: Animationen, Pfeile, Effekte ---------- */
@@ -4027,7 +4298,7 @@ function historyAdd(win){
 /* ---------- Automatische Updates ---------- */
 // Liegt die App im Web, prüft sie regelmässig version.json im selben Ordner und lädt sich bei einer neuen Version neu.
 // Alles Wichtige (Spielstand, Deck, Tisch) liegt im Browser-Speicher und ist nach dem Neuladen wieder da.
-const APP_VERSION = "2026.11.06-8";
+const APP_VERSION = "2026.11.06-9";
 const ONLINE = /^https?:$/.test(location.protocol);
 let updPending = null, updTimer = null, updSnoozeUntil = 0;
 function busyForUpdate(){ return botBusy || (!$("#modal").hidden && modalState && ["block","deck"].includes(modalState.kind)); }
