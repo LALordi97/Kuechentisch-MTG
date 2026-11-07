@@ -4648,7 +4648,7 @@ function matchStep2(p, src, full, SELF){
   if((m = p.match(/^(scry|surveil) (\d+|x|one|two|three)$/i))) return [W({t:"dig", n:m[2], mode:m[1].toLowerCase()})];
   if((m = p.match(/^mill (a card|one|two|three|four|five|\d+|x)(?: cards?)?$/i))) return [W({t:"mill", n:m[1] === "a card" ? 1 : m[1]})];
   if((m = p.match(/^put the top (a|one|two|three|\d+|x) cards? of your library into your graveyard$/i))) return [W({t:"mill", n:m[1]})];
-  if(/^shuffle(?: your library)?$/i.test(p)) return [{t:"shuffle"}];
+  if(/^shuffle(?: your library)?$/i.test(p)) return [may ? {t:"shuffle", may:true, text:"die Bibliothek mischen"} : {t:"shuffle"}];
   if((m = p.match(/^put (a|one|two|three|\d+) cards? from your hand on top of your library(?: in any order)?$/i))) return [W({t:"handTop", n:m[1]})];
   if((m = p.match(new RegExp(`^put ${SELF} on top of its owner's library$`, "i")))) return [W({t:"selfTop"})];
   if((m = p.match(new RegExp(`^sacrifice (${SELF}|it|this \\w+)$`, "i")))) return [W({t:"sacSelf"})];
@@ -5157,7 +5157,7 @@ function digDialog(title, cards, mode, hint){
   return abilModal(title, (box, done) => {
     if(hint) box.append(Object.assign(document.createElement("p"), {className:"stat", textContent:hint}));
     const dests = mode === "scry" ? [["top", "Oben"], ["bottom", "Unten"]] : mode === "surveil" ? [["top", "Oben"], ["gy", "Friedhof"]] : [["hand", "Hand"], ["top", "Oben"], ["bottom", "Unten"], ["gy", "Friedhof"], ["ex", "Exil"], ["bf", "Spielfeld"]];
-    const def = mode ? "top" : "bottom";
+    const def = mode || /put (them|those cards) back/i.test(hint || "") ? "top" : "bottom";
     const choice = new Map(cards.map(c => [c, def]));
     const list = document.createElement("div"); list.className = "diglist";
     cards.forEach(c => {
@@ -7318,7 +7318,7 @@ function historyAdd(win){
 /* ---------- Automatische Updates ---------- */
 // Liegt die App im Web, prüft sie regelmässig version.json im selben Ordner und lädt sich bei einer neuen Version neu.
 // Alles Wichtige (Spielstand, Deck, Tisch) liegt im Browser-Speicher und ist nach dem Neuladen wieder da.
-const APP_VERSION = "2026.11.07-14";
+const APP_VERSION = "2026.11.07-15";
 const ONLINE = /^https?:$/.test(location.protocol);
 let updPending = null, updTimer = null, updSnoozeUntil = 0;
 function busyForUpdate(){ return botBusy || (!$("#modal").hidden && modalState && ["block","deck"].includes(modalState.kind)); }
