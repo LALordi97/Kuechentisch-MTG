@@ -1465,7 +1465,7 @@ function applyAll(msg){
 }
 /* Nachrichten an einen Spieler: über den Host weitergeleitet */
 const ROUTED = ["give", "hit", "attack", "blocks", "cres", "st_resolve", "req", "resp"];
-const HOSTED = ["pass", "roll", "phase", "st_push", "st_pass", "st_cancel", "st_redirect"];
+const HOSTED = ["pass", "roll", "phase", "st_push", "st_pass", "st_cancel", "st_redirect", "st_tuck"];
 function sendTo(pid, m){
   m.to = pid; m.from = me.id; m.by = me.name || "Gegner";
   if(pid === me.id) return deliver(m);
@@ -1527,6 +1527,7 @@ function hostHandle(m){
   else if(m.t === "st_push") stackPush(m.item, from, m.by);
   else if(m.t === "st_pass") stackPass(m.id, from);
   else if(m.t === "st_cancel") stackCancel(m.id, from);
+  else if(m.t === "st_tuck"){ const it = STACK.find(x => x.id === m.id); if(it && !it.countered){ it.countered = true; it.tuck = true; relayLog({from:String(m.by || "").slice(0, 24), text:`${String(m.src || "").slice(0, 60)}: ${it.n} kommt auf die Bibliothek`, sys:true}); broadcastAll(); } }
   else if(m.t === "st_redirect"){ const it = STACK.find(x => x.id === m.id); if(it){ it.redirect = String(m.text || "").slice(0, 80); relayLog({from:String(m.by || "").slice(0, 24), text:`lenkt ${it.n} um: neues Ziel ${it.redirect}`, sys:true}); broadcastAll(); } }
   else if(m.t === "st_counter"){ const it = STACK.find(x => x.id === m.id); if(it && !it.countered){ it.countered = true; relayLog({from:String(m.by || "").slice(0, 24), text:`kontert ${it.n} (${String(m.src || "").slice(0, 60)})`, sys:true}); broadcastAll(); } }
 }
@@ -1791,6 +1792,7 @@ function stackApply(it){
 /* Gekonterte Zauber der KI: Token für die KI, ggf. ins Exil */
 function botCounterFx(it){
   if(!BOT.active) return;
+  if(it.tuck){ const c = [...BOT.gy].reverse().find(x => x.n === it.n); if(c){ BOT.gy.splice(BOT.gy.indexOf(c), 1); BOT.library.unshift(c); botLog(`${c.n} kommt oben auf die Bibliothek`); botChanged(); } return; }
   if(it.cExile){ const c = [...BOT.gy].reverse().find(x => x.n === it.n); if(c){ BOT.gy.splice(BOT.gy.indexOf(c), 1); BOT.ex.push(c); } }
   if(it.cTok) botTokens(it.cTok.desc, nWord(it.cTok.n) || 1, false, it.cTok.extra);
   botChanged();
@@ -1814,6 +1816,14 @@ function stackResolveMine(m){
   const i = S.st.findIndex(c => c.u === it.u); if(i < 0) return;
   const c = S.st[i];
   if(m.cancelled){ S.st.splice(i, 1); S.hand.push(c); act(`nimmt ${c.n} zurück auf die Hand`); commit(); return; }
+  if(it.countered && it.tuck){
+    S.st.splice(i, 1); S.hand.push(c); commit();
+    queued(async () => {
+      const w = await abilModal(`${c.n}: oben oder unten auf die Bibliothek?`, (box, done) => { const r = document.createElement("div"); r.className = "row"; r.append(btn("Oben", () => done("top"), "primary"), btn("Unten", () => done("bottom"), "primary")); box.append(r); });
+      const g = findCard(c.u); if(g){ moveCard(c.u, "library", w === "bottom" ? "bottom" : "top"); act(`${c.n} kommt ${w === "bottom" ? "unter" : "oben auf"} die Bibliothek`); }
+    });
+    return;
+  }
   if(it.countered){
     if(it.stolen){
       if(it.dest === "bf"){ S.st.splice(i, 1); sendGive(it.stolen.pid, {...c, ow:{id:me.id, name:me.name}}, "bf"); act(`${c.n} kommt unter der Kontrolle von ${it.stolen.by} ins Spiel`); commit(); return; }
@@ -4426,6 +4436,9 @@ function matchStep2(p, src, full, SELF){
   if((m = p.match(/^until end of turn, it becomes an? (\w+) in addition to its other types and gains ([a-z ,]+)$/i))) return [{t:"tempTypeKw", sub:m[1], kw:m[2]}];
   // Touch the Spirit Realm: zurück am Ende des Zuges
   if(/^return (it|that card|the exiled card|that creature) to the battlefield under (?:its|their) owner'?s?'? control at the beginning of the next end step$/i.test(p)) return [{t:"flickerBack"}];
+  // Subtlety: Kreatur- oder Planeswalker-Zauber auf die Bibliothek
+  if((m = p.match(/^choose (up to one )?target (creature spell or planeswalker spell|creature spell|planeswalker spell|spell)$/i))) return [{t:"stackTuck", what:m[2]}];
+  if(/^its owner puts it on their choice of the top or bottom of their library$/i.test(p)) return [{t:"skip"}];
   // Kinnan: Bonus-Mana läuft über das Mana-System
   if(/^add one (?:additional )?mana of any type that permanent produced$/i.test(p)) return [{t:"skip"}];
   // Thrasios: «reveal the top card … If it's a land card, put it onto the battlefield tapped. Otherwise, draw a card.»
@@ -5471,6 +5484,14 @@ async function runSteps(steps, src, ctx = {}){
         break;
       }
       case "consult": await demonicConsult(src); break;
+      case "stackTuck": {
+        const types = st.what.toLowerCase().includes("planeswalker") ? /\b(Creature|Planeswalker)\b/ : /creature spell/i.test(st.what) ? /\bCreature\b/ : /./;
+        const list = (STACK || []).filter(x => !x.countered && types.test(x.type || ""));
+        if(!usesStack() || !list.length){ act(`${src.n}: kein passender Zauber auf dem Stapel`); break; }
+        const it = await abilModal(`${src.n}: welchen Zauber auf die Bibliothek?`, (box, done) => { [...list].reverse().forEach(x => box.append(btn(`${x.n} von ${x.by}`, () => done(x), "small"))); box.append(btn("Keinen", () => done(null), "small")); });
+        if(it){ toHost({t:"st_tuck", id:it.id, src:src.n}); act(`${src.n}: ${it.n} kommt auf die Bibliothek seines Besitzers`); }
+        break;
+      }
       case "destroyRest": {
         const all = [...S.bf.filter(c => isCreature(c) && !c.fd).map(c => ({card:c, pid:me.id})), ...liveOpps().flatMap(o => (Array.isArray(others[o.id].bf) ? others[o.id].bf : []).filter(c => c && !c.fd && isCreature(c)).map(c => ({card:c, pid:o.id})))];
         const keep = await abilModal(`${src.n}: bis zu ${st.n} Kreaturen behalten, der Rest wird zerstört`, (box, done) => {
@@ -6174,6 +6195,12 @@ function abilMenuItems(c, zone){
     abs.filter(a => a.kind === "act" && !/\{E\}/.test(a.cost) && !/from your hand onto the battlefield|onto the battlefield from the command zone/i.test(a.text)).forEach(a => items.push({l:`Fähigkeit: ${short(a.cost + ": " + a.text)}`, f:() => queued(() => activateAbility(c, a))}));
     abs.filter(a => a.kind === "trig" && !/deals combat damage to (a player|you|an opponent|one or more players)|deal combat damage to (a player|an opponent|one or more players)/i.test(a.cond) && /deals (combat )?damage|blocks|becomes (blocked|tapped|the target|untapped)|leaves (your graveyard|the battlefield)|you sacrifice|turned face up|isn't blocked|you cycle|you activate|you scry|you surveil|explores|transforms|you expend|loses life|you search|attacks and|is dealt damage/i.test(a.cond))
       .forEach(a => items.push({l:`Auslösen: ${short(a.cond)}`, f:() => queued(() => runTrigger(c, a, {kind:"manual"}))}));
+    // Hazel's Brewmaster: Food-Token haben die Fähigkeiten der verbannten Kreaturen
+    if(/\bFood\b/.test(c.type || "") || /^Food$/i.test(c.n || "")) S.bf.filter(x => !x.fd && Array.isArray(x.exiledWith) && /Foods you control have all activated abilities of all creature cards exiled with/i.test(x.o || "")).forEach(hz => hz.exiledWith.forEach(info => {
+      const shadow = newCard({...info, img:null});
+      parseAbilities(shadow).filter(a => a.kind === "act").forEach(a => items.push({l:`${info.n} (${hz.n}): ${short(a.cost + ": " + a.text)}`, f:() => queued(async () => { c._alias = info.n; try{ await activateAbility(c, a); } finally { delete c._alias; } })}));
+      (manaChoices0(shadow) || []).forEach(o => items.push({h:`${esc(info.n)} (${esc(hz.n)}): ${optHtml(o)}`, f:() => tapForMana(c, o)}));
+    }));
     // Agatha's Soul Cauldron: Kreaturen mit +1/+1-Marken haben die Fähigkeiten der verbannten Kreaturen
     if(isCreature(c) && (c.c || 0) > 0) S.bf.filter(x => !x.fd && Array.isArray(x.exiledWith) && /Creatures you control with \+1\/\+1 counters on them have all activated abilities/i.test(x.o || "")).forEach(ag => ag.exiledWith.forEach(info => {
       const shadow = newCard({...info, img:null});
@@ -6302,7 +6329,7 @@ const HANDLED_STATIC = [
   /^As long as your devotion to/i, /^As long as you have \d+ or more life, /i, /Creatures you control with power 2 or less can't be blocked/i,
   /If a triggered ability of a creature you control with power 2 or less triggers/i, /You may look at the top card of your library any time/i,
   /You may play lands and cast spells from the top of your library/i, /You control your opponents while they're searching/i, /While an opponent is searching their library/i, /^Bargain\b/i,
-  /can't cast noncreature spells with mana value greater than the number of lands/i, /You may have this \w+ enter as a copy of/i, /^You control enchanted (creature|enchantment|artifact|permanent|land|planeswalker)/i, /^(Enchanted|Equipped) creature gets [+-]\d+\/[+-]\d+\.?$/i, /^Other creatures you control have "Ward/i, /costs \{\d+\} more to cast except during its controller's turn/i, /Each player can't cast more than one noncreature spell each turn/i, /has all activated abilities of creatures you control that don't have the same name/i, /you may exchange (?:his|her|its|their) text box and another creature's/i, /^Other legendary creatures you control have vigilance and "\{T\}: Add one mana of any color/i, /for each color among other legendary permanents you control/i, /^Activated abilities of creatures you control cost \{\d+\} less to activate/i, /^Each nonland card in your graveyard has escape/i,
+  /can't cast noncreature spells with mana value greater than the number of lands/i, /You may have this \w+ enter as a copy of/i, /^You control enchanted (creature|enchantment|artifact|permanent|land|planeswalker)/i, /^(Enchanted|Equipped) creature gets [+-]\d+\/[+-]\d+\.?$/i, /^Other creatures you control have "Ward/i, /costs \{\d+\} more to cast except during its controller's turn/i, /Each player can't cast more than one noncreature spell each turn/i, /^Creature cards you own that aren't on the battlefield have flash/i, /Foods you control have all activated abilities of all creature cards exiled with/i, /has all activated abilities of creatures you control that don't have the same name/i, /you may exchange (?:his|her|its|their) text box and another creature's/i, /^Other legendary creatures you control have vigilance and "\{T\}: Add one mana of any color/i, /for each color among other legendary permanents you control/i, /^Activated abilities of creatures you control cost \{\d+\} less to activate/i, /^Each nonland card in your graveyard has escape/i,
   /^You may cast (?:noncreature |creature |instant and sorcery |artifact )?spells as though they had flash/i, /^Mobilize (\d+|X)$/i, /^Gift an? /i, /^Kicker\b/i
 ];
 function keywordOnly(line){
@@ -7074,7 +7101,7 @@ function historyAdd(win){
 /* ---------- Automatische Updates ---------- */
 // Liegt die App im Web, prüft sie regelmässig version.json im selben Ordner und lädt sich bei einer neuen Version neu.
 // Alles Wichtige (Spielstand, Deck, Tisch) liegt im Browser-Speicher und ist nach dem Neuladen wieder da.
-const APP_VERSION = "2026.11.07-11";
+const APP_VERSION = "2026.11.07-12";
 const ONLINE = /^https?:$/.test(location.protocol);
 let updPending = null, updTimer = null, updSnoozeUntil = 0;
 function busyForUpdate(){ return botBusy || (!$("#modal").hidden && modalState && ["block","deck"].includes(modalState.kind)); }
