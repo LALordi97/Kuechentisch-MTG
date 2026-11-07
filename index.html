@@ -1424,7 +1424,7 @@ let STACK = [];
 function setStatus(t){ $("#status").textContent = t; }
 function pub(){
   const strip = c => {
-    const base = {u:c.u, tap:c.tap, c:c.c, type:c.type, x:c.x, y:c.y, ow: c.ow ? c.ow.name : undefined, phased: c.phased ? true : undefined};
+    const base = {u:c.u, tap:c.tap, c:c.c, type:c.type, x:c.x, y:c.y, ow: c.ow ? c.ow.name : undefined, phased: c.phased ? true : undefined, eqPid: typeof c.eqPid === "string" ? c.eqPid : undefined};
     return c.fd ? {...base, fd:true} : {...base, n:c.n, img:c.img, back:c.back, flip:c.flip, tok:c.tok, pw:c.pwO ?? c.pw, tg:c.tgO ?? c.tg, pto: c.pwO != null, kw:(c.kw || []).filter(k => !(c.tkwOff || []).includes(String(k).toLowerCase())).slice(0, 8), mc:String(c.mc || "").slice(0, 40), cmc:Number(c.cmc) || 0};
   };
   const m = S.match || {w:0, l:0};
@@ -1929,8 +1929,8 @@ const kwHas = (c, k) => !(c.tkwOff && c.tkwOff.includes(k)) && kwHas0(c, k);
 const kwHas0 = (c, k) => (k === "vigilance" && esikaFor(c)) || (c.kw || []).some(x => x.toLowerCase() === k) || (c.tkw || []).some(x => x.toLowerCase() === k) || (typeof lifeBoost === "function" && (lifeBoost(c) || {}).kw === k) || new RegExp("^[^.]*\\b" + k + "\\b", "i").test((c.o || "").split("\n")[0] || "");
 // Variable Werte (*/*) sind unbekannt, bis man sie setzt; alte Ladungen hatten dafür 0/0 gespeichert
 const ptUnknown = c => isCreature(c) && c.pwO == null && (c.pw == null || (c.pw === 0 && c.tg === 0));
-const power = c => (c.pumpBase ? c.pumpBase.p : (c.pwO ?? c.pw ?? 0)) + (c.c || 0) + ((c.pump && c.pump.p) || 0) + (((typeof lifeBoost === "function") && lifeBoost(c) || {}).p || 0) + (typeof attachBoost === "function" ? attachBoost(c).p : 0) + (typeof sisayBoost === "function" ? sisayBoost(c) : 0);
-const tough = c => (c.pumpBase ? c.pumpBase.t : (c.tgO ?? c.tg ?? 0)) + (c.c || 0) + ((c.pump && c.pump.t) || 0) + (((typeof lifeBoost === "function") && lifeBoost(c) || {}).t || 0) + (typeof attachBoost === "function" ? attachBoost(c).t : 0) + (typeof sisayBoost === "function" ? sisayBoost(c) : 0);
+const power = c => (c.pumpBase ? c.pumpBase.p : (c.pwO ?? c.pw ?? 0)) + (c.c || 0) + ((c.pump && c.pump.p) || 0) + (((typeof lifeBoost === "function") && lifeBoost(c) || {}).p || 0) + (typeof attachBoost === "function" ? attachBoost(c).p : 0) + (typeof sisayBoost === "function" ? sisayBoost(c) + countBoost(c).p : 0);
+const tough = c => (c.pumpBase ? c.pumpBase.t : (c.tgO ?? c.tg ?? 0)) + (c.c || 0) + ((c.pump && c.pump.t) || 0) + (((typeof lifeBoost === "function") && lifeBoost(c) || {}).t || 0) + (typeof attachBoost === "function" ? attachBoost(c).t : 0) + (typeof sisayBoost === "function" ? sisayBoost(c) + countBoost(c).t : 0);
 function botLog(text){ sendLog({from:"KI", text, sys:true}); }
 function botSay(text){ if(text && String(text).trim()) sendLog({from:"KI", text:String(text).trim().slice(0, 200), sys:false}); }
 function botPub(){
@@ -2543,6 +2543,7 @@ function openAttackDialog(preTarget){
     closeModal();
     markOnAttack(attackers);
     mobilize(attackers, chosen);
+    curseOnAttack(new Set([...chosen.values()]));
     if(TURN.active === me.id && TURN.phase !== 3) setPhase(3);
     const groups = {};
     attackers.forEach(c => { const t = chosen.get(c.u); (groups[t] = groups[t] || []).push(c); });
@@ -3067,6 +3068,15 @@ function cardPoint(c){
   return {clientX: r.left + r.width / 2, clientY: r.top + r.height / 2};
 }
 function emptyPool(why){
+  const keep = S.keepPool && S.keepPool.key === turnKey() && !/Zugende|neuer Zug/.test(why || "") ? S.keepPool.pool : null;
+  if(keep){
+    const p = poolOf(), held = {}; POOL_ORDER.forEach(k => { held[k] = Math.min(p[k] || 0, keep[k] || 0); p[k] = (p[k] || 0) - held[k]; });
+    const n = poolTotal(p);
+    if(n) act(`Manapool geleert${why ? " (" + why + ")" : ""}: ${symStr(POOL_ORDER.flatMap(k => Array(p[k]).fill(k)))} verfällt`);
+    S.pool = emptyPoolObj(); POOL_ORDER.forEach(k => { if(held[k]) S.pool[k] = held[k]; });
+    S.bf.forEach(c => { c.mtap = null; });
+    return;
+  }
   const p = poolOf(); const n = poolTotal(p);
   if(n){ act(`Manapool geleert${why ? " (" + why + ")" : ""}: ${symStr(POOL_ORDER.flatMap(k => Array(p[k]).fill(k)))} verfällt`); }
   S.pool = emptyPoolObj();
@@ -3879,8 +3889,11 @@ function countMine(desc, self){
 const ZERO_OPT = {cost:0, sac:false, life:0, pain:0};
 function manaChoices(c){
   const base = manaChoices0(c);
-  if(!esikaFor(c)) return base;
-  const extra = manaChoices0({...newCard({n:c.n, type:"Artifact", o:"{T}: Add one mana of any color."}), u:c.u}) || [];
+  const grants = [];
+  if(esikaFor(c)) grants.push("{T}: Add one mana of any color.");
+  if(c && c.u && typeof S !== "undefined" && S.bf && S.bf.includes(c)) S.bf.forEach(x => { if(x.eq !== c.u) return; const m = String(x.o || "").match(/(?:Equipped|Enchanted) creature has "(\{T\}: Add [^"]+)"/i); if(m) grants.push(m[1]); });
+  if(!grants.length) return base;
+  const extra = grants.flatMap(g => manaChoices0({...newCard({n:c.n, type:"Artifact", o:g}), u:c.u}) || []);
   return [...(base || []), ...extra];
 }
 function manaChoices0(c){
@@ -4439,6 +4452,19 @@ function matchStep2(p, src, full, SELF){
   // Subtlety: Kreatur- oder Planeswalker-Zauber auf die Bibliothek
   if((m = p.match(/^choose (up to one )?target (creature spell or planeswalker spell|creature spell|planeswalker spell|spell)$/i))) return [{t:"stackTuck", what:m[2]}];
   if(/^its owner puts it on their choice of the top or bottom of their library$/i.test(p)) return [{t:"skip"}];
+  // Gifts Ungiven, Intuition
+  if(/^Search your library for up to four cards with different names and reveal them\. Target opponent chooses two of those cards/i.test(full || "")) return [/^search your library/i.test(p) ? {t:"gifts", n:4, k:2, chosenTo:"gy"} : {t:"skip"}];
+  if(/^Search your library for three cards and reveal them\. Target opponent chooses one/i.test(full || "")) return [/^search your library/i.test(p) ? {t:"gifts", n:3, k:1, chosenTo:"hand"} : {t:"skip"}];
+  // Birgi: Mana bleibt bis Zugende
+  if(/^until end of turn, you don't lose this mana as steps and phases end$/i.test(p)) return [{t:"keepMana"}];
+  // The Queen of Dale: Recruit
+  if(/^(?:you )?recruit$/i.test(p)) return [{t:"recruit"}];
+  // Curse of Opulence: läuft über den Angriff
+  if(/^each opponent attacking that player does the same$/i.test(p)) return [{t:"skip"}];
+  // Hydroelectric Specimen
+  if(/^(?:you may )?change the target of target (instant or sorcery |instant |sorcery )?spell with a single target to this creature$/i.test(p)) return [{t:"spellskite", only:/instant|sorcery/i.test(p) ? "Instant|Sorcery" : ""}];
+  // Sevinne's Reclamation
+  if(/^if this spell was cast from a graveyard, you may copy this spell/i.test(p)) return [{t:"copyIfGy"}];
   // Kinnan: Bonus-Mana läuft über das Mana-System
   if(/^add one (?:additional )?mana of any type that permanent produced$/i.test(p)) return [{t:"skip"}];
   // Thrasios: «reveal the top card … If it's a land card, put it onto the battlefield tapped. Otherwise, draw a card.»
@@ -4878,6 +4904,7 @@ async function auraAttach(c){
   if(!S.bf.includes(c) || c.eq) return;
   const m = String(c.o || "").match(/^Enchant ([a-z ]+?)\s*$/im); if(!m) return;
   const t = await pickTarget(`${c.n}: anlegen an …`, `target ${m[1].toLowerCase()}`, true);
+  if(t && t.kind === "player"){ c.eqPid = t.pid; act(`${c.n} verzaubert ${t.pid === me.id ? "dich" : oppByPid(t.pid)}`); commit(); return; }
   if(!t || t.kind !== "card") return;
   c.eq = t.card.u; act(`legt ${c.n} an ${t.card.n} an`); commit();
 }
@@ -4897,6 +4924,13 @@ function esikaFor(c){
   return S.bf.some(x => x !== c && !x.fd && /Other legendary creatures you control have vigilance and "\{T\}: Add one mana of any color/i.test(x.o || ""));
 }
 /* Sisay: +1/+1 je Farbe unter anderen legendären bleibenden Karten */
+function countBoost(c){
+  if(!c || !c.o || c.o.indexOf(" for each ") < 0 || typeof S === "undefined" || !S.bf || !S.bf.includes(c)) return {p:0, t:0};
+  const m = c.o.match(new RegExp(`^(?:This creature|${selfPat(c)}) gets \\+(\\d+)/\\+(\\d+) for each (.+?) you control\\.?$`, "im")); if(!m) return {p:0, t:0};
+  const f = cardFilter(m[3].replace(/^other /i, "")); const other = /^other /i.test(m[3]);
+  const n = S.bf.filter(x => !x.fd && (!other || x !== c) && f(x)).length;
+  return {p:+m[1] * n, t:+m[2] * n};
+}
 function sisayBoost(c){
   if(!c || !c.o || c.o.indexOf("for each color among other legendary permanents you control") < 0 || typeof S === "undefined" || !S.bf || !S.bf.includes(c)) return 0;
   const cols = new Set(); S.bf.forEach(x => { if(x !== c && !x.fd && /\bLegendary\b/.test(x.type || "")) (String(x.mc || "").toUpperCase().match(/[WUBRG]/g) || []).forEach(k => cols.add(k)); });
@@ -4910,6 +4944,16 @@ async function swapTextBox(c){
   if(!p || !p.length) return;
   const t = p[0]; const o = c.o; c.o = t.o; t.o = o; [c, t].forEach(x => { delete x._ab; delete x._abO; });
   act(`${c.n} tauscht die Textbox mit ${t.n}`); commit();
+}
+/* Curse of Opulence: wer einen verfluchten Spieler angreift, bekommt Gold */
+function curseOnAttack(targets){
+  const all = [...S.bf.map(c => ({c, mine:true})), ...Object.entries(others).filter(([id]) => id !== me.id).flatMap(([, o]) => (Array.isArray(o && o.bf) ? o.bf : []).map(c => ({c, mine:false})))];
+  all.forEach(({c, mine}) => {
+    if(!c || c.fd || !c.eqPid || !targets.has(c.eqPid)) return;
+    if(!(c.n === "Curse of Opulence" || /Whenever enchanted player is attacked, create an? (\w+) token/i.test(c.o || ""))) return;
+    const tk = ((c.o || "").match(/create an? (\w+) token/i) || [, "Gold"])[1];
+    queued(() => makeTokens({n:"a", desc:tk, extra:""}, {n:c.n}, {}));
+  });
 }
 /* Mobilize: Krieger kommen getappt und angreifend dazu und werden am Ende geopfert */
 function mobilize(attackers, chosen){
@@ -5391,10 +5435,10 @@ async function runSteps(steps, src, ctx = {}){
         break;
       }
       case "addMana": {
-        if(st.syms){ const add = st.syms.match(/[WUBRGC]/g); poolAdd(add); act(`${src.n}: ${st.syms} in den Pool`); break; }
+        if(st.syms){ const add = st.syms.match(/[WUBRGC]/g); poolAdd(add); ctx.lastMana = add; act(`${src.n}: ${st.syms} in den Pool`); break; }
         const n = await needX(); if(!n){ act(`${src.n}: kein Mana`); break; }
         const col = await pickColor(`${src.n}: ${n} Mana – welche Farbe?`, COLORS); if(!col) break;
-        poolAdd(Array(n).fill(col)); src._manaKey = turnKey(); act(`${src.n}: ${n}× {${col}} in den Pool`);
+        poolAdd(Array(n).fill(col)); ctx.lastMana = Array(n).fill(col); src._manaKey = turnKey(); act(`${src.n}: ${n}× {${col}} in den Pool`);
         break;
       }
       case "basePT": {
@@ -5484,6 +5528,50 @@ async function runSteps(steps, src, ctx = {}){
         break;
       }
       case "consult": await demonicConsult(src); break;
+      case "gifts": {
+        let pool = S.library.slice();
+        const picked = [];
+        for(let i = 0; i < st.n; i++){
+          const avail = pool.filter(c => !picked.some(p => p.n === c.n));
+          if(!avail.length) break;
+          const p = await pickCards(`${src.n}: Karte ${i + 1} von ${st.n} suchen${st.n === 4 ? " (verschiedene Namen)" : ""}`, avail, 1, {none:"Fertig"});
+          if(!p || !p.length) break; picked.push(p[0]);
+        }
+        S.library = shuffle(S.library.filter(c => !picked.includes(c)));
+        if(!picked.length){ act(`${src.n}: findet nichts und mischt`); break; }
+        act(`${src.n}: zeigt ${picked.map(c => c.n).join(", ")}`);
+        let chosen = [];
+        const opps = liveOpps();
+        if(opps.length){
+          let pid = opps[0].id;
+          if(opps.length > 1){ const t = await pickTarget(`${src.n}: welcher Gegner wählt?`, "target opponent", false); if(t) pid = t.pid; }
+          const r = await requestOpp(pid, {kind:"chooseCards", cards:picked.map(pubCard), k:st.k, to:st.chosenTo, src:src.n});
+          chosen = picked.filter(c => r && Array.isArray(r.us) && r.us.includes(c.u));
+          if(chosen.length < Math.min(st.k, picked.length)) chosen = [...chosen, ...picked.filter(c => !chosen.includes(c))].slice(0, Math.min(st.k, picked.length));
+          act(`${src.n}: ${oppByPid(pid)} wählt ${chosen.map(c => c.n).join(", ")}`);
+        } else chosen = (await pickCards(`${src.n}: wähle ${st.k} (für den Gegner)`, picked, st.k, {none:"Keine"})) || [];
+        const rest = picked.filter(c => !chosen.includes(c));
+        const toHand = st.chosenTo === "hand" ? chosen : rest, toGy = st.chosenTo === "hand" ? rest : chosen;
+        S.hand.push(...toHand); toGy.forEach(c => { S.gy.push(c); });
+        act(`${src.n}: auf die Hand ${toHand.map(c => c.n).join(", ") || "nichts"}, in den Friedhof ${toGy.map(c => c.n).join(", ") || "nichts"}`);
+        break;
+      }
+      case "keepMana": { const add = ctx.lastMana || []; if(add.length){ const k = turnKey(); if(!S.keepPool || S.keepPool.key !== k) S.keepPool = {key:k, pool:{}}; add.forEach(x => S.keepPool.pool[x] = (S.keepPool.pool[x] || 0) + 1); act(`${src.n}: ${add.map(x => `{${x}}`).join("")} bleibt bis Zugende im Pool`); } break; }
+      case "recruit": {
+        draw(1);
+        const p = S.hand.length ? await pickCards(`${src.n}: Recruit – eine Karte abwerfen`, S.hand.slice(), 1, {none:"Abbrechen"}) : [];
+        const d = (p && p[0]) || S.hand[S.hand.length - 1];
+        if(d){ moveCard(d.u, "gy"); act(`${src.n}: wirft ${d.n} ab`); if(!isLand(d)) await makeTokens({n:"a", desc:"1/1 white Human Soldier creature", extra:""}, src, ctx); }
+        break;
+      }
+      case "copyIfGy": {
+        if(!src.fromGy || ctx.copied) break;
+        if(!(await confirmMay(src, "den Zauber kopieren (aus dem Friedhof gewirkt)"))) break;
+        const sh = newCard({n:`${src.n} (Kopie)`, type:src.type, o:src.o, mc:src.mc, cmc:src.cmc});
+        act(`${src.n}: kopiert sich`);
+        for(const ab of parseAbilities(sh).filter(a => a.kind === "spell")) await runAbility(sh, ab, {copied:true});
+        break;
+      }
       case "stackTuck": {
         const types = st.what.toLowerCase().includes("planeswalker") ? /\b(Creature|Planeswalker)\b/ : /creature spell/i.test(st.what) ? /\bCreature\b/ : /./;
         const list = (STACK || []).filter(x => !x.countered && types.test(x.type || ""));
@@ -5524,8 +5612,8 @@ async function runSteps(steps, src, ctx = {}){
       }
       case "othersDraw": { const n = nWord(st.n) || 1; for(const o of liveOpps()){ const r = await requestOpp(o.id, {kind:"draw", n, src:src.n}); act(`${src.n}: ${o.name} zieht ${r && r.n != null ? r.n : n}`); } break; }
       case "spellskite": {
-        const list = (STACK || []).filter(x => x.owner !== me.id);
-        if(!usesStack() || !list.length){ manual.push("Auf dem Stapel liegt kein Zauber eines Gegners. Ziele von Fähigkeiten lenkst du selbst um."); break; }
+        const list = (STACK || []).filter(x => x.owner !== me.id && (!st.only || new RegExp(`\\b(${st.only})\\b`).test(x.type || "")));
+        if(!usesStack() || !list.length){ if(st.only){ act(`${src.n}: kein passender Zauber auf dem Stapel`); break; } manual.push("Auf dem Stapel liegt kein Zauber eines Gegners. Ziele von Fähigkeiten lenkst du selbst um."); break; }
         const it = await abilModal(`${src.n}: welchen Zauber umlenken?`, (box, done) => { [...list].reverse().forEach(x => box.append(btn(`${x.n} von ${x.by}`, () => done(x), "small"))); box.append(btn("Abbrechen", () => done(null), "small")); });
         if(it){ toHost({t:"st_redirect", id:it.id, text:`${src.n} von ${me.name || "dir"}`}); act(`${src.n}: lenkt ${it.n} auf sich um`); }
         break;
@@ -5804,6 +5892,7 @@ const LOCAL_TOKENS = {
   clue: {n:"Clue", type:"Token Artifact — Clue", o:"{2}, Sacrifice this token: Draw a card."},
   blood: {n:"Blood", type:"Token Artifact — Blood", o:"{1}, {T}, Discard a card, Sacrifice this token: Draw a card."},
   map: {n:"Map", type:"Token Artifact — Map", o:"{1}, {T}, Sacrifice this token: Target creature you control explores. Activate only as a sorcery."},
+  gold: {n:"Gold", type:"Token Artifact — Gold", o:"Sacrifice this token: Add one mana of any color."},
   powerstone: {n:"Powerstone", type:"Token Artifact — Powerstone", o:"{T}: Add {C}. This mana can't be spent to cast a nonartifact spell."}
 };
 async function makeTokens(st, src, ctx){
@@ -6265,7 +6354,7 @@ function abilMenuItems(c, zone){
       if(!mana){ const paid = await payAbilityCost(c, a.cost, {free:true}); if(!paid) return; }
       act(`wirkt ${c.n} mit Flashback`); markOnCast(c);
       moveCard(c.u, "ex");
-      await abilSpellResolve(c);
+      c.fromGy = true; try{ await abilSpellResolve(c); } finally { delete c.fromGy; }
     })}));
   }
   return items;
@@ -6329,7 +6418,7 @@ const HANDLED_STATIC = [
   /^As long as your devotion to/i, /^As long as you have \d+ or more life, /i, /Creatures you control with power 2 or less can't be blocked/i,
   /If a triggered ability of a creature you control with power 2 or less triggers/i, /You may look at the top card of your library any time/i,
   /You may play lands and cast spells from the top of your library/i, /You control your opponents while they're searching/i, /While an opponent is searching their library/i, /^Bargain\b/i,
-  /can't cast noncreature spells with mana value greater than the number of lands/i, /You may have this \w+ enter as a copy of/i, /^You control enchanted (creature|enchantment|artifact|permanent|land|planeswalker)/i, /^(Enchanted|Equipped) creature gets [+-]\d+\/[+-]\d+\.?$/i, /^Other creatures you control have "Ward/i, /costs \{\d+\} more to cast except during its controller's turn/i, /Each player can't cast more than one noncreature spell each turn/i, /^Creature cards you own that aren't on the battlefield have flash/i, /Foods you control have all activated abilities of all creature cards exiled with/i, /has all activated abilities of creatures you control that don't have the same name/i, /you may exchange (?:his|her|its|their) text box and another creature's/i, /^Other legendary creatures you control have vigilance and "\{T\}: Add one mana of any color/i, /for each color among other legendary permanents you control/i, /^Activated abilities of creatures you control cost \{\d+\} less to activate/i, /^Each nonland card in your graveyard has escape/i,
+  /can't cast noncreature spells with mana value greater than the number of lands/i, /You may have this \w+ enter as a copy of/i, /^You control enchanted (creature|enchantment|artifact|permanent|land|planeswalker)/i, /^(Enchanted|Equipped) creature gets [+-]\d+\/[+-]\d+\.?$/i, /^Other creatures you control have "Ward/i, /costs \{\d+\} more to cast except during its controller's turn/i, /Each player can't cast more than one noncreature spell each turn/i, /^Creature cards you own that aren't on the battlefield have flash/i, /can boast twice/i, /^(Equipped|Enchanted) creature has "\{T\}: Add/i, /gets \+\d+\/\+\d+ for each .+ you control\.?$/i, /Foods you control have all activated abilities of all creature cards exiled with/i, /has all activated abilities of creatures you control that don't have the same name/i, /you may exchange (?:his|her|its|their) text box and another creature's/i, /^Other legendary creatures you control have vigilance and "\{T\}: Add one mana of any color/i, /for each color among other legendary permanents you control/i, /^Activated abilities of creatures you control cost \{\d+\} less to activate/i, /^Each nonland card in your graveyard has escape/i,
   /^You may cast (?:noncreature |creature |instant and sorcery |artifact )?spells as though they had flash/i, /^Mobilize (\d+|X)$/i, /^Gift an? /i, /^Kicker\b/i
 ];
 function keywordOnly(line){
@@ -6462,6 +6551,18 @@ function receiveReq(m){
     });
     return;
   }
+  if(q.kind === "chooseCards"){
+    const cards = (Array.isArray(q.cards) ? q.cards : []).slice(0, 6), k = Math.max(1, Math.min(4, parseInt(q.k, 10) || 1));
+    queuedNow(async () => {
+      const us = await abilModal(`${by} (${src}): wähle ${k} Karte${k > 1 ? "n" : ""} – ${q.to === "hand" ? "kommt auf seine Hand, der Rest in den Friedhof" : "kommen in seinen Friedhof, der Rest auf die Hand"}`, (box, done) => {
+        const chosen = new Set(); const grid = document.createElement("div"); grid.className = "grid z-modal";
+        cards.forEach(c => { const el = cardEl({...c}, false, "hand"); el.style.setProperty("--w", "96px"); el.style.cursor = "pointer"; el.addEventListener("click", () => { if(chosen.has(c.u)) chosen.delete(c.u); else if(chosen.size < k) chosen.add(c.u); el.classList.toggle("picked", chosen.has(c.u)); }); grid.append(el); });
+        box.append(grid, btn("Fertig", () => done([...chosen]), "primary"));
+      });
+      reply({us: us || []});
+    });
+    return;
+  }
   if(q.kind === "delayReturn"){
     const c = [...S.ex].reverse().find(x => x.n === q.n);
     if(c){ S.delayed = Array.isArray(S.delayed) ? S.delayed : []; S.delayed.push({when:"end", action:"returnBf", u:c.u, n:c.n, src:`${by}: ${src}`}); commit(); }
@@ -6536,6 +6637,13 @@ function botReq(m){
     reply({cards:p.map(c => c.n)}); return;
   }
   if(q.kind === "draw"){ const n = Math.max(1, Math.min(10, parseInt(q.n, 10) || 1)); botDraw(n); botLog(`zieht ${n} Karte(n) (${String(q.src || "").slice(0, 60)})`); botChanged(); reply({n}); return; }
+  if(q.kind === "chooseCards"){
+    const cards = (Array.isArray(q.cards) ? q.cards : []).slice(0, 6), k = Math.max(1, parseInt(q.k, 10) || 1);
+    // Die KI gibt dir die schwächsten Karten: bei «auf die Hand» die billigste, bei «in den Friedhof» die teuersten
+    const sorted = cards.slice().sort((a, b) => (b.cmc || 0) - (a.cmc || 0));
+    const pick = (q.to === "hand" ? sorted.reverse() : sorted).slice(0, k);
+    botLog(`wählt ${pick.map(c => c.n).join(", ")}`); reply({us:pick.map(c => c.u)}); return;
+  }
   if(q.kind === "tuck"){ const c = BOT.bf.find(x => x.u === q.u); if(c){ botRemove(c); if(!c.tok) BOT.library.unshift(c); botLog(`legt ${c.n} oben auf die Bibliothek`); botChanged(); } reply({ok:!!c, where:"top"}); return; }
   if(q.kind === "gyBottom"){ const k = BOT.gy.length; BOT.library.push(...shuffle(BOT.gy)); BOT.gy = []; botLog(`legt ${k} Karten aus dem Friedhof unter die Bibliothek`); botChanged(); reply({n:k}); return; }
   if(q.kind === "giveMe"){
@@ -7101,7 +7209,7 @@ function historyAdd(win){
 /* ---------- Automatische Updates ---------- */
 // Liegt die App im Web, prüft sie regelmässig version.json im selben Ordner und lädt sich bei einer neuen Version neu.
 // Alles Wichtige (Spielstand, Deck, Tisch) liegt im Browser-Speicher und ist nach dem Neuladen wieder da.
-const APP_VERSION = "2026.11.07-12";
+const APP_VERSION = "2026.11.07-13";
 const ONLINE = /^https?:$/.test(location.protocol);
 let updPending = null, updTimer = null, updSnoozeUntil = 0;
 function busyForUpdate(){ return botBusy || (!$("#modal").hidden && modalState && ["block","deck"].includes(modalState.kind)); }
