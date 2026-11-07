@@ -497,12 +497,16 @@ let CASTING_U = null;
 function gyToExile(c){
   if(c.tok) return false;
   if(S.bf.some(x => !x.fd && /If a card or token would be put into (your|a) graveyard from anywhere, exile it instead/i.test(x.o || ""))) return true;
-  return Object.values(others).some(o => (Array.isArray(o && o.bf) ? o.bf : []).some(x => x && !x.fd && /^(Rest in Peace|Leyline of the Void|Planar Void)$/.test(x.n || "")));
+  return Object.values(others).some(o => (Array.isArray(o && o.bf) ? o.bf : []).some(x => x && !x.fd && /^(Rest in Peace|Leyline of the Void|Planar Void|Dauthi Voidwalker)$/.test(x.n || "")));
 }
+const dauthiOpp = () => Object.entries(others).some(([id, o]) => id !== me.id && (Array.isArray(o && o.bf) ? o.bf : []).some(x => x && !x.fd && x.n === "Dauthi Voidwalker"));
+const dauthiMine = () => (S.bf || []).some(x => !x.fd && /If a card would be put into an opponent's graveyard from anywhere, instead exile it with a void counter/i.test(x.o || ""));
 function moveCard(u, to, where){
   // Hülle: nach dem Bewegen prüfen, ob Karten Marken auslösen (Eintreten, Sterben)
   const f = findCard(u); if(!f) return;
   const c = f.c, from = f.z, wasFd = c.fd;
+  if(from === "bf" && to !== "bf") S.leftKey = turnKey();
+  if(from === "gy" && to !== "gy" && typeof abilEvent === "function") setTimeout(() => abilEvent({kind:"leaveGy", c}), 0);
   if(from === "bf" && to !== "bf" && c.earth){
     const e = c.earth; Object.assign(c, {type:e.type, pw:e.pw, tg:e.tg, kw:e.kw}); delete c.earth;
     if(to === "gy" || to === "ex") setTimeout(() => { const g = findCard(c.u); if(g && (g.z === "gy" || g.z === "ex")){ moveCard(c.u, "bf"); c.tap = true; act(`${c.n} kehrt getappt ins Spiel zurück (Earthbend)`); commit(); } }, 0);
@@ -516,7 +520,7 @@ function moveCard(u, to, where){
   if(from === "bf" && to !== "bf" && c.stole){ const g = S.bf.find(x => x.u === c.stole); delete c.stole; if(g && g.ow) setTimeout(() => giveControl(g.u, g.ow.id), 0); }
   if(from === "bf" && to !== "bf" && c.cipher) delete c.cipher;
   if(from === "bf" && to !== "bf" && c._orig){ Object.assign(c, c._orig); delete c._orig; delete c._ab; delete c._abO; }
-  if(to === "gy" && gyToExile(c)){ to = "ex"; act(`${c.n} kommt ins Exil statt in den Friedhof`); }
+  if(to === "gy" && gyToExile(c)){ to = "ex"; if(dauthiOpp()) c.void = true; act(`${c.n} kommt ins Exil statt in den Friedhof`); }
   moveCardRaw(u, to, where);
   if(from === "hand" && to === "gy" && CASTING_U !== u && typeof abilEvent === "function") abilEvent({kind:"youDiscard", c});
   markOnMove(c, from, to, wasFd);
@@ -585,6 +589,7 @@ async function castSpell(u){
   if(!countered) await queuedNow(async () => { await markOnResolve(card); await ritualResolve(card); await abilSpellResolve(card); });
 }
 function draw(n=1){
+  if(n > 0 && S.hand.length <= 1){ const qr = S.bf.filter(x => !x.fd && /As long as you have one or fewer cards in hand, if you would draw one or more cards, you draw that many cards plus one instead/i.test(x.o || "")).length; if(qr){ n += qr; act(`Quantum Riddler: zieht ${qr} zusätzlich`); } }
   let k = 0;
   for(let i=0;i<n;i++){ if(!S.library.length) break; S.hand.push(S.library.shift()); k++; }
   for(let i = 0; i < k; i++) if(typeof abilEvent === "function") abilEvent({kind:"youDraw"});
@@ -1426,7 +1431,7 @@ let STACK = [];
 function setStatus(t){ $("#status").textContent = t; }
 function pub(){
   const strip = c => {
-    const base = {u:c.u, tap:c.tap, c:c.c, type:c.type, x:c.x, y:c.y, ow: c.ow ? c.ow.name : undefined, phased: c.phased ? true : undefined, eqPid: typeof c.eqPid === "string" ? c.eqPid : undefined};
+    const base = {u:c.u, tap:c.tap, c:c.c, type:c.type, x:c.x, y:c.y, ow: c.ow ? c.ow.name : undefined, phased: c.phased ? true : undefined, void: c.void ? true : undefined, eqPid: typeof c.eqPid === "string" ? c.eqPid : undefined};
     return c.fd ? {...base, fd:true} : {...base, n:c.n, img:c.img, back:c.back, flip:c.flip, tok:c.tok, pw:c.pwO ?? c.pw, tg:c.tgO ?? c.tg, pto: c.pwO != null, kw:(c.kw || []).filter(k => !(c.tkwOff || []).includes(String(k).toLowerCase())).slice(0, 8), mc:String(c.mc || "").slice(0, 40), cmc:Number(c.cmc) || 0};
   };
   const m = S.match || {w:0, l:0};
@@ -1930,13 +1935,22 @@ const isInstant = c => /\bInstant\b/.test(c.type || "") || /\bFlash\b/i.test((c.
 const kwHas = (c, k) => !(c.tkwOff && c.tkwOff.includes(k)) && kwHas0(c, k);
 const kwHas0 = (c, k) => (k === "vigilance" && esikaFor(c)) || (typeof deliriumBoost === "function" && (deliriumBoost(c) || {}).kw === k) || (c.kw || []).some(x => x.toLowerCase() === k) || (c.tkw || []).some(x => x.toLowerCase() === k) || (typeof lifeBoost === "function" && (lifeBoost(c) || {}).kw === k) || new RegExp("^[^.]*\\b" + k + "\\b", "i").test((c.o || "").split("\n")[0] || "");
 // Variable Werte (*/*) sind unbekannt, bis man sie setzt; alte Ladungen hatten dafür 0/0 gespeichert
-const ptUnknown = c => isCreature(c) && c.pwO == null && (c.pw == null || (c.pw === 0 && c.tg === 0));
-const power = c => (c.pumpBase ? c.pumpBase.p : (c.pwO ?? c.pw ?? 0)) + (c.c || 0) + ((c.pump && c.pump.p) || 0) + (((typeof lifeBoost === "function") && lifeBoost(c) || {}).p || 0) + (typeof attachBoost === "function" ? attachBoost(c).p : 0) + (typeof sisayBoost === "function" ? sisayBoost(c) + countBoost(c).p + ((deliriumBoost(c) || {}).p || 0) : 0);
-const tough = c => (c.pumpBase ? c.pumpBase.t : (c.tgO ?? c.tg ?? 0)) + (c.c || 0) + ((c.pump && c.pump.t) || 0) + (((typeof lifeBoost === "function") && lifeBoost(c) || {}).t || 0) + (typeof attachBoost === "function" ? attachBoost(c).t : 0) + (typeof sisayBoost === "function" ? sisayBoost(c) + countBoost(c).t + ((deliriumBoost(c) || {}).t || 0) : 0);
+const ptUnknown = c => isCreature(c) && c.pwO == null && !goyfPT(c) && (c.pw == null || (c.pw === 0 && c.tg === 0));
+/* «power is equal to the number of card types among cards in all graveyards» (Tarmogoyf, Barrowgoyf) */
+function goyfPT(c){
+  if(!c || !c.o || c.o.indexOf("card types among cards in all graveyards") < 0) return null;
+  const m = c.o.match(/power is equal to the number of card types among cards in all graveyards and (?:its|whose) toughness is equal to that number plus (\d+)/i); if(!m) return null;
+  const ts = new Set(), add = x => (String(x && x.type || "").split("—")[0].match(/\b(Artifact|Battle|Creature|Enchantment|Instant|Kindred|Land|Planeswalker|Sorcery)\b/g) || []).forEach(t => ts.add(t));
+  (typeof S !== "undefined" && S.gy || []).forEach(add);
+  if(typeof others !== "undefined") Object.entries(others).forEach(([id, o]) => { if(id !== me.id) (Array.isArray(o && o.gy) ? o.gy : []).forEach(add); });
+  return {p:ts.size, t:ts.size + +m[1]};
+}
+const power = c => (c.pumpBase ? c.pumpBase.p : (c.pwO ?? (goyfPT(c) || {}).p ?? c.pw ?? 0)) + (c.c || 0) + ((c.pump && c.pump.p) || 0) + (((typeof lifeBoost === "function") && lifeBoost(c) || {}).p || 0) + (typeof attachBoost === "function" ? attachBoost(c).p : 0) + (typeof sisayBoost === "function" ? sisayBoost(c) + countBoost(c).p + ((deliriumBoost(c) || {}).p || 0) : 0);
+const tough = c => (c.pumpBase ? c.pumpBase.t : (c.tgO ?? (goyfPT(c) || {}).t ?? c.tg ?? 0)) + (c.c || 0) + ((c.pump && c.pump.t) || 0) + (((typeof lifeBoost === "function") && lifeBoost(c) || {}).t || 0) + (typeof attachBoost === "function" ? attachBoost(c).t : 0) + (typeof sisayBoost === "function" ? sisayBoost(c) + countBoost(c).t + ((deliriumBoost(c) || {}).t || 0) : 0);
 function botLog(text){ sendLog({from:"KI", text, sys:true}); }
 function botSay(text){ if(text && String(text).trim()) sendLog({from:"KI", text:String(text).trim().slice(0, 200), sys:false}); }
 function botPub(){
-  const strip = c => ({u:c.u, n:c.n, img:c.img, back:c.back, type:c.type, tap:c.tap, flip:false, c:c.c, tok:c.tok, x:c.x, y:c.y, pw:c.pwO ?? c.pw, tg:c.tgO ?? c.tg, mc:c.mc, cmc:c.cmc});
+  const strip = c => ({u:c.u, n:c.n, img:c.img, back:c.back, type:c.type, tap:c.tap, flip:false, c:c.c, tok:c.tok, x:c.x, y:c.y, void:!!c.void, pw:c.pwO ?? c.pw, tg:c.tgO ?? c.tg, mc:c.mc, cmc:c.cmc});
   return {name: "KI" + (BOT.deckName ? " · " + BOT.deckName : "") + (claudeOn() ? " (Claude)" : ""), life:BOT.life, poison:BOT.poison, turn:BOT.turn,
     handN:BOT.hand.length, libN:BOT.library.length, bf:BOT.bf.map(strip), gy:BOT.gy.map(strip), ex:BOT.ex.map(strip), cz:BOT.cz.map(strip)};
 }
@@ -1961,7 +1975,7 @@ function botDraw(n = 1){
   return true;
 }
 function botRemove(c){ const i = BOT.bf.indexOf(c); if(i >= 0) BOT.bf.splice(i, 1); }
-function botToZone(c, zone){ botRemove(c); c.tap = false; c.sick = false; c.c = 0; if(c.tok) return; (zone === "hand" ? BOT.hand : zone === "ex" ? BOT.ex : BOT.gy).push(c); }
+function botToZone(c, zone){ botRemove(c); c.tap = false; c.sick = false; c.c = 0; if(c.tok) return; if(zone === "gy" && typeof dauthiMine === "function" && dauthiMine()){ zone = "ex"; c.void = true; } (zone === "hand" ? BOT.hand : zone === "ex" ? BOT.ex : BOT.gy).push(c); }
 
 /* --- Mana mit Farben --- */
 const COLORS = ["W","U","B","R","G"];
@@ -4496,6 +4510,26 @@ function matchStep2(p, src, full, SELF){
   if((m = p.match(/^(.+?) unless you pay ((?:\{[^}]+\})+)$/i))) return [{t:"unlessYou", sub:matchStep2(m[1], src, full, SELF), cost:m[2], text:m[1]}];
   // The Jolly Balloon Man: Token-Kopie mit Ausnahmen
   if((m = p.match(/^create (a|two|three) tokens? that's a copy of ((?:another )?target .+?|it|that creature|that permanent), except (.+)$/i))) return [{t:"tokenCopy", n:m[1], who:m[2].replace(/^another /i, ""), except:m[3]}];
+  // Doomsday
+  if(/^Search your library and graveyard for five cards and exile the rest\. Put the chosen cards on top of your library in any order/i.test(full || "")){
+    if(/^search your library and graveyard/i.test(p)) return [{t:"doomsday", n:5}];
+    if(/^put the chosen cards on top of your library in any order$/i.test(p)) return [{t:"skip"}];
+  }
+  if((m = p.match(/^(?:you )?lose half your life, rounded (up|down)$/i))) return [{t:"loseHalf", up:m[1].toLowerCase() === "up"}];
+  // Hide on the Ceiling: X Ziele ins Exil, am Ende zurück
+  if((m = p.match(/^exile (x|two|three|four|\d+) target (.+)$/i))) return [{t:"multiExile", n:m[1], who:"target " + m[2].replace(/\band\/or\b/g, "or").replace(/s\b/g, ""), back:/Return the exiled cards to the battlefield under their owners' control at the beginning of the next end step/i.test(full || "")}];
+  if(/^return the exiled cards to the battlefield under their owners' control at the beginning of the next end step$/i.test(p)) return [{t:"skip"}];
+  // Barrowgoyf
+  if((m = p.match(/^(you may )?mill that many cards$/i))) return [{t:"mill", n:"that much", may:!!m[1], text:"so viele Karten mahlen"}];
+  if((m = p.match(/^(?:you may )?put an? (.+?) card from among them into your hand$/i))) return [{t:"fromMilled", who:m[1]}];
+  // Dauthi Voidwalker
+  if(/^choose an exiled card an opponent owns with a void counter on it$/i.test(p)) return [{t:"dauthi"}];
+  if(/^(?:you may )?play it this turn without paying its mana cost$/i.test(p)) return [{t:"skip"}];
+  // Edge of Autumn: «If you control four or fewer lands, …»
+  if((m = p.match(/^if you control (\w+) or (fewer|more) (.+?), (.+)$/i))){ const sub = matchStep2(m[4], src, full, SELF); if(sub.length && !sub.some(x => x.t === "manual")){ sub.forEach(x => x.ifControl = {n:nWord(m[1]), dir:m[2].toLowerCase(), desc:m[3]}); return sub; } }
+  // Fatal Push
+  if((m = p.match(/^destroy target creature if it has mana value (\d+) or less$/i))) return [{t:"pushDestroy", n:+m[1]}];
+  if((m = p.match(/^destroy that creature if it has mana value (\d+) or less instead if a permanent left the battlefield under your control this turn$/i))) return [{t:"revoltDestroy", n:+m[1]}];
   // Kinnan: Bonus-Mana läuft über das Mana-System
   if(/^add one (?:additional )?mana of any type that permanent produced$/i.test(p)) return [{t:"skip"}];
   // Thrasios: «reveal the top card … If it's a land card, put it onto the battlefield tapped. Otherwise, draw a card.»
@@ -4809,10 +4843,12 @@ async function deliverGift(c){
 async function castFromExile(c){
   const f = findCard(c.u); if(!f || f.z !== "ex") return;
   if(isLand(c)){
+    delete c.freeCast;
     if(!c.playOk){ toast("Diese Karte darfst du nur wirken. Länder kann man nicht wirken."); return; }
     S.ex.splice(f.i, 1); S.hand.push(c); delete c.castKey; delete c.playOk; play(c.u); return;
   }
   S.ex.splice(f.i, 1); S.hand.push(c); commit();
+  if(c.freeCast) c.payMc = "";
   try{ if(/\b(Instant|Sorcery)\b/.test(c.type || "")) await castSpell(c.u); else await play(c.u); }
   finally {
     const g = findCard(c.u);
@@ -5016,6 +5052,16 @@ function deliriumBoost(c){
   if(!c || !c.o || c.o.indexOf("four or more card types among cards in your graveyard") < 0 || typeof S === "undefined" || !S.bf || !S.bf.includes(c)) return null;
   const m = c.o.match(/As long as there are four or more card types among cards in your graveyard, [^,]+? gets \+(\d+)\/\+(\d+)(?:, has (\w+))?/i);
   return m && deliriumOn() ? {p:+m[1], t:+m[2], kw:(m[3] || "").toLowerCase()} : null;
+}
+/* Verbannte Karte kommt am Ende des Zuges zurück (bei dir, Mitspielern oder der KI) */
+async function scheduleReturn(t, src){
+  if(!t || t.kind !== "card" || !t.card) return;
+  S.delayed = Array.isArray(S.delayed) ? S.delayed : [];
+  if(!t.mine && t.pid !== me.id){
+    if(t.pid === "bot") S.delayed.push({when:"end", action:"botReturn", n:t.card.n, src:src.n});
+    else await requestOpp(t.pid, {kind:"delayReturn", n:t.card.n, src:src.n});
+  } else S.delayed.push({when:"end", action:"returnBf", u:t.card.u, n:t.card.n, src:src.n});
+  act(`${src.n}: ${t.card.n} kommt am Ende des Zuges zurück`);
 }
 /* Mobilize: Krieger kommen getappt und angreifend dazu und werden am Ende geopfert */
 function mobilize(attackers, chosen){
@@ -5254,6 +5300,7 @@ async function runSteps(steps, src, ctx = {}){
     if(st.ifGift && !src.gift) continue;
     if(st.ifNoGift && src.gift) continue;
     if(st.ifKicked && !src.kicked) continue;
+    if(st.ifControl){ const k = S.bf.filter(c => !c.fd && descMatch(st.ifControl.desc.replace(/s$/, ""), c)).length; const ok = st.ifControl.dir === "fewer" ? k <= st.ifControl.n : k >= st.ifControl.n; if(!ok){ act(`${src.n}: Bedingung nicht erfüllt (${k} ${st.ifControl.desc})`); continue; } }
     if(st.may && st.t !== "unless"){ const yes = await confirmMay(src, st.text || describeStep(st)); ctx.mayNo = !yes; if(!yes) continue; }
     const N = () => { const v = st.n === "that much" ? ctx.much : nWord(st.n, ctx); return v; };
     if(st.xexpr){ const v = xExpr(st.xexpr, src); if(v != null) ctx.X = v; }
@@ -5396,7 +5443,7 @@ async function runSteps(steps, src, ctx = {}){
         ctx.last = cards.find(c => choice.get(c) === "bf" || choice.get(c) === "hand") || null;
         break;
       }
-      case "mill": { const n = await needX(); const k = Math.min(n, S.library.length); S.gy.push(...S.library.splice(0, k)); act(`${src.n}: mahlt ${k} Karte(n)`); break; }
+      case "mill": { const n = await needX(); const k = Math.min(n, S.library.length); const milled = S.library.splice(0, k); S.gy.push(...milled); ctx.lastMany = milled; act(`${src.n}: mahlt ${k} Karte(n)`); break; }
       case "shuffle": S.library = shuffle(S.library); act("mischt die Bibliothek"); break;
       case "handTop": {
         const n = await needX();
@@ -5593,6 +5640,60 @@ async function runSteps(steps, src, ctx = {}){
         break;
       }
       case "consult": await demonicConsult(src); break;
+      case "doomsday": {
+        const pool = [...S.library, ...S.gy];
+        const order = (await pickCards(`${src.n}: wähle ${st.n} Karten – in Klickreihenfolge von oben nach unten`, pool, st.n, {none:"Keine"})) || [];
+        const rest = pool.filter(c => !order.includes(c));
+        S.library = order.slice(); S.gy = []; S.ex.push(...rest);
+        act(`${src.n}: Bibliothek ist jetzt ${order.map(c => c.n).join(", ") || "leer"}, ${rest.length} Karten ins Exil`);
+        break;
+      }
+      case "loseHalf": { const n = st.up ? Math.ceil(Math.max(0, S.life) / 2) : Math.floor(Math.max(0, S.life) / 2); S.life -= n; act(`${src.n}: verliert ${n} Leben (Hälfte)`); break; }
+      case "multiExile": {
+        const n = /^x$/i.test(st.n) ? await needX() : (nWord(st.n) || 1);
+        const used = new Set();
+        for(let i = 0; i < n; i++){
+          const t = await pickTarget(`${src.n}: Ziel ${i + 1} von ${n} verbannen`, st.who, true);
+          if(!t || t.kind !== "card") break; if(used.has(t.card.u)) continue; used.add(t.card.u);
+          actOnTarget(t, "exile", src);
+          if(st.back) await scheduleReturn(t, src);
+        }
+        break;
+      }
+      case "fromMilled": {
+        const list = (ctx.lastMany || []).filter(c => S.gy.includes(c) && cardFilter(st.who)(c));
+        if(!list.length) break;
+        const p = await pickCards(`${src.n}: ${st.who} auf die Hand? (freiwillig)`, list, 1, {none:"Keine"});
+        (p || []).forEach(c => { moveCard(c.u, "hand"); act(`${src.n}: nimmt ${c.n} auf die Hand`); });
+        break;
+      }
+      case "dauthi": {
+        const groups = liveOpps().map(o => ({o, cards:(Array.isArray((others[o.id] || {}).ex) ? others[o.id].ex : []).filter(c => c && c.void && !c.fd)})).filter(g => g.cards.length);
+        if(!groups.length){ act(`${src.n}: keine Karte mit Leere-Marke im Exil`); break; }
+        const pick = await abilModal(`${src.n}: Karte mit Leere-Marke wählen`, (box, done) => {
+          groups.forEach(g => { box.append(Object.assign(document.createElement("h3"), {textContent:g.o.name})); const grid = document.createElement("div"); grid.className = "grid z-modal"; g.cards.forEach(c => grid.append(miniCard(c, false, () => done({pid:g.o.id, card:c})))); box.append(grid); });
+          box.append(btn("Keine", () => done(null), "small"));
+        });
+        if(!pick) break;
+        const r = await requestOpp(pick.pid, {kind:"giveExiled", u:pick.card.u, src:src.n});
+        if(!r || !r.card){ act(`${src.n}: Karte nicht mehr da`); break; }
+        receiveGive({card:{...r.card, ow:{id:pick.pid, name:oppByPid(pick.pid)}}, zone:"ex"});
+        const c = S.ex[S.ex.length - 1]; c.castKey = turnKey(); c.playOk = true; c.freeCast = true;
+        act(`${src.n}: ${c.n} darfst du diesen Zug gratis spielen (Exil-Menü)`);
+        break;
+      }
+      case "pushDestroy": {
+        const t = await pickTarget(`${src.n}: welche Kreatur?`, "target creature", false); if(!t || t.kind !== "card") break;
+        ctx.target = t;
+        if((t.card.cmc || 0) <= st.n) actOnTarget(t, "destroy", src); else { ctx.pushPending = true; act(`${src.n}: ${t.card.n} hat Manawert ${t.card.cmc || 0}`); }
+        break;
+      }
+      case "revoltDestroy": {
+        const t = ctx.target; if(!ctx.pushPending || !t) break;
+        if(S.leftKey === turnKey() && (t.card.cmc || 0) <= st.n){ act(`${src.n}: Revolt – ${t.card.n} wird doch zerstört`); actOnTarget(t, "destroy", src); }
+        else act(`${src.n}: kein Revolt, ${t.card.n} bleibt`);
+        break;
+      }
       case "winGame": act(`${src.n}: gewinnt das Spiel!`); toast(`<b>${esc(src.n)}: Du gewinnst das Spiel!</b>`, 15000); break;
       case "tapSelf": if(S.bf.includes(src)){ src.tap = true; act(`tappt ${src.n}`); } break;
       case "exileTopMV": {
@@ -5744,16 +5845,7 @@ async function runSteps(steps, src, ctx = {}){
         act(`${src.n}: ${c.n} ist bis Ende des Zuges auch ${st.sub} und hat ${kws.join(", ")}`);
         break;
       }
-      case "flickerBack": {
-        const t = ctx.target; const c = ctx.last;
-        S.delayed = Array.isArray(S.delayed) ? S.delayed : [];
-        if(t && !t.mine && t.kind === "card"){
-          if(t.pid === "bot") S.delayed.push({when:"end", action:"botReturn", n:t.card.n, src:src.n});
-          else await requestOpp(t.pid, {kind:"delayReturn", n:t.card.n, src:src.n});
-        } else if(c) S.delayed.push({when:"end", action:"returnBf", u:c.u, n:c.n, src:src.n});
-        act(`${src.n}: kommt am Ende des Zuges zurück`);
-        break;
-      }
+      case "flickerBack": await scheduleReturn(ctx.target && ctx.target.mine === false ? ctx.target : {kind:"card", mine:true, card:ctx.last, pid:me.id}, src); break;
       case "emblem": {
         S.emblems = Array.isArray(S.emblems) ? S.emblems : [];
         const e = newCard({n:`Emblem (${src.n})`, type:"Emblem", o:st.text.replace(/\.?$/, ".")}); S.emblems.push(e);
@@ -6073,6 +6165,7 @@ function trigMatches(ab, src, ev){
   }
   if(ev.kind === "combatDamageToYou") return /^(a creature|one or more creatures|a source) deals? (combat )?damage to you$/i.test(cond);
   if(ev.kind === "castSelf") return /^you cast this spell$/i.test(cond) && ev.c === src;
+  if(ev.kind === "leaveGy"){ const lm = cond.match(/^an? (.+?) card leaves your graveyard$/i); return !!lm && cardFilter(lm[1])(ev.c); }
   if(ev.kind === "youSac"){ const sm = cond.match(/^you sacrifice (another|an?|one or more) (.+?)s?$/i); return !!sm && !(sm[1].toLowerCase() === "another" && ev.c === src) && cardFilter(sm[2])(ev.c); }
   if(ev.kind === "tapped") return ev.c === src && new RegExp(`^(this creature|this permanent|${SELF}) becomes tapped$`, "i").test(cond) && !/^it deals \d+ damage to you\.?$/i.test(ab.text);
   if(ev.kind === "enter" || ev.kind === "die" || ev.kind === "attack" || ev.kind === "cast"){
@@ -6389,7 +6482,7 @@ function abilMenuItems(c, zone){
   if(zone === "bf" && !c.fd){
     abs.filter(a => a.kind === "loy").forEach(a => items.push({l:`${a.cost.startsWith("-") ? "−" + a.cost.slice(1) : a.cost === "0" ? "0" : (a.cost.startsWith("+") ? a.cost : "+" + a.cost)}: ${short(a.text)}`, f:() => queued(() => activateLoyalty(c, a))}));
     abs.filter(a => a.kind === "act" && !/\{E\}/.test(a.cost) && !/from your hand onto the battlefield|onto the battlefield from the command zone/i.test(a.text)).forEach(a => items.push({l:`Fähigkeit: ${short(a.cost + ": " + a.text)}`, f:() => queued(() => activateAbility(c, a))}));
-    abs.filter(a => a.kind === "trig" && !/deals combat damage to (a player|you|an opponent|one or more players)|deal combat damage to (a player|an opponent|one or more players)/i.test(a.cond) && /deals (combat )?damage|blocks|becomes (blocked|tapped|the target|untapped)|leaves (your graveyard|the battlefield)|turned face up|isn't blocked|you cycle|you activate|you scry|you surveil|explores|transforms|you expend|loses life|you search|attacks and|is dealt damage/i.test(a.cond))
+    abs.filter(a => a.kind === "trig" && !/deals combat damage to (a player|you|an opponent|one or more players)|deal combat damage to (a player|an opponent|one or more players)/i.test(a.cond) && /deals (combat )?damage|blocks|becomes (blocked|tapped|the target|untapped)|leaves (the battlefield)|turned face up|isn't blocked|you cycle|you activate|you scry|you surveil|explores|transforms|you expend|loses life|you search|attacks and|is dealt damage/i.test(a.cond))
       .forEach(a => items.push({l:`Auslösen: ${short(a.cond)}`, f:() => queued(() => runTrigger(c, a, {kind:"manual"}))}));
     // Hazel's Brewmaster: Food-Token haben die Fähigkeiten der verbannten Kreaturen
     if(/\bFood\b/.test(c.type || "") || /^Food$/i.test(c.n || "")) S.bf.filter(x => !x.fd && Array.isArray(x.exiledWith) && /Foods you control have all activated abilities of all creature cards exiled with/i.test(x.o || "")).forEach(hz => hz.exiledWith.forEach(info => {
@@ -6525,7 +6618,7 @@ const HANDLED_STATIC = [
   /^As long as your devotion to/i, /^As long as you have \d+ or more life, /i, /Creatures you control with power 2 or less can't be blocked/i,
   /If a triggered ability of a creature you control with power 2 or less triggers/i, /You may look at the top card of your library any time/i,
   /You may play lands and cast spells from the top of your library/i, /You control your opponents while they're searching/i, /While an opponent is searching their library/i, /^Bargain\b/i,
-  /can't cast noncreature spells with mana value greater than the number of lands/i, /You may have this \w+ enter as a copy of/i, /^You control enchanted (creature|enchantment|artifact|permanent|land|planeswalker)/i, /^(Enchanted|Equipped) creature gets [+-]\d+\/[+-]\d+\.?$/i, /^Other creatures you control have "Ward/i, /costs \{\d+\} more to cast except during its controller's turn/i, /Each player can't cast more than one noncreature spell each turn/i, /^Creature cards you own that aren't on the battlefield have flash/i, /^Fabricate \d+$/i, /^As (?:this \w+|[^,]+?) enters(?: the battlefield)?, choose an? (creature type|color|colour|card type)\.?$/i, /four or more card types among cards in your graveyard, [^,]+? gets/i, /can boast twice/i, /^(Equipped|Enchanted) creature has "\{T\}: Add/i, /gets \+\d+\/\+\d+ for each .+ you control\.?$/i, /Foods you control have all activated abilities of all creature cards exiled with/i, /has all activated abilities of creatures you control that don't have the same name/i, /you may exchange (?:his|her|its|their) text box and another creature's/i, /^Other legendary creatures you control have vigilance and "\{T\}: Add one mana of any color/i, /for each color among other legendary permanents you control/i, /^Activated abilities of creatures you control cost \{\d+\} less to activate/i, /^Each nonland card in your graveyard has escape/i,
+  /can't cast noncreature spells with mana value greater than the number of lands/i, /You may have this \w+ enter as a copy of/i, /^You control enchanted (creature|enchantment|artifact|permanent|land|planeswalker)/i, /^(Enchanted|Equipped) creature gets [+-]\d+\/[+-]\d+\.?$/i, /^Other creatures you control have "Ward/i, /costs \{\d+\} more to cast except during its controller's turn/i, /Each player can't cast more than one noncreature spell each turn/i, /^Creature cards you own that aren't on the battlefield have flash/i, /power is equal to the number of card types among cards in all graveyards/i, /If a card would be put into an opponent's graveyard from anywhere, instead exile it with a void counter/i, /As long as you have one or fewer cards in hand, if you would draw one or more cards/i, /^Fabricate \d+$/i, /^As (?:this \w+|[^,]+?) enters(?: the battlefield)?, choose an? (creature type|color|colour|card type)\.?$/i, /four or more card types among cards in your graveyard, [^,]+? gets/i, /can boast twice/i, /^(Equipped|Enchanted) creature has "\{T\}: Add/i, /gets \+\d+\/\+\d+ for each .+ you control\.?$/i, /Foods you control have all activated abilities of all creature cards exiled with/i, /has all activated abilities of creatures you control that don't have the same name/i, /you may exchange (?:his|her|its|their) text box and another creature's/i, /^Other legendary creatures you control have vigilance and "\{T\}: Add one mana of any color/i, /for each color among other legendary permanents you control/i, /^Activated abilities of creatures you control cost \{\d+\} less to activate/i, /^Each nonland card in your graveyard has escape/i,
   /^You may cast (?:noncreature |creature |instant and sorcery |artifact )?spells as though they had flash/i, /^Mobilize (\d+|X)$/i, /^Gift an? /i, /^Kicker\b/i
 ];
 function keywordOnly(line){
@@ -6554,7 +6647,7 @@ function cardCheck(t){
       out.static.push(line); return;
     }
     if(["cycling", "evoke", "flashback", "equip", "transmute"].includes(ab.kind)){ out.auto.push("Kartenmenü: " + line); return; }
-    if(ab.kind === "trig" && /deals (combat )?damage|blocks|becomes (blocked|tapped|the target|untapped)|leaves (your graveyard|the battlefield)|turned face up|isn't blocked|you cycle|you activate|you scry|you surveil|explores|transforms|you expend|loses life|you search|attacks and|is dealt damage/i.test(ab.cond) && !/deals combat damage to (a player|you|an opponent)/i.test(ab.cond)){
+    if(ab.kind === "trig" && /deals (combat )?damage|blocks|becomes (blocked|tapped|the target|untapped)|leaves (the battlefield)|turned face up|isn't blocked|you cycle|you activate|you scry|you surveil|explores|transforms|you expend|loses life|you search|attacks and|is dealt damage/i.test(ab.cond) && !/deals combat damage to (a player|you|an opponent)/i.test(ab.cond)){
       out.hand.push(line);
     }
     let mainText = ab.text;
@@ -6660,6 +6753,11 @@ function receiveReq(m){
     });
     return;
   }
+  if(q.kind === "giveExiled"){
+    const c = S.ex.find(x => x.u === q.u);
+    if(c){ S.ex.splice(S.ex.indexOf(c), 1); act(`${by} darf ${c.n} aus deinem Exil spielen (${src})`); commit(); }
+    reply(c ? {card:fullCard(c)} : null); return;
+  }
   if(q.kind === "chooseCards"){
     const cards = (Array.isArray(q.cards) ? q.cards : []).slice(0, 6), k = Math.max(1, Math.min(4, parseInt(q.k, 10) || 1));
     queuedNow(async () => {
@@ -6746,6 +6844,7 @@ function botReq(m){
     reply({cards:p.map(c => c.n)}); return;
   }
   if(q.kind === "draw"){ const n = Math.max(1, Math.min(10, parseInt(q.n, 10) || 1)); botDraw(n); botLog(`zieht ${n} Karte(n) (${String(q.src || "").slice(0, 60)})`); botChanged(); reply({n}); return; }
+  if(q.kind === "giveExiled"){ const c = BOT.ex.find(x => x.u === q.u); if(c){ BOT.ex.splice(BOT.ex.indexOf(c), 1); botLog(`${c.n} wird aus dem Exil gespielt`); botChanged(); } reply(c ? {card:fullCard(c)} : null); return; }
   if(q.kind === "chooseCards"){
     const cards = (Array.isArray(q.cards) ? q.cards : []).slice(0, 6), k = Math.max(1, parseInt(q.k, 10) || 1);
     // Die KI gibt dir die schwächsten Karten: bei «auf die Hand» die billigste, bei «in den Friedhof» die teuersten
@@ -7318,7 +7417,7 @@ function historyAdd(win){
 /* ---------- Automatische Updates ---------- */
 // Liegt die App im Web, prüft sie regelmässig version.json im selben Ordner und lädt sich bei einer neuen Version neu.
 // Alles Wichtige (Spielstand, Deck, Tisch) liegt im Browser-Speicher und ist nach dem Neuladen wieder da.
-const APP_VERSION = "2026.11.07-15";
+const APP_VERSION = "2026.11.07-16";
 const ONLINE = /^https?:$/.test(location.protocol);
 let updPending = null, updTimer = null, updSnoozeUntil = 0;
 function busyForUpdate(){ return botBusy || (!$("#modal").hidden && modalState && ["block","deck"].includes(modalState.kind)); }
