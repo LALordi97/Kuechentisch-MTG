@@ -1,4 +1,4 @@
 {
-  "version": "2026.11.07-4",
-  "notes": "Neu: Rückgängig-Knopf, Fähigkeiten-Check in der Statistik, Kampfschaden-Auslöser, Hand zeigen/abwerfen/opfern bei Mitspielern"
+  "version": "2026.11.07-5",
+  "notes": "Lücken aus dem Fähigkeiten-Check geschlossen: Shocklands, Zusatz-/Alternativkosten, Pumpen, Silence-Sperren und mehr"
 }
