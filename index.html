@@ -540,7 +540,7 @@ function moveCardRaw(u, to, where){
   const from = f.z, c = f.c;
   S[from].splice(f.i, 1);
   const wasFd = c.fd;
-  if(from === "bf" && to !== "bf"){ c.tap=false; c.c=0; c.flip=false; delete c.x; delete c.y; c.pwO = null; c.tgO = null; c.mtap = null; delete c.kwc; if(c.noAb){ c.o = c._oBak; c.kw = c._kwBak || []; delete c.noAb; delete c._oBak; delete c._kwBak; delete c._ab; delete c._abO; } }
+  if(from === "bf" && to !== "bf"){ c.tap=false; c.c=0; c.flip=false; delete c.x; delete c.y; c.pwO = null; c.tgO = null; c.mtap = null; delete c.kwc; if(c._classO != null){ c.o = c._classO; delete c._classO; delete c.level; delete c._ab; delete c._abO; } if(c.noAb){ c.o = c._oBak; c.kw = c._kwBak || []; delete c.noAb; delete c._oBak; delete c._kwBak; delete c._ab; delete c._abO; } }
   if(to !== "bf" && to !== "ex") c.fd = false;
   if(c.tok && to !== "bf"){ act(`entfernt Token ${c.n}`); commit(); return; }
   if(c.ow && to !== "bf"){
@@ -2832,6 +2832,10 @@ injectBot();
 let LAST_SRC = "";
 function lastSource(){ return S.bf.some(c => c.n === LAST_SRC) ? LAST_SRC : ""; }
 function hitOpponent(pid, hdef){
+  if((hdef.kind || "damage") === "damage" && (parseInt(hdef.amount, 10) || 0) > 0 && !hdef.combat && typeof S !== "undefined"){
+    const plus = S.bf.filter(x => !x.fd && /If a source you control would deal noncombat damage to an opponent or a permanent an opponent controls, it deals that much damage plus (\d+) instead/i.test(x.o || "")).reduce((a, x) => a + +x.o.match(/that much damage plus (\d+) instead/i)[1], 0);
+    if(plus){ hdef = {...hdef, amount:(parseInt(hdef.amount, 10) || 0) + plus}; act(`${S.bf.filter(x => /that much damage plus \d+ instead/i.test(x.o || "")).map(x => x.n).join(", ")}: +${plus} Schaden`); }
+  }
   if((hdef.kind || "damage") === "damage" && !hdef.card && (parseInt(hdef.amount, 10) || 0) > 0 && typeof abilEvent === "function") { const sc = hdef.src && S.bf.find(c => c.n === hdef.src); setTimeout(() => abilEvent({kind:"noncombatOpp", much:parseInt(hdef.amount, 10), pid, c:sc || null}), 0); }
   const srcCard = hdef.src && S.bf.find(c => c.n === hdef.src);
   fxSend({kind:"arrow", style:"hit", from: srcCard ? {u:srcCard.u} : {pid:me.id}, to: hdef.card ? {u:hdef.card} : {pid}});
@@ -3457,6 +3461,7 @@ function markOnMove(c, from, to, wasFd){
   }
   if(c && to === "bf" && from !== "bf" && !c.fd){ manaEnter(c); lifeEvent("enter", 1, c); sagaEnter(c); if(/Planeswalker/.test(c.type || "")) queued(() => pwEnter(c)); abilEvent({kind:"enter", c}); }
   if(c && to === "gy" && from !== "gy" && !c.tok && !c.ow && isPermanentType(c)) noteToGyPerm();
+  if(c && to === "bf" && from !== "bf" && /\bClass\b/.test(c.type || "")){ c.level = 1; classApply(c); }
   if(c && to === "bf" && from !== "bf" && !c.fd && isCreature(c) && typeof abilAuto === "function" && abilAuto() && hasExploit(c)) queued(() => exploitEnter(c));
   if(c && from === "bf" && to !== "bf"){ sagaLeave(c); if(to === "gy" && !wasFd) abilEvent({kind:"die", c}, [c]); delete c.evoked; delete c.loyUsed; delete c.wasCast; delete c.pump; delete c.tkw; }
   if(!c || !markAutoOn()) return;
@@ -4476,6 +4481,11 @@ function matchStep2(p, src, full, SELF){
   if((m = p.match(new RegExp(`^remove an? -1/-1 counter from (?:this creature|${SELF})$`, "i")))) return [{t:"selfMinus"}];
   if(/^untap enchanted creature$/i.test(p)) return [{t:"untapEq"}];
   if(/^proliferate$/i.test(p)) return [{t:"proliferate"}];
+  if((m = p.match(/^level (\d+)$/i)) && /\bClass\b/.test(src.type || "")) return [{t:"classLevel", n:+m[1]}];
+  if(/^untap those creatures$/i.test(p) && /creatures you control get [+-]\d+\/[+-]\d+ until end of turn\. Untap those creatures/i.test(full || "")) return [{t:"untapMine"}];
+  if(/^cast this spell only during (?:your turn|an opponent's turn|combat|your main phase)$/i.test(p)) return [{t:"skip"}];
+  if(/^other creatures you control get \+\d+\/\+\d+ for each aura and equipment attached to /i.test(p)) return [{t:"skip"}];
+  if(/^take an extra turn after this one if an opponent cast a blue spell this turn$/i.test(p)) return [{t:"extraTurn", cond:"oppBlue"}];
   if(/^goad target creature$/i.test(p)) return [{t:"goad"}];
   if(/^the exiled card's owner creates an x\/x blue illusion creature token$/i.test(p)) return [{t:"skyTok"}];
   if((m = p.match(new RegExp(`^(it|this creature|${SELF}) endures (x|\\d+)$`, "i")))) return [{t:"endure", who:/^it$/i.test(m[1]) ? "it" : "self", n:m[2]}];
@@ -5215,6 +5225,17 @@ function esikaFor(c){
 }
 /* Sisay: +1/+1 je Farbe unter anderen legendären bleibenden Karten */
 function countBoost(c){
+  const b = countBoost0(c);
+  if(!c || typeof S === "undefined" || !S.bf || !S.bf.includes(c) || !isCreature(c)) return b;
+  S.bf.forEach(k => {
+    if(k === c || k.fd) return;
+    const m = String(k.o || "").match(/Other creatures you control get \+(\d+)\/\+(\d+) for each Aura and Equipment attached to/i); if(!m) return;
+    const n = S.bf.filter(a => a.eq === k.u && /\b(Aura|Equipment)\b/.test(a.type || "")).length;
+    b.p += +m[1] * n; b.t += +m[2] * n;
+  });
+  return b;
+}
+function countBoost0(c){
   if(!c || !c.o || c.o.indexOf(" for each ") < 0 || typeof S === "undefined" || !S.bf || !S.bf.includes(c)) return {p:0, t:0};
   const g = c.o.match(new RegExp(`^(?:This creature|${selfPat(c)}) gets \\+(\\d+)/\\+(\\d+) for each (.+?) cards? in your graveyard\\.?$`, "im"));
   if(g){ const f = cardFilter(g[3]); const n = (S.gy || []).filter(x => f(x)).length; return {p:+g[1] * n, t:+g[2] * n}; }
@@ -5332,6 +5353,19 @@ function enduringStory(){
 }
 /* Unlicensed Hearse: Stärke = Zahl der damit verbannten Karten */
 function hearsePT(c){ if(!c || !c.o || c.o.indexOf("equal to the number of cards exiled with it") < 0) return null; const n = (c.exiledWith || []).length + (c.exiledN || 0); return {p:n, t:n}; }
+/* Class: nur die erreichten Level und die nächste Level-Fähigkeit gelten */
+function classApply(c){
+  if(!c || !/\bClass\b/.test(c.type || "")) return;
+  if(c._classO == null) c._classO = c.o || "";
+  const lv = c.level || (c.level = 1);
+  const out = []; let cur = 1;
+  String(c._classO).split("\n").forEach(l => {
+    const m = l.match(/^\{[^:]*\}:\s*Level (\d+)\s*$/i);
+    if(m){ cur = +m[1]; if(cur === lv + 1) out.push(l); return; }
+    if(cur <= lv) out.push(l);
+  });
+  c.o = out.join("\n"); delete c._ab; delete c._abO;
+}
 /* Fähigkeiten verlieren (Abigale) */
 function loseAllAbilities(c){
   if(!c || c.noAb) return;
@@ -6104,6 +6138,14 @@ async function runSteps(steps, src, ctx = {}){
       case "selfMinus": if(S.bf.includes(src) && (src.c || 0) < 0){ src.c++; act(`${src.n}: eine -1/-1-Marke weniger (noch ${-src.c})`); } break;
       case "untapEq": { const e = S.bf.find(x => x.u === src.eq); if(e){ e.tap = false; act(`${src.n}: enttappt ${e.n}`); } else act(`${src.n}: verzaubert nichts`); break; }
       case "proliferate": await proliferate(src); break;
+      case "untapMine": S.bf.filter(x => !x.fd && isCreature(x)).forEach(x => { x.tap = false; }); act(`${src.n}: enttappt deine Kreaturen`); break;
+      case "classLevel": {
+        const cur = src.level || 1;
+        if(!S.bf.includes(src)) break;
+        if(st.n !== cur + 1){ toast(`${src.n} ist auf Level ${cur} – Level ${st.n} geht erst danach.`); break; }
+        src.level = st.n; classApply(src); act(`${src.n} steigt auf Level ${st.n}`); commit();
+        break;
+      }
       case "goad": {
         const t = await pickTarget(`${src.n}: welche Kreatur aufstacheln (Goad)?`, "target creature", false); if(!t || !t.card) break;
         if(t.mine){ t.card.goad = me.name || "du"; act(`${src.n}: stachelt ${t.card.n} auf`); }
@@ -6844,7 +6886,7 @@ async function runSteps(steps, src, ctx = {}){
         else { act(`${src.n}: ${oppByPid(t.pid)} darf ein Land opfern und den Zauber kopieren …`); const r = await requestOpp(t.pid, {kind:"chain", src:src.n}); if(!r || !r.ok) act(`${src.n}: ${oppByPid(t.pid)} kopiert nicht`); }
         break;
       }
-      case "extraTurn": S.extraTurns = (S.extraTurns || 0) + 1; act(`${src.n}: nimmt nach diesem Zug einen zusätzlichen Zug`); toast(`<b>${esc(src.n)}:</b> Wenn du den Zug beendest, folgt dein zusätzlicher Zug.`); break;
+      case "extraTurn": if(st.cond === "oppBlue" && S.oppBlueKey !== turnKey()){ act(`${src.n}: diesen Zug hat kein Gegner einen blauen Zauber gewirkt – kein zusätzlicher Zug`); break; } S.extraTurns = (S.extraTurns || 0) + 1; act(`${src.n}: nimmt nach diesem Zug einen zusätzlichen Zug`); toast(`<b>${esc(src.n)}:</b> Wenn du den Zug beendest, folgt dein zusätzlicher Zug.`); break;
       case "loseGame": S.lifeLock = null; S.life = Math.min(S.life, 0); act(`${src.n}: verliert das Spiel`); toast(`<b>${esc(src.n)}:</b> Du verlierst das Spiel.`, 12000); break;
       case "delayedSteps": {
         S.delayed = Array.isArray(S.delayed) ? S.delayed : [];
@@ -7187,6 +7229,8 @@ async function castWarn(c, zone){
     if(one && !isLand(c) && spellsThisTurn() >= 1) why.push(`${one.n}: du hast diesen Zug schon einen Zauber gewirkt`);
     const can = all.find(x => x.n === "Ethersworn Canonist" || /Each player who has cast a nonartifact spell this turn can't cast additional nonartifact spells/i.test(x.o || ""));
     if(can && !isLand(c) && !/\bArtifact\b/.test(c.type || "") && S.naKey === tk && (S.naCount || 0) >= 1) why.push(`${can.n}: du hast diesen Zug schon einen Nicht-Artefakt-Zauber gewirkt`); }
+  if(/^Cast this spell only during your turn\.?$/im.test(c.o || "") && TURN.active && TURN.active !== me.id) why.push(`${c.n}: nur in deinem eigenen Zug`);
+  if(/^Cast this spell only during an opponent's turn\.?$/im.test(c.o || "") && TURN.active === me.id) why.push(`${c.n}: nur im Zug eines Gegners`);
   if(!why.length) return true;
   return abilModal(`${c.n}: eigentlich nicht erlaubt`, (box, done) => {
     why.forEach(w => box.append(Object.assign(document.createElement("p"), {textContent:"• " + w})));
@@ -7197,6 +7241,7 @@ async function castWarn(c, zone){
 function lifeGainedThisTurn(){ const k = `${TURN.n}|${TURN.active}`; return S.lifeGainKey === k ? (S.lifeGainTurn || 0) : 0; }
 function noteLifeGain(n){ const k = `${TURN.n}|${TURN.active}`; if(S.lifeGainKey !== k){ S.lifeGainKey = k; S.lifeGainTurn = 0; } S.lifeGainTurn += n; }
 function abilEvent(ev, extraSrc){
+  if(ev && ev.kind === "oppCast" && ev.c && /\{[^}]*U[^}]*\}/.test(ev.c.mc || "")) S.oppBlueKey = turnKey();
   if(!abilAuto()) return;
   const srcs = S.bf.filter(c => !c.fd);
   (Array.isArray(S.emblems) ? S.emblems : []).forEach(e => srcs.push(e));
@@ -7558,6 +7603,8 @@ function oppDrawScan(){
 
 /* ---------- Fähigkeiten-Check: Was kann die App mit den Karten im Deck? ---------- */
 const HANDLED_STATIC = [
+  /^Cast this spell only during (?:your turn|an opponent's turn)/i, /^If a source you control would deal noncombat damage to an opponent or a permanent an opponent controls, it deals that much damage plus \d+ instead/i,
+  /^Other creatures you control get \+\d+\/\+\d+ for each Aura and Equipment attached to/i,
   /^Each player can't cast more than one spell each turn/i, /^Each player who has cast a nonartifact spell this turn can't cast additional nonartifact spells/i,
   /^Nonbasic lands your opponents control enter tapped/i, /^Artifacts your opponents control enter tapped/i, /^Spells your opponents cast from graveyards or from exile cost \{\d+\} more/i,
   /^Each creature you control with a counter on it has "\{T\}: Add/i, /gets \+\d+\/\+\d+ for each .+ cards? in your graveyard\.?$/i, /^Other legendary creatures you control have exploit/i,
@@ -8401,7 +8448,7 @@ function historyAdd(win){
 /* ---------- Automatische Updates ---------- */
 // Liegt die App im Web, prüft sie regelmässig version.json im selben Ordner und lädt sich bei einer neuen Version neu.
 // Alles Wichtige (Spielstand, Deck, Tisch) liegt im Browser-Speicher und ist nach dem Neuladen wieder da.
-const APP_VERSION = "2026.11.08-3";
+const APP_VERSION = "2026.11.08-4";
 const ONLINE = /^https?:$/.test(location.protocol);
 let updPending = null, updTimer = null, updSnoozeUntil = 0;
 function busyForUpdate(){ return botBusy || (!$("#modal").hidden && modalState && ["block","deck"].includes(modalState.kind)); }
