@@ -598,10 +598,10 @@ function draw(n=1){
   commit();
 }
 function startGame(){
-  const lib = [], cz = [];
+  const lib = [], cz = [], attr = [];
   const comps = companionCandidates();
-  S.deck.forEach(t => { if(t.sb || comps.includes(t)) return; (t.cmdr ? cz : lib).push(newCard(t)); });
-  Object.assign(S, {library:shuffle(lib), hand:[], bf:[], gy:[], ex:[], cz, st:[], poison:0, cmd:{}, turn:0, life: cz.length ? 40 : 20, pool:emptyPoolObj(), marks:{E:0, XP:0, RAD:0}, pregameDone:false, pregameRev:[], emblems:[], compUsed:false, lifeLock:null, protect:null, delayed:[], locks:[]});
+  S.deck.forEach(t => { if(t.sb || comps.includes(t)) return; if(t.attr || /\bAttraction\b/.test(t.type || "")){ const a = newCard(t); a.lights = t.lights; attr.push(a); return; } (t.cmdr ? cz : lib).push(newCard(t)); });
+  Object.assign(S, {library:shuffle(lib), hand:[], bf:[], gy:[], ex:[], cz, st:[], poison:0, cmd:{}, turn:0, life: cz.length ? 40 : 20, pool:emptyPoolObj(), marks:{E:0, XP:0, RAD:0}, pregameDone:false, pregameRev:[], emblems:[], attrDeck:shuffle(attr), compUsed:false, lifeLock:null, protect:null, delayed:[], locks:[]});
   lifeLogReset();
   pickCompanion(comps[0] || null, false);
   const sbN = S.deck.filter(t => t.sb).length;
@@ -1109,6 +1109,7 @@ function tpl(sc){
     cmc: Number(sc.cmc) || 0, pw: pw != null ? num(pw) : null, tg: tg != null ? num(tg) : null,
     kw: Array.isArray(sc.keywords) ? sc.keywords : [], o: String(sc.oracle_text || f0.oracle_text || "").slice(0, 1500), loy: sc.loyalty ?? f0.loyalty ?? null,
     mc: sc.mana_cost || f0.mana_cost || "", pm: Array.isArray(sc.produced_mana) ? sc.produced_mana : [],
+    lights: Array.isArray(sc.attraction_lights) ? sc.attraction_lights.slice(0, 6) : (Array.isArray(f0.attraction_lights) ? f0.attraction_lights.slice(0, 6) : undefined),
     tk: (sc.all_parts || []).filter(x => x.component === "token" && x.id).reduce((a, x) => a.some(y => y.n === x.name) ? a : [...a, {id: x.id, n: x.name}], [])};
 }
 function parseDeck(text, cmdText){
@@ -1133,6 +1134,7 @@ function parseDeck(text, cmdText){
     if(/^(\/\/|#)/.test(l)) { if(/commander/i.test(l)) section = "cmdr"; else if(/side/i.test(l)) section = "side"; else if(/maybe/i.test(l)) section = "skip"; return; }
     if(/^(commander|commanders)\s*:?\s*$/i.test(l)){ section = "cmdr"; return; }
     if(/^(companion|companions)\s*:?\s*$/i.test(l)){ section = "comp"; return; }
+    if(/^(attractions?|attraktionen|attraktionsdeck)\s*:?\s*$/i.test(l)){ section = "attr"; return; }
     if(/^(deck|main|mainboard|maindeck)\s*:?\s*$/i.test(l)){ section = "main"; return; }
     if(/^sideboard\s*:?\s*$/i.test(l)){ section = "side"; return; }
     if(/^(maybeboard|considering|tokens?)\s*:?\s*$/i.test(l)){ section = "skip"; return; }
@@ -1141,6 +1143,7 @@ function parseDeck(text, cmdText){
     const n0 = out.length;
     add(l, section === "cmdr", section === "side" || section === "comp");
     if(section === "comp" && out.length > n0) out[out.length - 1].comp = true;
+    if(section === "attr" && out.length > n0) out[out.length - 1].attr = true;
   });
   (cmdText||"").split(/\r?\n|;/).forEach(l => add(l, true));
   return out;
@@ -1183,7 +1186,7 @@ async function fetchCards(entries, onProgress){
   entries.forEach(e => {
     const t = found.get(keyOf(e)) || found.get(`n|${e.name.toLowerCase()}`);
     if(!t) return;
-    for(let q=0;q<e.qty;q++) deck.push({...t, cmdr: e.cmdr, sb: !!e.sb, comp: !!e.comp});
+    for(let q=0;q<e.qty;q++) deck.push({...t, cmdr: e.cmdr, sb: !!e.sb, comp: !!e.comp, attr: !!e.attr});
   });
   return {deck, missing: [...new Set(missing)], netErr};
 }
@@ -2825,7 +2828,7 @@ injectBot();
 let LAST_SRC = "";
 function lastSource(){ return S.bf.some(c => c.n === LAST_SRC) ? LAST_SRC : ""; }
 function hitOpponent(pid, hdef){
-  if((hdef.kind || "damage") === "damage" && !hdef.card && (parseInt(hdef.amount, 10) || 0) > 0 && typeof abilEvent === "function") setTimeout(() => abilEvent({kind:"noncombatOpp", much:parseInt(hdef.amount, 10), pid}), 0);
+  if((hdef.kind || "damage") === "damage" && !hdef.card && (parseInt(hdef.amount, 10) || 0) > 0 && typeof abilEvent === "function") { const sc = hdef.src && S.bf.find(c => c.n === hdef.src); setTimeout(() => abilEvent({kind:"noncombatOpp", much:parseInt(hdef.amount, 10), pid, c:sc || null}), 0); }
   const srcCard = hdef.src && S.bf.find(c => c.n === hdef.src);
   fxSend({kind:"arrow", style:"hit", from: srcCard ? {u:srcCard.u} : {pid:me.id}, to: hdef.card ? {u:hdef.card} : {pid}});
   sendTo(pid, {t:"hit", kind:hdef.kind || "damage", amount: Math.max(0, Math.min(99, parseInt(hdef.amount, 10) || 0)), card: hdef.card || null, src: String(hdef.src || "").slice(0, 80), kw: String(hdef.kw || "").slice(0, 20)});
@@ -4615,8 +4618,9 @@ function matchStep2(p, src, full, SELF){
   // Command Performance: Tickets, Attraktionen
   if((m = p.match(/^you get ((?:\{TK\})+)$/i))) return [{t:"tickets", n:(m[1].match(/\{TK\}/gi) || []).length}];
   if(/^roll to visit your attractions$/i.test(p)) return [{t:"rollVisit"}];
-  if(/^open an attraction$/i.test(p)) return [{t:"info", text:"Öffne eine Attraktion: lege die oberste Karte deines Attraktionsdecks ins Spiel (das Attraktionsdeck führst du neben der App)."}];
-  if(/^(?:you may )?put an? (?:name |art |ability )?sticker on (?:a|an|target) .+$/i.test(p)) return [{t:"info", text:"Klebe einen Sticker auf die Karte (Sticker-Blätter führt die App nicht)."}];
+  if(/^open an attraction$/i.test(p)) return [{t:"openAttraction"}];
+  if((m = p.match(/^(?:you may )?put an? (name |art |ability |power and toughness )?sticker on (?:a|an|target) (.+)$/i))) return [{t:"sticker2", kind:(m[1] || "").trim().toLowerCase(), who:m[2]}];
+  if((m = p.match(new RegExp(`^(?:${SELF}|this creature|it) gains all activated abilities of (target .+?) until end of turn$`, "i")))) return [{t:"borrowAbils", who:m[1]}];
   // Jeweled Amulet
   if(/^note the type of mana spent to pay this activation cost$/i.test(p)) return [{t:"noteMana"}];
   if(/^add one mana of the last noted type$/i.test(p)) return [{t:"addNoted"}];
@@ -5053,6 +5057,7 @@ function kinnanBonus(src, o){
 function attachBoost(c){
   if(typeof S === "undefined" || !S || !Array.isArray(S.bf) || !c || !c.u) return {p:0, t:0};
   let p = 0, t = 0;
+  if(c.stk){ p += c.stk.p || 0; t += c.stk.t || 0; }
   for(const x of S.bf){ if(x.eq !== c.u || x === c) continue; const m = String(x.o || "").match(/(?:Enchanted|Equipped) creature gets ([+-]\d+)\/([+-]\d+)/i); if(m){ p += +m[1]; t += +m[2]; } }
   return {p, t};
 }
@@ -5117,6 +5122,52 @@ function curseOnAttack(targets){
     const tk = ((c.o || "").match(/create an? (\w+) token/i) || [, "Gold"])[1];
     queued(() => makeTokens({n:"a", desc:tk, extra:""}, {n:c.n}, {}));
   });
+}
+/* Attraktionen (Unfinity): öffnen und besuchen */
+async function openAttraction(src){
+  S.attrDeck = Array.isArray(S.attrDeck) ? S.attrDeck : [];
+  let c = S.attrDeck.shift() || null;
+  if(!c){
+    const name = await askCardName(`${src.n}: Attraktion öffnen`, "Dein Attraktionsdeck ist leer oder nicht geladen. Welche Attraktion öffnest du? (Tipp: Lade das Deck mit einem Abschnitt «Attractions:», dann zieht die App sie selbst.)");
+    if(!name) return;
+    let t = null;
+    try{ const r = await fetch(API + "/cards/named?fuzzy=" + encodeURIComponent(name)); if(r.ok) t = tpl(await r.json()); }catch(e){}
+    c = newCard(t || {n:name, type:"Artifact — Attraction", o:""}); c.lights = t && t.lights;
+  }
+  S.bf.push(c); markOnMove(c, null, "bf");
+  act(`${src.n}: öffnet die Attraktion ${c.n}${Array.isArray(c.lights) && c.lights.length ? ` (Lichter ${c.lights.join(", ")})` : ""}`); commit();
+}
+async function rollToVisit(src){
+  const r = 1 + Math.floor(Math.random() * 6);
+  act(`${src.n}: würfelt ${r} für deine Attraktionen`);
+  const attrs = S.bf.filter(c => !c.fd && /\bAttraction\b/.test(c.type || ""));
+  if(!attrs.length){ toast(`<b>${esc(src.n)}:</b> Wurf ${r}, aber du hast keine Attraktion im Spiel.`); return; }
+  for(const a of attrs){
+    let lit = Array.isArray(a.lights) && a.lights.length ? a.lights.includes(r) : null;
+    if(lit === null){ const ans = await abilModal(`${a.n}: leuchtet die ${r}?`, (box, done) => { const row = document.createElement("div"); row.className = "row"; row.append(btn("Ja", () => done(true), "primary"), btn("Nein", () => done(false), "small")); box.append(row); }); lit = !!ans; if(ans) a.lights = [...(a.lights || []), r]; }
+    if(!lit) continue;
+    const v = String(a.o || "").match(/Visit\s*[—-]\s*([^\n]+)/i);
+    act(`${a.n}: besucht (Wurf ${r})`);
+    if(v) await runSteps(parseSteps(v[1], a), a, {}); else toast(`<b>${esc(a.n)}:</b> besucht. Führe den Besuch aus.`);
+  }
+  commit();
+}
+/* Sticker (Unfinity): Name, Bild, Fähigkeit, Stärke/Widerstand */
+async function putSticker(src, st){
+  const f = cardFilter(String(st.who || "nonland permanent you own").replace(/ you own$/i, ""));
+  const list = S.bf.filter(c => !c.fd && f(c));
+  if(!list.length){ act(`${src.n}: keine passende bleibende Karte für einen Sticker`); return; }
+  const p = await pickCards(`${src.n}: Sticker auf welche Karte?`, list, 1, {none:"Keinen"}); if(!p || !p[0]) return;
+  const c = p[0];
+  let kind = st.kind;
+  if(!kind) kind = await abilModal(`${src.n}: welcher Sticker?`, (box, done) => { const r = document.createElement("div"); r.className = "row"; [["name", "Name"], ["ability", "Fähigkeit"], ["power and toughness", "Stärke/Widerstand"], ["art", "Bild"]].forEach(([k, l]) => r.append(btn(l, () => done(k), "primary"))); box.append(r); });
+  if(!kind) return;
+  c.stickers = Array.isArray(c.stickers) ? c.stickers : [];
+  if(kind === "name"){ const v = await askCardName(`${c.n}: Namensaufkleber`, "Welcher Name steht auf dem Aufkleber?"); if(!v) return; c.stickers.push({kind, text:v}); act(`${src.n}: ${c.n} bekommt den Namensaufkleber «${v}»`); }
+  else if(kind === "ability"){ const v = await askCardName(`${c.n}: Fähigkeits-Sticker`, "Text des Fähigkeits-Stickers auf Englisch, z. B. «Whenever this creature attacks, draw a card.»"); if(!v) return; c.stickers.push({kind, text:v}); c.o = (c.o ? c.o + "\n" : "") + v; delete c._ab; delete c._abO; act(`${src.n}: ${c.n} erhält «${v}»`); }
+  else if(kind === "power and toughness"){ const v = await askCardName(`${c.n}: Stärke/Widerstand-Sticker`, "Werte des Stickers, z. B. 3/2. Die Kreatur bekommt diese Werte als Grundwerte."); const m = String(v || "").match(/(\d+)\s*\/\s*(\d+)/); if(!m) return; c.stickers.push({kind, text:`${m[1]}/${m[2]}`}); c.pumpBaseSticker = {p:+m[1], t:+m[2]}; c.pw = +m[1]; c.tg = +m[2]; c.pwO = null; c.tgO = null; act(`${src.n}: ${c.n} ist jetzt ${m[1]}/${m[2]}`); }
+  else { c.stickers.push({kind:"art"}); act(`${src.n}: ${c.n} bekommt einen Bild-Sticker`); }
+  commit();
 }
 /* Soulbond: zwei Kreaturen verbinden */
 async function soulbond(c){
@@ -5796,7 +5847,18 @@ async function runSteps(steps, src, ctx = {}){
       }
       case "info": act(`${src.n}: ${st.text}`); toast(`<b>${esc(src.n)}:</b> ${esc(st.text)}`, 10000); break;
       case "tickets": { const mk = marksOf(); mk.TK = (mk.TK || 0) + st.n; act(`${src.n}: +${st.n} Ticket(s) (jetzt ${mk.TK})`); break; }
-      case "rollVisit": { const r = 1 + Math.floor(Math.random() * 6); act(`${src.n}: würfelt ${r} für deine Attraktionen`); toast(`<b>${esc(src.n)}:</b> Wurf ${r} – besuche Attraktionen mit dieser Zahl.`, 10000); break; }
+      case "rollVisit": await rollToVisit(src); break;
+      case "openAttraction": await openAttraction(src); break;
+      case "sticker2": await putSticker(src, st); break;
+      case "borrowAbils": {
+        const t = await pickTarget(`${src.n}: Fähigkeiten von welcher Kreatur?`, st.who, false); if(!t || t.kind !== "card" || !S.bf.includes(src)) break;
+        let o = t.card.o;
+        if(!t.mine){ const r = await requestOpp(t.pid, {kind:"cardText", u:t.card.u, src:src.n}); o = (r && r.o) || ((S.deck || []).find(d => d.n === t.card.n) || {}).o || ""; }
+        const k = turnKey(); if(!src.borrowed || src.borrowed.key !== k) src.borrowed = {key:k, list:[]};
+        src.borrowed.list.push({n:t.card.n, o:String(o || "")});
+        act(`${src.n}: hat bis Zugende die aktivierten Fähigkeiten von ${t.card.n}`);
+        break;
+      }
       case "noteMana": {
         const sp = src.lastSpent || {}; let col = POOL_ORDER.find(k => (sp[k] || 0) > 0);
         if(!col) col = await pickColor(`${src.n}: welche Manaart hast du bezahlt?`, [...COLORS, "C"]);
@@ -6398,8 +6460,8 @@ function adNauseam(src){
 /* ---------- Auslöser verteilen ---------- */
 function trigMatches(ab, src, ev){
   const SELF = selfPat(src);
-  const cond = ab.cond;
-  if(/^enchanted creature deals (?:combat )?damage to (?:an opponent|a player)$/i.test(cond)) return ev.kind === "combatDamage" && !!src.eq && !!ev.c && src.eq === ev.c.u;
+  const cond = ab.cond; let m0;
+  if((m0 = cond.match(/^enchanted creature deals (combat )?damage to (?:an opponent|a player)$/i))) return (ev.kind === "combatDamage" || (!m0[1] && ev.kind === "noncombatOpp")) && !!src.eq && !!ev.c && src.eq === ev.c.u;
   if(ev.kind === "phase"){
     if(/^the beginning of each of your main phases$/i.test(cond)) return ev.mine && (ev.phase === "main" || ev.phase === "main2");
     const m = cond.match(/^the beginning of (your|each|each opponent's|the|each player's)? ?(upkeep|end step|combat on your turn|each combat|draw step|precombat main phase|first main phase)/i);
@@ -6623,7 +6685,7 @@ function abilEvent(ev, extraSrc){
   // Delney: Auslöser von Kreaturen mit Stärke 2 oder weniger lösen ein weiteres Mal aus
   const delney = S.bf.filter(x => !x.fd && /If a triggered ability of a creature you control with power 2 or less triggers, that ability triggers an additional time/i.test(x.o || "")).length;
   fire.forEach(({src, ab}) => { const n = reps + (delney && isCreature(src) && power(src) <= 2 ? delney : 0); for(let r = 0; r < n; r++) queued(() => runTrigger(src, ab, ev)); });
-  if(ev.kind === "combatDamage" && ev.c && ev.c.pair){
+  if((ev.kind === "combatDamage" || ev.kind === "noncombatOpp") && ev.c && ev.c.pair){
     const pt = S.bf.find(x => x.u === ev.c.pair);
     const giver = [ev.c, pt].find(x => x && /each of those creatures has "Whenever this creature deals damage to an opponent, draw a card/i.test(x.o || ""));
     if(pt && giver) queued(async () => { draw(1); act(`${ev.c.n}: Schaden an Gegner → zieht (Soulbond mit ${pt === giver ? pt.n : ev.c.n})`); });
@@ -6789,6 +6851,12 @@ function abilMenuItems(c, zone){
       parseAbilities(shadow).filter(a => a.kind === "act").forEach(a => items.push({l:`${info.n} (Agatha): ${short(a.cost + ": " + a.text)}`, f:() => queued(async () => { c._alias = info.n; try{ await activateAbility(c, a); } finally { delete c._alias; } })}));
       (manaChoices(shadow) || []).forEach(o => items.push({h:`${esc(info.n)} (Agatha): ${optHtml(o)}`, f:() => tapForMana(c, o)}));
     }));
+    // Quicksilver Elemental: bis Zugende übernommene Fähigkeiten
+    if(c.borrowed && c.borrowed.key === turnKey()) c.borrowed.list.forEach(b => {
+      const sh = newCard({n:b.n, type:"Creature", o:b.o});
+      parseAbilities(sh).filter(a => a.kind === "act").forEach(a => items.push({l:`${b.n} (übernommen): ${short(a.cost + ": " + a.text)}`, f:() => queued(async () => { c._alias = b.n; try{ await activateAbility(c, a); } finally { delete c._alias; } })}));
+      (manaChoices0(sh) || []).forEach(o => items.push({h:`${esc(b.n)} (übernommen): ${optHtml(o)}`, f:() => tapForMana(c, o)}));
+    });
     // Marvin, Murderous Mimic: aktivierte Fähigkeiten anderer Kreaturen
     if(/has all activated abilities of creatures you control that don't have the same name/i.test(c.o || "")) S.bf.filter(x => x !== c && !x.fd && isCreature(x) && x.n !== c.n).forEach(x => {
       parseAbilities(x).filter(a => a.kind === "act").forEach(a => items.push({l:`${x.n} (Marvin): ${short(a.cost + ": " + a.text)}`, f:() => queued(async () => { c._alias = x.n; try{ await activateAbility(c, a); } finally { delete c._alias; } })}));
@@ -7075,6 +7143,7 @@ function receiveReq(m){
     });
     return;
   }
+  if(q.kind === "cardText"){ const c = S.bf.find(x => x.u === q.u); reply(c ? {o:String(c.o || "").slice(0, 1500)} : null); return; }
   if(q.kind === "peekTop"){ const c = S.library[0]; if(c) act(`${by} sieht deine oberste Karte (${src})`); reply(c ? {card:pubCard(c)} : null); return; }
   if(q.kind === "searchBasic"){ queuedNow(async () => { let ok = false; if(await confirmMay({n:`${by}: ${src}`}, "ein Standardland suchen")){ await searchStep({what:"a basic land card", rest:q.tapped ? "put it onto the battlefield tapped" : "put it onto the battlefield"}, {n:`${by}: ${src}`}, {}); ok = true; } reply({ok}); }); return; }
   if(q.kind === "secretNumber"){ queuedNow(async () => { const n = await askNumber(`${by} (${src}): deine geheime Zahl`, "Wähle eine Zahl (0 oder mehr). Alle zeigen gleichzeitig auf."); reply({n: Math.max(0, n || 0)}); }); return; }
@@ -7172,6 +7241,7 @@ function botReq(m){
     reply({cards:p.map(c => c.n)}); return;
   }
   if(q.kind === "draw"){ const n = Math.max(1, Math.min(10, parseInt(q.n, 10) || 1)); botDraw(n); botLog(`zieht ${n} Karte(n) (${String(q.src || "").slice(0, 60)})`); botChanged(); reply({n}); return; }
+  if(q.kind === "cardText"){ const c = BOT.bf.find(x => x.u === q.u); reply(c ? {o:String(c.o || "")} : null); return; }
   if(q.kind === "peekTop"){ const c = BOT.library[0]; reply(c ? {card:pubCard(c)} : null); return; }
   if(q.kind === "searchBasic"){ const c = BOT.library.find(x => /\bBasic\b/.test(x.type || "") && isLand(x)); if(c){ BOT.library.splice(BOT.library.indexOf(c), 1); c.tap = !!q.tapped; BOT.bf.push(c); BOT.library = shuffle(BOT.library); botLog(`sucht ${c.n}`); botChanged(); } reply({ok:!!c}); return; }
   if(q.kind === "secretNumber"){ const n = BOT.life > 10 ? Math.floor(Math.random() * 3) : 0; botLog(`wählt geheim ${n}`); reply({n}); return; }
@@ -7750,7 +7820,7 @@ function historyAdd(win){
 /* ---------- Automatische Updates ---------- */
 // Liegt die App im Web, prüft sie regelmässig version.json im selben Ordner und lädt sich bei einer neuen Version neu.
 // Alles Wichtige (Spielstand, Deck, Tisch) liegt im Browser-Speicher und ist nach dem Neuladen wieder da.
-const APP_VERSION = "2026.11.07-19";
+const APP_VERSION = "2026.11.07-20";
 const ONLINE = /^https?:$/.test(location.protocol);
 let updPending = null, updTimer = null, updSnoozeUntil = 0;
 function busyForUpdate(){ return botBusy || (!$("#modal").hidden && modalState && ["block","deck"].includes(modalState.kind)); }
