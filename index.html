@@ -496,6 +496,7 @@ function findCard(u){ for(const z of ["library","hand","bf","gy","ex","cz","st"]
 let CASTING_U = null;
 function gyToExile(c){
   if(c.tok) return false;
+  if(S.ywExile === turnKey()) return true;
   if(S.bf.some(x => !x.fd && /If a card or token would be put into (your|a) graveyard from anywhere, exile it instead/i.test(x.o || ""))) return true;
   return Object.values(others).some(o => (Array.isArray(o && o.bf) ? o.bf : []).some(x => x && !x.fd && /^(Rest in Peace|Leyline of the Void|Planar Void|Dauthi Voidwalker)$/.test(x.n || "")));
 }
@@ -986,7 +987,7 @@ function cardMenu(c, zone){
   } else if(zone !== "bf"){
     if(zone === "gy" && /\b(Instant|Sorcery)\b/.test(c.type || "")) markMenuItems(c).forEach(it => items.push(it));
     if(zone === "gy" || zone === "cz" || zone === "ex") abilMenuItems(c, zone).forEach(it => items.push(it));
-    if(zone === "ex" && c.castKey && (c.castKey === turnKey() || c.castKey === "myEnd" || c.castKey === "myNextEnd")) items.push({l: c.playOk ? "Spielen (bis Zugende erlaubt)" : "Wirken (bis Zugende erlaubt)", f:() => castFromExile(c)});
+    if(zone === "ex" && c.castKey && (c.castKey === turnKey() || c.castKey === "myEnd" || c.castKey === "myNextEnd" || c.castKey === "perm")) items.push({l: c.playOk ? "Spielen (bis Zugende erlaubt)" : "Wirken (bis Zugende erlaubt)", f:() => castFromExile(c)});
     items.push({l:"Aufs Spielfeld", f:mv("bf")});
   }
   if(zone !== "hand") items.push({l:"Auf die Hand", f:mv("hand")});
@@ -4691,6 +4692,20 @@ function matchStep2(p, src, full, SELF){
   if((m = p.match(/^it's an? ([A-Z]\w+) in addition to its other types$/i))) return [{t:"addTypeLast", sub:m[1]}];
   // Peter Parker's Camera, Return the Favor
   if(/^copy target (?:activated or triggered ability you control|instant spell, sorcery spell, activated ability, or triggered ability)$/i.test(p)) return [{t:"copyAbility", spells:/instant spell/i.test(p)}];
+  // Nick Fury u. a.: Rest unter die Bibliothek (macht das Ansehen-Fenster)
+  if(/^put the rest on the bottom of your library in (?:a random|any) order$/i.test(p)) return [{t:"skip"}];
+  // Praetor's Grasp
+  if(/^search target opponent's library for a card and exile it face down$/i.test(p)) return [{t:"graspOpp"}];
+  if(/^then that player shuffles$|^that player shuffles$/i.test(p)) return [{t:"skip"}];
+  if(/^(?:you may )?play that card for as long as it remains exiled$/i.test(p)) return [{t:"skip"}];
+  // Yawgmoth's Will
+  if(/^until end of turn, you may play lands and cast spells from your graveyard$/i.test(p)) return [{t:"ywPlay"}];
+  if(/^if a card would be put into your graveyard from anywhere this turn, exile that card instead$/i.test(p)) return [{t:"ywExile"}];
+  // Delirium-Variante (wird in abilSpellResolve gewählt)
+  if(/^if there are four or more card types among cards in your graveyard, instead /i.test(full || "")) return [{t:"skip"}];
+  // Mnemonic Betrayal
+  if(/^exile all opponents' graveyards$/i.test(p)) return [{t:"betrayal"}];
+  if(/^(?:you may )?cast spells from among those cards this turn/i.test(p) || /^if any of those cards remain exiled, return them to their owners' graveyards$/i.test(p)) return [{t:"skip"}];
   // Kinnan: Bonus-Mana läuft über das Mana-System
   if(/^add one (?:additional )?mana of any type that permanent produced$/i.test(p)) return [{t:"skip"}];
   // Thrasios: «reveal the top card … If it's a land card, put it onto the battlefield tapped. Otherwise, draw a card.»
@@ -5021,9 +5036,9 @@ async function castFromExile(c){
 function expireCastable(){
   if(typeof S === "undefined" || !S || !Array.isArray(S.ex)) return;
   (S.bf || []).filter(c => c.threatKey && c.threatKey !== turnKey()).forEach(c => { delete c.threatKey; if(c.ow && c.ow.id) setTimeout(() => giveControl(c.u, c.ow.id), 0); });
-  S.ex.filter(c => c.castKey && c.castKey !== turnKey() && c.castKey !== "myEnd" && c.castKey !== "myNextEnd").forEach(c => {
+  S.ex.filter(c => c.castKey && c.castKey !== turnKey() && c.castKey !== "myEnd" && c.castKey !== "myNextEnd" && c.castKey !== "perm").forEach(c => {
     delete c.castKey; delete c.playOk;
-    if(c.ow && c.ow.id){ S.ex.splice(S.ex.indexOf(c), 1); sendGive(c.ow.id, c, "ex"); act(`${c.n} geht ins Exil von ${c.ow.name} zurück`); }
+    if(c.ow && c.ow.id){ const z = c.returnZone || "ex"; S.ex.splice(S.ex.indexOf(c), 1); sendGive(c.ow.id, c, z); act(`${c.n} geht ${z === "gy" ? "in den Friedhof" : "ins Exil"} von ${c.ow.name} zurück`); }
   });
 }
 /* Underworld Breach: Escape aus dem Friedhof */
@@ -5919,6 +5934,31 @@ async function runSteps(steps, src, ctx = {}){
         break;
       }
       case "consult": await demonicConsult(src); break;
+      case "graspOpp": {
+        const t = await pickTarget(`${src.n}: wessen Bibliothek?`, "target opponent", false); if(!t) break;
+        const r = await requestOpp(t.pid, {kind:"library", src:src.n});
+        const lib = r && Array.isArray(r.cards) ? r.cards : [];
+        if(!lib.length){ act(`${src.n}: Bibliothek leer oder keine Antwort`); break; }
+        const p = await pickCards(`${src.n}: eine Karte aus der Bibliothek von ${oppByPid(t.pid)} verdeckt verbannen`, lib, 1, {none:"Keine"});
+        if(!p || !p[0]) break;
+        const g = await requestOpp(t.pid, {kind:"takeFromLib", u:p[0].u, src:src.n});
+        if(!g || !g.card) break;
+        receiveGive({card:{...g.card, ow:{id:t.pid, name:oppByPid(t.pid)}}, zone:"ex"});
+        const c = S.ex[S.ex.length - 1]; c.castKey = "perm"; c.playOk = true;
+        act(`${src.n}: verbannt eine Karte von ${oppByPid(t.pid)} verdeckt – du darfst sie spielen, solange sie im Exil ist`);
+        break;
+      }
+      case "ywPlay": S.ywPlay = turnKey(); act(`${src.n}: du darfst diesen Zug Länder und Zauber aus deinem Friedhof spielen (Friedhof-Menü)`); break;
+      case "ywExile": S.ywExile = turnKey(); act(`${src.n}: Karten, die diesen Zug in deinen Friedhof kämen, gehen ins Exil`); break;
+      case "betrayal": {
+        let n = 0;
+        for(const o of liveOpps()){
+          const r = await requestOpp(o.id, {kind:"giveGyAll", src:src.n});
+          (r && Array.isArray(r.cards) ? r.cards : []).forEach(card => { receiveGive({card:{...card, ow:{id:o.id, name:o.name}}, zone:"ex"}); const c = S.ex[S.ex.length - 1]; c.castKey = turnKey(); c.playOk = false; c.returnZone = "gy"; n++; });
+        }
+        act(`${src.n}: verbannt ${n} Karte(n) aus den Friedhöfen der Gegner – diesen Zug kannst du sie übers Exil-Menü wirken`);
+        break;
+      }
       case "stealPerm": {
         const t = await pickTarget(`${src.n}: Kontrolle über …`, st.who, false); if(!t || t.kind !== "card" || t.mine) break;
         const r = await requestOpp(t.pid, {kind:"giveMe", u:t.card.u, src:src.n});
@@ -6807,6 +6847,7 @@ function interveningIf(text, src){
   else if(/^it was kicked$/.test(c)) ok = !!src.kicked;
   else if(/^it's the first time that creature has become tapped this turn$/.test(c)){ const e = arguments[2] && arguments[2].ev; ok = e && e.c ? (e.c._tapKey === turnKey() && e.c._tapN === 1) : null; }
   else if(/^there are four or more card types among cards in your graveyard$/.test(c)) ok = deliriumOn();
+  else if((k = c.match(/^you control no (\w+?)s?$/))) ok = !S.bf.some(x => !x.fd && descMatch(k[1], x));
   else if((k = c.match(/^((?:\{[wubrgc]\})+) was spent to cast it$/))){ if(!src.spent) ok = null; else { const need = {}; k[1].toUpperCase().match(/[WUBRGC]/g).forEach(x => need[x] = (need[x] || 0) + 1); ok = Object.entries(need).every(([x, n]) => (src.spent[x] || 0) >= n); } }
   else if(/^it isn't that player's turn$/.test(c)) ok = arguments[2] && arguments[2].pid ? TURN.active !== arguments[2].pid : null;
   else if((k = c.match(/^you have (\d+) or more life$/))) ok = S.life >= +k[1];
@@ -7212,6 +7253,7 @@ function abilMenuItems(c, zone){
       delete c.payMc;
     })}));
   }
+  if(zone === "gy" && S.ywPlay === turnKey()) items.push({l: isLand(c) ? "Spielen (Yawgmoth's Will)" : "Wirken (Yawgmoth's Will)", f:() => queued(async () => { const f = findCard(c.u); if(!f || f.z !== "gy") return; S.gy.splice(f.i, 1); S.hand.push(c); commit(); if(isLand(c)) play(c.u); else if(/\b(Instant|Sorcery)\b/.test(c.type || "")) await castSpell(c.u); else await play(c.u); const g = findCard(c.u); if(g && g.z === "hand"){ S.hand.splice(g.i, 1); S.gy.push(c); commit(); } })});
   if((zone === "gy" || zone === "ex") && /You may cast this card from your graveyard(?: or from exile)?/i.test(c.o || "") && (zone === "gy" || /or from exile/i.test(c.o || ""))) items.push({l:`Wirken aus ${zone === "gy" ? "dem Friedhof" : "dem Exil"}`, f:() => queued(async () => { const f = findCard(c.u); if(!f) return; S[f.z].splice(f.i, 1); S.hand.push(c); commit(); if(/\b(Instant|Sorcery)\b/.test(c.type || "")) await castSpell(c.u); else await play(c.u); const g = findCard(c.u); if(g && g.z === "hand"){ S.hand.splice(g.i, 1); S[zone].push(c); commit(); } })});
   if(zone === "cz") abs.filter(a => a.kind === "act" && /onto the battlefield from the command zone/i.test(a.text)).forEach(a => items.push({l:`${a.cost}: aus der Kommandozone ins Spiel`, f:() => queued(() => activateAbility(c, a))}));
   if(zone === "gy" && !isLand(c) && S.bf.some(x => !x.fd && /Each nonland card in your graveyard has escape/i.test(x.o || ""))){
@@ -7238,7 +7280,13 @@ async function abilSpellResolve(c){
   const abs = parseAbilities(c).filter(a => a.kind === "spell");
   if(!abs.length) return;
   const ctx = {X: c.lastX ?? null, much: typeof LAST_E_PAID === "number" ? LAST_E_PAID : undefined};
-  for(const ab of abs) await runAbility(c, ab, ctx);
+  for(let i = 0; i < abs.length; i++){
+    const ab = abs[i], nx = abs[i + 1];
+    const iv = String(ab.text || "").match(/^If there are four or more card types among cards in your graveyard, instead (.+)$/i);
+    if(iv){ if(deliriumOn()){ act(`${c.n}: Delirium`); await runAbility(c, ab, ctx, iv[1].replace(/\bany card\b/i, "a card").replace(/^./, x => x.toUpperCase())); } continue; }
+    if(nx && /^If there are four or more card types among cards in your graveyard, instead /i.test(nx.text || "") && deliriumOn()) continue;
+    await runAbility(c, ab, ctx);
+  }
   // Splice onto Arcane: Effekte der gespleissten Karten
   for(const su of (c.splices || [])){ const sp = findCard(su); if(!sp) continue; act(`${c.n}: gespleisst mit ${sp.c.n}`); await ritualResolve(sp.c); for(const ab of parseAbilities(sp.c).filter(a => a.kind === "spell")) await runAbility(sp.c, ab, {}); }
   delete c.splices;
@@ -7452,6 +7500,9 @@ function receiveReq(m){
     });
     return;
   }
+  if(q.kind === "library"){ act(`${by} durchsucht deine Bibliothek (${src})`); reply({cards:S.library.map(pubCard)}); return; }
+  if(q.kind === "takeFromLib"){ const c = S.library.find(x => x.u === q.u); if(c){ S.library.splice(S.library.indexOf(c), 1); S.library = shuffle(S.library); act(`${by} verbannt eine Karte aus deiner Bibliothek verdeckt und du mischst (${src})`); commit(); } reply(c ? {card:fullCard(c)} : null); return; }
+  if(q.kind === "giveGyAll"){ const cards = S.gy.splice(0); act(`${by} verbannt deinen Friedhof (${cards.length} Karten, ${src})`); commit(); reply({cards:cards.map(fullCard)}); return; }
   if(q.kind === "giveFromGy"){ const c = S.gy.find(x => x.u === q.u); if(c && others[m.from]){ S.gy.splice(S.gy.indexOf(c), 1); sendGive(m.from, {...c, ow:{id:me.id, name:me.name}}, "bf"); act(`${by} holt ${c.n} aus deinem Friedhof (${src})`); commit(); } reply({ok:!!c}); return; }
   if(q.kind === "returnFromExile"){ const c = [...S.ex].reverse().find(x => x.n === q.n); if(c){ moveCard(c.u, "bf"); if(q.tapped) c.tap = true; act(`${c.n} kommt zurück ins Spiel (${by}: ${src})`); commit(); } reply({ok:!!c}); return; }
   if(q.kind === "exileUntilNonland"){ let hit = null; const ex = []; while(S.library.length){ const c = S.library.shift(); if(!isLand(c)){ hit = c; break; } ex.push(c); S.ex.push(c); } act(`verbannt ${[...ex, hit].filter(Boolean).map(c => c.n).join(", ")} (${by}: ${src}${hit ? `, ${by} darf ${hit.n} wirken` : ""})`); commit(); reply(hit ? {card:fullCard(hit)} : null); return; }
@@ -7554,6 +7605,9 @@ function botReq(m){
     reply({cards:p.map(c => c.n)}); return;
   }
   if(q.kind === "draw"){ const n = Math.max(1, Math.min(10, parseInt(q.n, 10) || 1)); botDraw(n); botLog(`zieht ${n} Karte(n) (${String(q.src || "").slice(0, 60)})`); botChanged(); reply({n}); return; }
+  if(q.kind === "library"){ reply({cards:BOT.library.map(pubCard)}); return; }
+  if(q.kind === "takeFromLib"){ const c = BOT.library.find(x => x.u === q.u); if(c){ BOT.library.splice(BOT.library.indexOf(c), 1); BOT.library = shuffle(BOT.library); botLog("verliert eine Karte aus der Bibliothek"); botChanged(); } reply(c ? {card:fullCard(c)} : null); return; }
+  if(q.kind === "giveGyAll"){ const cards = BOT.gy.splice(0); botLog(`Friedhof verbannt (${cards.length})`); botChanged(); reply({cards:cards.map(fullCard)}); return; }
   if(q.kind === "giveFromGy"){ const c = BOT.gy.find(x => x.u === q.u); if(!c){ reply({ok:false}); return; } BOT.gy.splice(BOT.gy.indexOf(c), 1); const msg = {t:"give", card:{...c, ow:{id:"bot", name:"KI"}}, zone:"bf"}; if(m.from === me.id) receiveGive(msg); else route({...msg, to:m.from, from:"bot", by:"KI"}); botLog(`verliert ${c.n} aus dem Friedhof`); botChanged(); reply({ok:true}); return; }
   if(q.kind === "returnFromExile"){ const c = [...BOT.ex].reverse().find(x => x.n === q.n); if(c){ BOT.ex.splice(BOT.ex.indexOf(c), 1); c.tap = !!q.tapped; BOT.bf.push(c); botLog(`${c.n} kommt zurück`); botChanged(); } reply({ok:!!c}); return; }
   if(q.kind === "exileUntilNonland"){ let hit = null; while(BOT.library.length){ const c = BOT.library.shift(); if(!isLand(c)){ hit = c; break; } BOT.ex.push(c); } if(hit) botLog(`verliert ${hit.n} ins Exil`); botChanged(); reply(hit ? {card:fullCard(hit)} : null); return; }
@@ -8137,7 +8191,7 @@ function historyAdd(win){
 /* ---------- Automatische Updates ---------- */
 // Liegt die App im Web, prüft sie regelmässig version.json im selben Ordner und lädt sich bei einer neuen Version neu.
 // Alles Wichtige (Spielstand, Deck, Tisch) liegt im Browser-Speicher und ist nach dem Neuladen wieder da.
-const APP_VERSION = "2026.11.08-1";
+const APP_VERSION = "2026.11.08-2";
 const ONLINE = /^https?:$/.test(location.protocol);
 let updPending = null, updTimer = null, updSnoozeUntil = 0;
 function busyForUpdate(){ return botBusy || (!$("#modal").hidden && modalState && ["block","deck"].includes(modalState.kind)); }
