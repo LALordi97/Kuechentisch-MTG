@@ -525,7 +525,7 @@ function moveCard(u, to, where){
   if(from === "hand" && to === "gy" && CASTING_U !== u && typeof abilEvent === "function") abilEvent({kind:"youDiscard", c});
   markOnMove(c, from, to, wasFd);
   if(from === "bf" && to === "gy" && !wasFd) lifeEvent("die", 1, c);
-  if(to === "bf" && from !== "bf" && !c.fd && /You may have this \w+ enter as a copy of/i.test(c.o || "") && typeof abilAuto === "function" && abilAuto()) queued(() => cloneEnter(c));
+  if(to === "bf" && from !== "bf" && !c.fd && /You may have this \w+ enter as a copy of|you may have it become a copy of any/i.test(c.o || "") && typeof abilAuto === "function" && abilAuto()) queued(() => cloneEnter(c));
   if(to === "bf" && from !== "bf" && !c.fd && /You control enchanted/i.test(c.o || "") && typeof abilAuto === "function" && abilAuto()) queued(() => auraSteal(c));
   if(to === "bf" && from !== "bf" && !c.fd && isCreature(c) && typeof abilAuto === "function" && abilAuto() && (/^Soulbond\b/im.test(c.o || "") || S.bf.some(x => x !== c && !x.fd && !x.pair && /^Soulbond\b/im.test(x.o || "")))) queued(() => soulbond(c));
   if(to === "bf" && from !== "bf" && !c.fd && /^Fabricate \d+/im.test(c.o || "") && typeof abilAuto === "function" && abilAuto()) queued(() => fabricate(c));
@@ -984,7 +984,7 @@ function cardMenu(c, zone){
     items.push("-");
   } else if(zone !== "bf"){
     if(zone === "gy" && /\b(Instant|Sorcery)\b/.test(c.type || "")) markMenuItems(c).forEach(it => items.push(it));
-    if(zone === "gy" || zone === "cz") abilMenuItems(c, zone).forEach(it => items.push(it));
+    if(zone === "gy" || zone === "cz" || zone === "ex") abilMenuItems(c, zone).forEach(it => items.push(it));
     if(zone === "ex" && c.castKey && (c.castKey === turnKey() || c.castKey === "myEnd" || c.castKey === "myNextEnd")) items.push({l: c.playOk ? "Spielen (bis Zugende erlaubt)" : "Wirken (bis Zugende erlaubt)", f:() => castFromExile(c)});
     items.push({l:"Aufs Spielfeld", f:mv("bf")});
   }
@@ -2996,6 +2996,7 @@ function passTurn(){
   advanceTurn();
 }
 function onMyTurnStart(){
+  if(S.extraAfterNext){ S.extraAfterNext = false; S.extraTurns = (S.extraTurns || 0) + 1; act("Nach diesem Zug folgt dein Zusatzzug (Emrakul)"); }
   S.turn = (S.turn || 0) + 1;
   if(S.turn === 1) pregameFirstTurnReminder();
   setTimeout(sagaAdvanceAll, 0); // Sagas: Kapitelmarke nach dem Ziehen
@@ -3446,6 +3447,7 @@ function markOnMove(c, from, to, wasFd){
   else if(from === "bf" && to === "gy" && !wasFd) markEvent({kind:"die", c}, [c]);
 }
 function markOnCast(c){ if(c && !isLand(c) && !isCreature(c)){ const k = turnKey(); if(S.ncKey !== k){ S.ncKey = k; S.ncCount = 0; } S.ncCount++; }
+  if(c && /\b(Instant|Sorcery)\b/.test(c.type || "")){ const k = turnKey(); if(S.isKey !== k){ S.isKey = k; S.isCount = 0; } S.isCount++; }
   if(c && !isLand(c)){ c.wasCast = true; noteSpellCast(); c.stormN = ((c.kw || []).some(k => /^storm$/i.test(k)) || /^Storm\b/m.test(c.o || "")) ? Math.max(0, (S.spellsCast || 1) - 1) : 0; markEvent({kind:"cast", c}); abilEvent({kind:"cast", c}); abilEvent({kind:"castSelf", c}, [c]); } }
 function markOnAttack(attackers){ attackers.forEach((c, i) => { markEvent({kind:"attack", c, first: i === 0}); abilEvent({kind:"attack", c, first: i === 0}); }); }
 /* Spontanzauber und Hexereien: «You get {E}{E}{E}» beim Verrechnen */
@@ -4136,13 +4138,15 @@ async function ritualResolve(c){
     for(let i = 0; i < n; i++) add.push(then[2][1]);
   } else if(/^(?:\{[WUBRGC]\})+$/.test(clause.trim())) add = clause.match(/[WUBRGC]/g);
   else {
-    let n = /\bX\b|for each/i.test(clause) ? await askNumber(`${c.n}: Wie viel Mana?`, clause) : (/\bthree mana\b/i.test(clause) ? 3 : /\btwo mana\b/i.test(clause) ? 2 : /\bfour mana\b/i.test(clause) ? 4 : 1);
+    const sacX = String(c.o || "").match(/where X is (\d+|one) plus the sacrificed creature's mana value/i);
+    let n = sacX && c.lastSacMV != null ? (nWord(sacX[1]) || 1) + c.lastSacMV : /\bX\b|for each/i.test(clause) ? await askNumber(`${c.n}: Wie viel Mana?`, clause) : (/\bthree mana\b/i.test(clause) ? 3 : /\btwo mana\b/i.test(clause) ? 2 : /\bfour mana\b/i.test(clause) ? 4 : 1);
     if(!n) return;
     const per = clause.match(/^(\{[WUBRGC]\}) or (\{[WUBRGC]\}) for each/i);
     let cols = /any|combination/i.test(clause) ? COLORS.slice() : (clause.match(/\{([WUBRGC])\}/g) || []).map(x => x[1]);
     if(per) cols = [per[1][1], per[2][1]];
     if(!cols.length) return;
-    for(let i = 0; i < n; i++){
+    if(/any one colou?r/i.test(clause) && cols.length > 1){ const col = await pickColor(`${c.n}: Farbe für ${n} Mana`, cols); if(col) for(let i = 0; i < n; i++) add.push(col); }
+    else for(let i = 0; i < n; i++){
       const col = cols.length === 1 ? cols[0] : await pickColor(`${c.n}: Farbe für Mana ${i + 1} von ${n}`, cols);
       if(!col) break; add.push(col);
     }
@@ -4315,7 +4319,7 @@ function parseAbilities(c){
   const out = [];
   const isPW = /Planeswalker/.test(c.type || ""), isSpell = /\b(Instant|Sorcery)\b/.test(c.type || ""), saga = isSaga(c);
   const ltTexts = lifeTriggers(c).map(t => t.text.slice(0, 50));
-  const MODAL_RE = /(?:^|\.\s*)choose (one|two|three|up to one|up to two|up to three|one or more|any number)(?: or more)?\s*(?:[—-]|\. If you control a commander as you cast this spell, you may choose both instead\.?)\s*$/i;
+  const MODAL_RE = /(?:^|\.\s*)choose (one|two|three|up to one|up to two|up to three|one or more|any number)(?: or more)?\s*(?:[—-]|\. If you control a commander as you cast this spell, you may choose both instead\.?|\. You may choose the same mode more than once\.?)\s*$/i;
   const withModal = (ab) => { const mm = ab.text.match(MODAL_RE); if(mm){ ab.modal = {n:/or more/i.test(mm[0]) ? "one or more" : mm[1].toLowerCase(), modes:[], line:mm[0]}; ab.text = ab.text.slice(0, mm.index).trim(); } return ab; };
   String(c.o).split("\n").forEach(raw => {
     let line = cleanLine(raw); if(!line) return;
@@ -4366,7 +4370,7 @@ function splitSentences(t){
 }
 const TGT_RE = "(up to (?:one|two|three) )?(?:another |other )?target";
 function parseSteps(text, src){
-  text = String(text || "").replace(/\[([^\]]*)\]/g, (_, x) => src && src.cleaved ? "" : x).replace(/\s+\./g, ".").replace(/\s{2,}/g, " ").trim();
+  text = String(text || "").replace(/\."\s+(?=[A-Z])/g, '". ').replace(/\[([^\]]*)\]/g, (_, x) => src && src.cleaved ? "" : x).replace(/\s+\./g, ".").replace(/\s{2,}/g, " ").trim();
   const steps = [];
   // Text in Anführungszeichen (verliehene Fähigkeiten) nicht zerteilen
   const quotes = [];
@@ -4436,6 +4440,7 @@ function matchStep2(p, src, full, SELF){
   p = p.replace(/^you (create|search|return|exile|destroy|scry|surveil|mill|sacrifice|shuffle)\b/i, "$1");
   const repeat = /repeat this process/i.test(full || "");
   p = p.replace(/^(he|she) deals /i, "it deals ");
+  if(/For each of them, create a token that's a copy of that creature/i.test(full || "") && (/^for each of them$/i.test(p) || /^create a token that's a copy of that creature/i.test(p))) return [{t:"skip"}];
   // Zauber mit eigenem Ablauf (Demonic Consultation, Tainted Pact, Lim-Dûl's Vault, Scheming Symmetry)
   { const F = String(full || "").trim(); const sig = [
       [/^Choose a card name\. Exile the top six cards of your library, then reveal cards from the top of your library until you reveal a card with the chosen name/i, "consult"],
@@ -4624,6 +4629,36 @@ function matchStep2(p, src, full, SELF){
   // Jeweled Amulet
   if(/^note the type of mana spent to pay this activation cost$/i.test(p)) return [{t:"noteMana"}];
   if(/^add one mana of the last noted type$/i.test(p)) return [{t:"addNoted"}];
+  // Mana-Einschränkungen setzt die App nicht durch
+  if(/^spend this mana only (?:to|on)\b/i.test(p)) return [{t:"skip"}];
+  // Metamorphosis
+  if((m = p.match(/^add x mana of any one colou?r, where x is (\d+|one) plus the sacrificed creature's mana value$/i))) return [{t:"addMana", n:"sacmv", plus:nWord(m[1]) || 1, any:true}];
+  // Improvisation Capstone, Etali
+  if(/^exile cards from the top of your library until you exile cards with total mana value (\d+) or greater$/i.test(p)) return [{t:"exileUntilMV", mv:+p.match(/(\d+)/)[1]}];
+  if(/^(?:you may )?cast any number of spells from among (them|the nonland cards exiled this way) without paying their mana costs$/i.test(p)) return [{t:"castAmong"}];
+  if(/^each player exiles cards from the top of their library until they exile a nonland card$/i.test(p)) return [{t:"etali"}];
+  if(/^paradigm$/i.test(p)) return [{t:"paradigm"}];
+  // Rionya, Twinflame, Jaxis
+  if((m = p.match(/^create (x|\w+) tokens that are copies of ((?:another )?target creature you control|target creature)(?:, where x is (.+))?$/i))) return [{t:"tokenCopy", n:m[1], who:m[2].replace(/^another /i, ""), xIs:m[3] || ((full || "").match(/, where X is ([^.]+)/i) || [])[1] || null}];
+  if(/^(they|those tokens|the tokens) gains? haste$/i.test(p)) return [{t:"hasteMany"}];
+  if(/^choose any number of target creatures you control$/i.test(p) && /For each of them, create a token that's a copy of that creature/i.test(full || "")) return [{t:"twinflame", haste:/except it has haste/i.test(full || ""), strive:((full || "").match(/costs ((?:\{[^}]+\})+) more to cast for each target beyond the first/i) || [])[1] || null}];
+  if(/For each of them, create a token that's a copy of that creature/i.test(full || "") && (/^for each of them$/i.test(p) || /^create a token that's a copy of that creature/i.test(p))) return [{t:"skip"}];
+  if((m = p.match(/^return (it|that card|that permanent) to the battlefield tapped under (?:its|their) owner'?s?'? control$/i))) return [{t:"returnExiled", tapped:true}];
+  if((m = p.match(/^(it|that creature) gains ([a-z ]+?)(?: until end of turn)?$/i)) && !/ and /.test(m[2])) return [{t:"gainKwLast", kw:m[2]}];
+  if(/^for each of them, create a token that's a copy of that creature/i.test(p) || /^this spell costs (?:\{[^}]+\})+ more to cast for each target beyond the first$/i.test(p)) return [{t:"skip"}];
+  if((m = p.match(/^it gains haste and "(.+)"$/i))) return [{t:"gainText", kw:"Haste", text:m[1]}];
+  // Wandering Archaic
+  if((m = p.match(/^they may pay ((?:\{[^}]+\})+)$/i))) return [{t:"oppMayPay", cost:m[1]}];
+  if(/^(?:you may )?copy that spell$/i.test(p)) return [{t:"copyOppSpell", may:/^you may/i.test(p) || true}];
+  if(/^you may choose new targets for the copy$/i.test(p)) return [{t:"skip"}];
+  // Emrakul, the Promised End
+  if(/^you gain control of target opponent during that player's next turn$/i.test(p)) return [{t:"mindslaver"}];
+  if(/^after that turn, that player takes an extra turn$/i.test(p)) return [{t:"skip"}];
+  // Fear of Missing Out
+  if(/^after this phase, there is an additional combat phase$/i.test(p)) return [{t:"extraCombat"}];
+  // Hellkite Courser
+  if(/^(?:you may )?put a commander you own from the command zone onto the battlefield$/i.test(p)) return [{t:"czToBf", may:/^you may/i.test(p)}];
+  if(/^return it to the command zone at the beginning of the next end step$/i.test(p)) return [{t:"delayed", when:"end", action:"toCz"}];
   // Kinnan: Bonus-Mana läuft über das Mana-System
   if(/^add one (?:additional )?mana of any type that permanent produced$/i.test(p)) return [{t:"skip"}];
   // Thrasios: «reveal the top card … If it's a land card, put it onto the battlefield tapped. Otherwise, draw a card.»
@@ -4645,7 +4680,7 @@ function matchStep2(p, src, full, SELF){
   if(/^exchange control of target noncreature spell and target creature$/i.test(p)) return [{t:"giveCreatureToSpellOwner"}];
   if(/^copy target (instant or sorcery |instant |sorcery )?spell$/i.test(p) || /^then the spell's controller may choose new targets for it$/i.test(p) || /^the spell's controller may choose new targets for it$/i.test(p)) return [{t:"skip"}];
   // Flash Photography: Token-Kopie
-  if((m = p.match(/^create (a|two|three) tokens? that's a copy of (target .+|it|that creature|that permanent)$/i))) return [{t:"tokenCopy", n:m[1], who:m[2]}];
+  if((m = p.match(/^create (a|two|three) tokens? that's a copy of ((?:another )?target .+|it|that creature|that permanent)$/i))) return [{t:"tokenCopy", n:m[1], who:m[2].replace(/^another /i, "")}];
   // Mirage Mirror
   if((m = p.match(new RegExp(`^(?:${SELF}|this \\w+) becomes a copy of (target .+?)( until end of turn)?$`, "i")))) return [{t:"becomeCopy", who:m[1].replace(/ until end of turn$/i, ""), eot:/until end of turn/i.test(p)}];
   // Wan Shi Tong
@@ -4978,7 +5013,8 @@ function manaSpent(c){ return (String(c.mc || "").match(/\{[^}]+\}/g) || []).red
 async function cloneEnter(c){
   if(!S.bf.includes(c) || c._orig) return;
   const o = String(c.o || "");
-  const m = o.match(/enter as a copy of (?:any|an?) (.+?)(?: on the battlefield)?(?: with mana value[^,.]*)?(?:,|\.|$)/i); if(!m) return;
+  const m = o.match(/(?:enter as|have it become) a copy of (?:any|an?) (.+?)(?: on the battlefield)?(?: until end of turn)?(?: with mana value[^,.]*)?(?:,|\.|$)/i); if(!m) return;
+  const eot = /have it become a copy of [^.]+ until end of turn/i.test(o);
   const max = /mana value less than or equal to the amount of mana spent to cast/i.test(o) ? (c.wasCast ? manaSpent(c) : 0) : Infinity;
   const desc = m[1], oppOnly = /an opponent controls|you don't control/i.test(desc), mineOnly = /\byou control\b/i.test(desc) && !oppOnly;
   const f = cardFilter(desc.replace(/\b(an opponent controls|you don't control|you control)\b/gi, ""));
@@ -4991,7 +5027,7 @@ async function cloneEnter(c){
     box.append(grid, btn("Nicht kopieren", () => done(null), "small"));
   });
   if(!pick || !S.bf.includes(c)) return;
-  applyCopy(c, pick.card, pick.pid, {except:(o.replace(/\([^)]*\)/g, "").match(/, except (.+?)\.\s*(?:\n|$)/i) || [, ""])[1]});
+  applyCopy(c, pick.card, pick.pid, {eot, except:(o.replace(/\([^)]*\)/g, "").match(/, except (.+?)\.\s*(?:\n|$)/i) || [, ""])[1]});
   const ev = {kind:"enter", c};
   parseAbilities(c).filter(a => a.kind === "trig" && trigMatches(a, c, ev)).forEach(a => queued(() => runTrigger(c, a, ev)));
 }
@@ -5714,6 +5750,7 @@ async function runSteps(steps, src, ctx = {}){
         break;
       }
       case "addMana": {
+        if(st.n === "sacmv"){ const x = (src.lastSacMV ?? await askNumber(`${src.n}: Manawert der geopferten Kreatur`, "")) ?? 0; st.n = String(x + (st.plus || 1)); }
         if(st.syms){ const add = st.syms.match(/[WUBRGC]/g); poolAdd(add); ctx.lastMana = add; act(`${src.n}: ${st.syms} in den Pool`); break; }
         const n = await needX(); if(!n){ act(`${src.n}: kein Mana`); break; }
         const col = await pickColor(`${src.n}: ${n} Mana – welche Farbe?`, COLORS); if(!col) break;
@@ -5808,6 +5845,81 @@ async function runSteps(steps, src, ctx = {}){
         break;
       }
       case "consult": await demonicConsult(src); break;
+      case "gainKwLast": { const c = ctx.last; if(c && S.bf.includes(c)){ c.tkw = [...(c.tkw || []), st.kw.split(" ").map(w => w[0].toUpperCase() + w.slice(1)).join(" ")]; act(`${c.n} erhält ${st.kw}`); } break; }
+      case "returnExiled": {
+        const t = ctx.target;
+        if(t && t.kind === "card" && !t.mine && t.pid !== me.id){ await requestOpp(t.pid, {kind:"returnFromExile", n:t.card.n, tapped:st.tapped, src:src.n}); act(`${src.n}: ${t.card.n} kommt zurück ins Spiel`); break; }
+        const c = (t && t.card) || ctx.last; const g = c && findCard(c.u);
+        if(g && g.z === "ex"){ moveCard(c.u, "bf"); if(st.tapped) c.tap = true; act(`${src.n}: ${c.n} kommt${st.tapped ? " getappt" : ""} zurück`); }
+        break;
+      }
+      case "hasteMany": (ctx.lastMany || []).forEach(c => { c.tkw = [...(c.tkw || []), "Haste"]; }); break;
+      case "gainText": { const c = ctx.last; if(c && S.bf.includes(c)){ c.kw = [...new Set([...(c.kw || []), st.kw])]; c.o = (c.o ? c.o + "\n" : "") + st.text; delete c._ab; delete c._abO; act(`${c.n} erhält ${st.kw} und «${st.text}»`); } break; }
+      case "twinflame": {
+        const list = S.bf.filter(c => isCreature(c) && !c.fd);
+        const p = (await pickCards(`${src.n}: beliebig viele deiner Kreaturen kopieren`, list, list.length, {none:"Keine"})) || [];
+        if(!p.length) break;
+        if(st.strive && p.length > 1){ const extra = st.strive.repeat(p.length - 1); if(!(await payFor({n:`${src.n}: Strive ${extra}`, mc:extra, cmc:0, type:"Ability", o:""}))){ act(`${src.n}: Strive nicht bezahlt`); break; } }
+        const made = [];
+        p.forEach(b => { const c = newCard({n:b.n, img:b.img, back:b.back, type:/^Token\b/.test(b.type || "") ? b.type : "Token " + (b.type || ""), o:b.o || "", mc:b.mc || "", cmc:b.cmc || 0, pw:b.pwO ?? b.pw, tg:b.tgO ?? b.tg, kw:[...new Set([...(b.kw || []), ...(st.haste ? ["Haste"] : [])])], tk:b.tk || [], tok:true}); S.bf.push(c); markOnMove(c, null, "bf"); made.push(c); });
+        ctx.lastMany = made; ctx.last = made[0];
+        act(`${src.n}: Token-Kopien von ${p.map(c => c.n).join(", ")}`);
+        break;
+      }
+      case "exileUntilMV": {
+        const got = []; let sum = 0;
+        while(S.library.length && sum < st.mv){ const c = S.library.shift(); S.ex.push(c); got.push(c); sum += c.cmc || 0; }
+        ctx.lastMany = got; act(`${src.n}: verbannt ${got.map(c => c.n).join(", ")} (Manawert ${sum})`);
+        break;
+      }
+      case "castAmong": {
+        const list = (ctx.lastMany || []).filter(c => !isLand(c) && S.ex.includes(c));
+        const p = (await pickCards(`${src.n}: welche Zauber gratis wirken?`, list, list.length, {none:"Keine"})) || [];
+        for(const c of p) await castFree(c, {});
+        break;
+      }
+      case "etali": {
+        const got = [];
+        const mine = []; while(S.library.length){ const c = S.library.shift(); S.ex.push(c); mine.push(c); if(!isLand(c)){ got.push(c); break; } }
+        act(`${src.n}: du verbannst ${mine.map(c => c.n).join(", ")}`);
+        for(const o of liveOpps()){ const r = await requestOpp(o.id, {kind:"exileUntilNonland", src:src.n}); if(r && r.card){ receiveGive({card:{...r.card, ow:{id:o.id, name:o.name}}, zone:"ex"}); got.push(S.ex[S.ex.length - 1]); } }
+        ctx.lastMany = got;
+        const p = (await pickCards(`${src.n}: welche Zauber gratis wirken?`, got, got.length, {none:"Keine"})) || [];
+        for(const c of p) await castFree(c, {});
+        break;
+      }
+      case "paradigm": {
+        const f = findCard(src.u); if(f && f.z !== "ex") moveCard(src.u, "ex");
+        S.paradigms = Array.isArray(S.paradigms) ? S.paradigms : [];
+        if(!S.paradigms.some(x => x.n === src.n)) S.paradigms.push({n:src.n, type:src.type, o:src.o, mc:src.mc, cmc:src.cmc});
+        act(`${src.n}: Paradigm – ab jetzt darfst du zu Beginn jeder deiner ersten Hauptphasen eine Kopie gratis wirken`);
+        break;
+      }
+      case "copyOppSpell": {
+        const sp = ctx.ev && ctx.ev.c; if(!sp) break;
+        let o = sp.o || ((STACK || []).find(x => x.n === sp.n) || {}).o || "";
+        if(!o){ try{ const r = await fetch(API + "/cards/named?exact=" + encodeURIComponent(sp.n)); if(r.ok) o = tpl(await r.json()).o; }catch(e){} }
+        if(!o){ manual.push(`Kopiere ${sp.n}`); break; }
+        const sh = newCard({n:`${sp.n} (Kopie)`, type:sp.type || "Instant", o, mc:sp.mc || "", cmc:sp.cmc || 0});
+        act(`${src.n}: kopiert ${sp.n}`); await ritualResolve(sh); await abilSpellResolve(sh);
+        break;
+      }
+      case "mindslaver": {
+        const t = await pickTarget(`${src.n}: welchen Gegner?`, "target opponent", false); if(!t) break;
+        await requestOpp(t.pid, {kind:"extraTurnAfter", src:src.n});
+        act(`${src.n}: du steuerst den nächsten Zug von ${oppByPid(t.pid)}. Danach nimmt ${oppByPid(t.pid)} einen Zusatzzug.`);
+        toast(`<b>${esc(src.n)}:</b> Du steuerst den nächsten Zug von ${esc(oppByPid(t.pid))}. Sprecht euch ab: du sagst an, was gespielt wird.`, 15000);
+        break;
+      }
+      case "extraCombat": act(`${src.n}: nach dieser Phase folgt eine zusätzliche Kampfphase`); toast(`<b>${esc(src.n)}:</b> Zusätzliche Kampfphase – du kannst danach nochmals angreifen.`, 10000); break;
+      case "czToBf": {
+        const list = (S.cz || []).filter(c => c.cmdr || true);
+        if(!list.length){ act(`${src.n}: kein Commander in der Kommandozone`); break; }
+        const p = list.length === 1 ? list : ((await pickCards(`${src.n}: welchen Commander?`, list, 1, {none:"Keinen"})) || []);
+        if(!p[0]) { ctx.mayNo = true; break; }
+        moveCard(p[0].u, "bf"); ctx.last = p[0]; act(`${src.n}: ${p[0].n} kommt aus der Kommandozone ins Spiel`);
+        break;
+      }
       case "swapPT": {
         for(let i = 0; i < st.n; i++){
           const t = await pickTarget(`${src.n}: Stärke/Widerstand tauschen (${i + 1} von ${st.n})`, "target creature", true); if(!t || t.kind !== "card") break;
@@ -5981,7 +6093,7 @@ async function runSteps(steps, src, ctx = {}){
       case "loseHalf": { const n = st.up ? Math.ceil(Math.max(0, S.life) / 2) : Math.floor(Math.max(0, S.life) / 2); S.life -= n; act(`${src.n}: verliert ${n} Leben (Hälfte)`); break; }
       case "multiExile": {
         const n = /^x$/i.test(st.n) ? await needX() : (nWord(st.n) || 1);
-        const used = new Set();
+        const used = new Set(); ctx.lastMany = [];
         for(let i = 0; i < n; i++){
           const t = await pickTarget(`${src.n}: Ziel ${i + 1} von ${n} verbannen`, st.who, true);
           if(!t || t.kind !== "card") break; if(used.has(t.card.u)) continue; used.add(t.card.u);
@@ -6305,9 +6417,12 @@ async function runSteps(steps, src, ctx = {}){
         else base = ctx.last;
         if(!base) break;
         const info = pid === me.id ? base : ((S.deck || []).find(d => d.n === base.n) || base);
-        const n = nWord(st.n) || 1;
+        let n = nWord(st.n, ctx) || 1;
+        if(st.xIs){ const xm = st.xIs.match(/^one plus the number of instant and sorcery spells you've cast this turn$/i); n = xm ? 1 + (S.isKey === turnKey() ? (S.isCount || 0) : 0) : (xExpr(st.xIs, src) || 1); }
+        const made = [];
         const ex = String(st.except || ""), pt = ex.match(/it's an? (\d+)\/(\d+)/i), sub = ex.match(/(?:it's an? (?:\d+\/\d+ )?(?:[a-z]+ )?)?([A-Z]\w+) creature in addition to its other/), kwx = (ex.match(/it has ([a-z ]+?)(?:\.|$)/i) || [, ""])[1].split(/,\s*|\s+and\s+/).filter(Boolean).map(k => k[0].toUpperCase() + k.slice(1));
-        for(let i = 0; i < n; i++){ const c = newCard({n:base.n, img:base.img, back:base.back, type:(/^Token\b/.test(base.type || "") ? base.type : "Token " + (base.type || "")) + (sub ? " " + sub[1] : ""), o:info.o || "", mc:(base.mc || "") + (/ red /.test(" " + ex + " ") ? "{R}" : ""), cmc:base.cmc || 0, pw:pt ? +pt[1] : base.pwO ?? base.pw, tg:pt ? +pt[2] : base.tgO ?? base.tg, kw:[...new Set([...(base.kw || []), ...kwx])], tk:info.tk || [], tok:true}); S.bf.push(c); markOnMove(c, null, "bf"); ctx.last = c; ctx.lastMany = [c]; }
+        for(let i = 0; i < n; i++){ const c = newCard({n:base.n, img:base.img, back:base.back, type:(/^Token\b/.test(base.type || "") ? base.type : "Token " + (base.type || "")) + (sub ? " " + sub[1] : ""), o:info.o || "", mc:(base.mc || "") + (/ red /.test(" " + ex + " ") ? "{R}" : ""), cmc:base.cmc || 0, pw:pt ? +pt[1] : base.pwO ?? base.pw, tg:pt ? +pt[2] : base.tgO ?? base.tg, kw:[...new Set([...(base.kw || []), ...kwx])], tk:info.tk || [], tok:true}); S.bf.push(c); markOnMove(c, null, "bf"); ctx.last = c; made.push(c); }
+        ctx.lastMany = made;
         act(`${src.n}: erzeugt ${n}× Token-Kopie von ${base.n}`);
         break;
       }
@@ -6499,6 +6614,7 @@ function trigMatches(ab, src, ev){
   if(ev.kind === "cast" && / during your turn$/i.test(cond) && TURN.active !== me.id) return false;
   if(ev.kind === "castSelf") return /^you cast this spell$/i.test(cond) && ev.c === src;
   if(ev.kind === "noncombatOpp") return /^a source you control deals noncombat damage to an opponent$/i.test(cond);
+  if(ev.kind === "attack" && new RegExp(`^(${SELF}|this creature) attacks for the first time each turn$`, "i").test(cond)){ if(ev.c !== src) return false; const k = turnKey(); if(src._firstAtk === k) return false; src._firstAtk = k; return true; }
   if(ev.kind === "leaveBf") return ev.c === src && new RegExp(`^(${SELF}|this creature|this permanent|this artifact|this enchantment) leaves the battlefield$`, "i").test(cond);
   if(ev.kind === "coinWin") return /^you win (?:one or more|a) coin flips?$/i.test(cond);
   if(ev.kind === "leaveGy"){ const lm = cond.match(/^an? (.+?) card leaves your graveyard$/i); return !!lm && cardFilter(lm[1])(ev.c); }
@@ -6535,6 +6651,7 @@ function interveningIf(text, src){
   else if((k = c.match(/^you have (\d+) or more life$/))) ok = S.life >= +k[1];
   else if(/^it's not your turn$/.test(c)) ok = TURN.active !== me.id;
   else if(/^it was kicked$/.test(c)) ok = !!src.kicked;
+  else if(/^there are four or more card types among cards in your graveyard$/.test(c)) ok = deliriumOn();
   else if((k = c.match(/^((?:\{[wubrgc]\})+) was spent to cast it$/))){ if(!src.spent) ok = null; else { const need = {}; k[1].toUpperCase().match(/[WUBRGC]/g).forEach(x => need[x] = (need[x] || 0) + 1); ok = Object.entries(need).every(([x, n]) => (src.spent[x] || 0) >= n); } }
   else if(/^it isn't that player's turn$/.test(c)) ok = arguments[2] && arguments[2].pid ? TURN.active !== arguments[2].pid : null;
   else if((k = c.match(/^you have (\d+) or more life$/))) ok = S.life >= +k[1];
@@ -6550,6 +6667,7 @@ function runDelayed(kind, myTurn){
   S.delayed = list.filter(d => !due.includes(d));
   due.forEach(d => {
     if(d.action === "draw"){ draw(1); act(`${d.src}: zieht die vorgemerkte Karte`); return; }
+    if(d.action === "toCz"){ const g = findCard(d.u); if(g && g.z === "bf"){ moveCard(d.u, "cz"); act(`${d.src}: ${g.c.n} kehrt in die Kommandozone zurück`); } return; }
     if(d.action === "botReturn"){ const c = BOT.ex.find(x => x.n === d.n); if(c){ BOT.ex.splice(BOT.ex.indexOf(c), 1); c.tap = false; BOT.bf.push(c); botLog(`${c.n} kommt zurück ins Spiel (${d.src})`); botChanged(); } return; }
     if(d.action === "returnBf"){ const g = findCard(d.u); if(g && g.z === "ex"){ g.c.fd = false; moveCard(d.u, "bf"); act(`${d.src}: ${g.c.n} kommt zurück ins Spiel`); } return; }
     if(d.action === "steps"){ const sh = newCard({n:d.src, type:"Instant", o:""}); act(`${d.src}: ${d.text}`); queued(() => runSteps(parseSteps(d.text, sh), sh, {})); return; }
@@ -6622,6 +6740,13 @@ async function castCosts(c){
   }
   { const grids = [...S.bf, ...Object.entries(others).filter(([id]) => id !== me.id).flatMap(([, x]) => Array.isArray(x && x.bf) ? x.bf : [])].filter(x => x && !x.fd && (x.n === "Defense Grid" || /Each spell costs \{\d+\} more to cast except during its controller's turn/i.test(x.o || "")));
     if(grids.length && TURN.active && TURN.active !== me.id){ const add = "{3}".repeat(grids.length); c.payMc = (c.payMc != null ? c.payMc : (c.mc || "")) + add; act(`${c.n}: kostet ${add} mehr (Defense Grid)`); } }
+  { const raptor = S.bf.find(x => !x.fd && /(\w+) spells you cast have prowl ((?:\{[^}]+\})+)/i.test(x.o || "")); const pm = raptor && raptor.o.match(/(\w+) spells you cast have prowl ((?:\{[^}]+\})+)/i);
+    const own = String(o).match(/^Prowl ((?:\{[^}]+\})+)/im);
+    const sub = String(c.type || "").split("—")[1] || "";
+    const cost = own ? own[1] : pm && new RegExp(`\\b${pm[1]}\\b`, "i").test(c.type || "") ? pm[2] : null;
+    const ok = cost && S.prowl && S.prowl.key === turnKey() && sub.trim().split(/\s+/).some(t => S.prowl.types.includes(t));
+    if(ok){ const k = await abilModal(`${c.n} wirken`, (box, done) => { box.append(btn(`Mit Prowl (${cost})`, () => done(true), "primary"), btn(`Normal (${c.mc})`, () => done(false), "small"), btn("Abbrechen", () => done(null), "small")); }); if(k === null){ delete c.payMc; return false; } if(k){ c.payMc = cost; act(`${c.n}: mit Prowl`); } }
+  }
   c.cleaved = false;
   { const cl = o.match(/^Cleave ((?:\{[^}]+\})+)/im);
     if(cl){ const k = await abilModal(`${c.n} wirken`, (box, done) => { box.append(btn(`Mit Cleave (${cl[1]}): Text in [Klammern] fällt weg`, () => done(true), "primary"), btn(`Normal (${c.mc})`, () => done(false), "small"), btn("Abbrechen", () => done(null), "small")); });
@@ -6685,11 +6810,16 @@ function abilEvent(ev, extraSrc){
   // Delney: Auslöser von Kreaturen mit Stärke 2 oder weniger lösen ein weiteres Mal aus
   const delney = S.bf.filter(x => !x.fd && /If a triggered ability of a creature you control with power 2 or less triggers, that ability triggers an additional time/i.test(x.o || "")).length;
   fire.forEach(({src, ab}) => { const n = reps + (delney && isCreature(src) && power(src) <= 2 ? delney : 0); for(let r = 0; r < n; r++) queued(() => runTrigger(src, ab, ev)); });
+  if(ev.kind === "phase" && ev.phase === "main" && ev.mine && Array.isArray(S.paradigms) && S.paradigms.length && S.paradigmKey !== turnKey()){
+    S.paradigmKey = turnKey();
+    S.paradigms.forEach(pd => queued(async () => { if(!(await confirmMay({n:pd.n}, `Paradigm: eine Kopie von ${pd.n} gratis wirken`))) return; const sh = newCard({n:`${pd.n} (Kopie)`, type:pd.type, o:pd.o, mc:pd.mc, cmc:pd.cmc}); act(`wirkt eine Kopie von ${pd.n} (Paradigm)`); markOnCast(sh); await ritualResolve(sh); await abilSpellResolve(sh); }));
+  }
   if((ev.kind === "combatDamage" || ev.kind === "noncombatOpp") && ev.c && ev.c.pair){
     const pt = S.bf.find(x => x.u === ev.c.pair);
     const giver = [ev.c, pt].find(x => x && /each of those creatures has "Whenever this creature deals damage to an opponent, draw a card/i.test(x.o || ""));
     if(pt && giver) queued(async () => { draw(1); act(`${ev.c.n}: Schaden an Gegner → zieht (Soulbond mit ${pt === giver ? pt.n : ev.c.n})`); });
   }
+  if(ev.kind === "combatDamage" && ev.c && !ev.opp){ const k = turnKey(); if(!S.prowl || S.prowl.key !== k) S.prowl = {key:k, types:[]}; String(ev.c.type || "").split("—")[1]?.trim().split(/\s+/).forEach(t => { if(t && !S.prowl.types.includes(t)) S.prowl.types.push(t); }); }
   if(ev.kind === "combatDamage" && ev.c && Array.isArray(ev.c.cipher)) ev.c.cipher.forEach(ci => queued(async () => {
     const f = findCard(ci.u); if(!f || f.z !== "ex") return;
     if(!(await confirmMay(ev.c, `Kopie von ${ci.n} wirken (Cipher)`))) return;
@@ -6698,6 +6828,16 @@ function abilEvent(ev, extraSrc){
   if(ev.kind === "enter" && ev.c && ev.c.evoked && !ev.opp){ queued(async () => { if(S.bf.includes(ev.c)){ moveCard(ev.c.u, "gy"); act(`opfert ${ev.c.n} (Evoke)`); commit(); } }); }
 }
 async function chooseModes(src, modal){
+  if(modal.line && /You may choose the same mode more than once/i.test(modal.line)){
+    const n = nWord(modal.n) || 3;
+    return abilModal(`${src.n}: ${n} Modi wählen (auch mehrfach)`, (box, done) => {
+      const cnt = modal.modes.map(() => 0); const total = () => cnt.reduce((a, b) => a + b, 0);
+      const ok = btn("Ausführen", () => done(modal.modes.flatMap((m, i) => Array(cnt[i]).fill(m))), "primary"); ok.disabled = true;
+      modal.modes.forEach((m, i) => { const row = document.createElement("div"); row.className = "row"; const lab = Object.assign(document.createElement("span"), {textContent:`0× ${m}`}); const paint = () => { lab.textContent = `${cnt[i]}× ${m}`; ok.disabled = total() !== n; };
+        row.append(btn("+", () => { if(total() < n){ cnt[i]++; paint(); } }, "small"), btn("−", () => { if(cnt[i] > 0){ cnt[i]--; paint(); } }, "small"), lab); box.append(row); });
+      box.append(ok);
+    });
+  }
   const cmdrBoth = modal.line && /If you control a commander as you cast this spell, you may choose both instead/i.test(modal.line) && S.bf.some(c => c.cmdr && !c.fd);
   const upTo = /up to|one or more|any number/.test(modal.n) || cmdrBoth;
   const max = cmdrBoth ? 2 : /one or more|any number/.test(modal.n) ? modal.modes.length : (nWord(modal.n.replace("up to ", "")) || 1);
@@ -6796,6 +6936,7 @@ async function payAbilityCost(c, cost0, opts = {}){
   if(rc) c.c = Math.max(0, (c.c || 0) - (nWord(rc[1]) || 1));
   if(victims[0]){ c.sacPow = power(victims[0]); c.sacMV = victims[0].cmc || 0; }
   victims.forEach(v => { moveCard(v.u, "gy"); act(`opfert ${v.n}`); abilEvent({kind:"youSac", c:v}); });
+  if(victims.length){ c.lastSacMV = victims[0].cmc || 0; c.lastSacPow = power(victims[0]); }
   if(discSelf){ moveCard(c.u, "gy"); act(`wirft ${c.n} ab`); }
   disc.forEach(v => { moveCard(v.u, "gy"); act(`wirft ${v.n} ab`); });
   exiled.forEach(v => { moveCard(v.u, "ex"); act(`legt ${v.n} ins Exil`); });
@@ -6904,6 +7045,7 @@ function abilMenuItems(c, zone){
       delete c.payMc;
     })}));
   }
+  if((zone === "gy" || zone === "ex") && /You may cast this card from your graveyard(?: or from exile)?/i.test(c.o || "") && (zone === "gy" || /or from exile/i.test(c.o || ""))) items.push({l:`Wirken aus ${zone === "gy" ? "dem Friedhof" : "dem Exil"}`, f:() => queued(async () => { const f = findCard(c.u); if(!f) return; S[f.z].splice(f.i, 1); S.hand.push(c); commit(); if(/\b(Instant|Sorcery)\b/.test(c.type || "")) await castSpell(c.u); else await play(c.u); const g = findCard(c.u); if(g && g.z === "hand"){ S.hand.splice(g.i, 1); S[zone].push(c); commit(); } })});
   if(zone === "cz") abs.filter(a => a.kind === "act" && /onto the battlefield from the command zone/i.test(a.text)).forEach(a => items.push({l:`${a.cost}: aus der Kommandozone ins Spiel`, f:() => queued(() => activateAbility(c, a))}));
   if(zone === "gy" && !isLand(c) && S.bf.some(x => !x.fd && /Each nonland card in your graveyard has escape/i.test(x.o || ""))){
     items.push({l:`Mit Escape wirken (${c.mc || "{0}"} + drei andere Karten verbannen)`, f:() => queued(() => breachCast(c))});
@@ -7008,7 +7150,7 @@ const HANDLED_STATIC = [
   /^As long as your devotion to/i, /^As long as you have \d+ or more life, /i, /Creatures you control with power 2 or less can't be blocked/i,
   /If a triggered ability of a creature you control with power 2 or less triggers/i, /You may look at the top card of your library any time/i,
   /You may play lands and cast spells from the top of your library/i, /You control your opponents while they're searching/i, /While an opponent is searching their library/i, /^Bargain\b/i,
-  /can't cast noncreature spells with mana value greater than the number of lands/i, /You may have this \w+ enter as a copy of/i, /^You control enchanted (creature|enchantment|artifact|permanent|land|planeswalker)/i, /^(Enchanted|Equipped) creature gets [+-]\d+\/[+-]\d+\.?$/i, /^Other creatures you control have "Ward/i, /costs \{\d+\} more to cast except during its controller's turn/i, /Each player can't cast more than one noncreature spell each turn/i, /^Creature cards you own that aren't on the battlefield have flash/i, /^Soulbond\b/i, /As long as .+? is paired with another creature, each of those creatures has "Whenever this creature deals damage to an opponent, draw a card/i, /^(?:This land|[^.]+?) is the chosen type/i, /^Mana abilities of (?:this land|[^.]+?) cost an additional 1 life to activate/i, /^You may spend blue mana as though it were mana of any color to pay the activation costs/i, /^Cleave\b/i, /^You don't lose unspent (red|\w+) mana as steps and phases end/i, /power is equal to the number of card types among cards in all graveyards/i, /If a card would be put into an opponent's graveyard from anywhere, instead exile it with a void counter/i, /As long as you have one or fewer cards in hand, if you would draw one or more cards/i, /^Fabricate \d+$/i, /^As (?:this \w+|[^,]+?) enters(?: the battlefield)?, choose an? (creature type|color|colour|card type|basic land type)\.?/i, /four or more card types among cards in your graveyard, [^,]+? gets/i, /can boast twice/i, /^(Equipped|Enchanted) creature has "\{T\}: Add/i, /gets \+\d+\/\+\d+ for each .+ you control\.?$/i, /Foods you control have all activated abilities of all creature cards exiled with/i, /has all activated abilities of creatures you control that don't have the same name/i, /you may exchange (?:his|her|its|their) text box and another creature's/i, /^Other legendary creatures you control have vigilance and "\{T\}: Add one mana of any color/i, /for each color among other legendary permanents you control/i, /^Activated abilities of creatures you control cost \{\d+\} less to activate/i, /^Each nonland card in your graveyard has escape/i,
+  /can't cast noncreature spells with mana value greater than the number of lands/i, /You may have this \w+ enter as a copy of/i, /^You control enchanted (creature|enchantment|artifact|permanent|land|planeswalker)/i, /^(Enchanted|Equipped) creature gets [+-]\d+\/[+-]\d+\.?$/i, /^Other creatures you control have "Ward/i, /costs \{\d+\} more to cast except during its controller's turn/i, /Each player can't cast more than one noncreature spell each turn/i, /^Creature cards you own that aren't on the battlefield have flash/i, /^You may cast this card from your graveyard/i, /you may have it become a copy of any/i, /spells you cast have prowl/i, /^Strive\b/i, /^Soulbond\b/i, /As long as .+? is paired with another creature, each of those creatures has "Whenever this creature deals damage to an opponent, draw a card/i, /^(?:This land|[^.]+?) is the chosen type/i, /^Mana abilities of (?:this land|[^.]+?) cost an additional 1 life to activate/i, /^You may spend blue mana as though it were mana of any color to pay the activation costs/i, /^Cleave\b/i, /^You don't lose unspent (red|\w+) mana as steps and phases end/i, /power is equal to the number of card types among cards in all graveyards/i, /If a card would be put into an opponent's graveyard from anywhere, instead exile it with a void counter/i, /As long as you have one or fewer cards in hand, if you would draw one or more cards/i, /^Fabricate \d+$/i, /^As (?:this \w+|[^,]+?) enters(?: the battlefield)?, choose an? (creature type|color|colour|card type|basic land type)\.?/i, /four or more card types among cards in your graveyard, [^,]+? gets/i, /can boast twice/i, /^(Equipped|Enchanted) creature has "\{T\}: Add/i, /gets \+\d+\/\+\d+ for each .+ you control\.?$/i, /Foods you control have all activated abilities of all creature cards exiled with/i, /has all activated abilities of creatures you control that don't have the same name/i, /you may exchange (?:his|her|its|their) text box and another creature's/i, /^Other legendary creatures you control have vigilance and "\{T\}: Add one mana of any color/i, /for each color among other legendary permanents you control/i, /^Activated abilities of creatures you control cost \{\d+\} less to activate/i, /^Each nonland card in your graveyard has escape/i,
   /^You may cast (?:noncreature |creature |instant and sorcery |artifact )?spells as though they had flash/i, /^Mobilize (\d+|X)$/i, /^Gift an? /i, /^Kicker\b/i
 ];
 function keywordOnly(line){
@@ -7046,7 +7188,7 @@ function cardCheck(t){
     const texts = [mainText, ...(ab.modal ? ab.modal.modes.map(m => m.replace(/^[A-Z][^—.]{0,40} — /, "")) : [])].filter(Boolean);
     const steps = texts.flatMap(tx => parseSteps(tx, c));
     const man = steps.filter(s => s.t === "manual" || s.t === "note").map(s => s.text);
-    if(ab.kind === "trig" && /^if /i.test(ab.text)){ const iff = interveningIf(ab.text, c); if(iff.ok === null && !/^(no mana was spent to cast it|you cast it|it isn't that player's turn|it was kicked|(?:\{[wubrgc]\})+ was spent to cast it)$/i.test(iff.cond || "")) man.unshift(`Bedingung «${iff.cond}» wird nachgefragt`); }
+    if(ab.kind === "trig" && /^if /i.test(ab.text)){ const iff = interveningIf(ab.text, c); if(iff.ok === null && !/^(no mana was spent to cast it|you cast it|it isn't that player's turn|it was kicked|there are four or more card types among cards in your graveyard|(?:\{[wubrgc]\})+ was spent to cast it)$/i.test(iff.cond || "")) man.unshift(`Bedingung «${iff.cond}» wird nachgefragt`); }
     if(man.length) out.manual.push(`${line.slice(0, 90)} → selbst: ${man.join(" / ")}`);
     else out.auto.push(line);
   });
@@ -7143,6 +7285,9 @@ function receiveReq(m){
     });
     return;
   }
+  if(q.kind === "returnFromExile"){ const c = [...S.ex].reverse().find(x => x.n === q.n); if(c){ moveCard(c.u, "bf"); if(q.tapped) c.tap = true; act(`${c.n} kommt zurück ins Spiel (${by}: ${src})`); commit(); } reply({ok:!!c}); return; }
+  if(q.kind === "exileUntilNonland"){ let hit = null; const ex = []; while(S.library.length){ const c = S.library.shift(); if(!isLand(c)){ hit = c; break; } ex.push(c); S.ex.push(c); } act(`verbannt ${[...ex, hit].filter(Boolean).map(c => c.n).join(", ")} (${by}: ${src}${hit ? `, ${by} darf ${hit.n} wirken` : ""})`); commit(); reply(hit ? {card:fullCard(hit)} : null); return; }
+  if(q.kind === "extraTurnAfter"){ S.extraAfterNext = true; act(`${by} steuert deinen nächsten Zug (${src}), danach nimmst du einen Zusatzzug`); toast(`<b>${esc(by)} (${esc(src)}):</b> ${esc(by)} steuert deinen nächsten Zug. Danach nimmst du einen Zusatzzug.`, 15000); commit(); reply({ok:true}); return; }
   if(q.kind === "cardText"){ const c = S.bf.find(x => x.u === q.u); reply(c ? {o:String(c.o || "").slice(0, 1500)} : null); return; }
   if(q.kind === "peekTop"){ const c = S.library[0]; if(c) act(`${by} sieht deine oberste Karte (${src})`); reply(c ? {card:pubCard(c)} : null); return; }
   if(q.kind === "searchBasic"){ queuedNow(async () => { let ok = false; if(await confirmMay({n:`${by}: ${src}`}, "ein Standardland suchen")){ await searchStep({what:"a basic land card", rest:q.tapped ? "put it onto the battlefield tapped" : "put it onto the battlefield"}, {n:`${by}: ${src}`}, {}); ok = true; } reply({ok}); }); return; }
@@ -7241,6 +7386,9 @@ function botReq(m){
     reply({cards:p.map(c => c.n)}); return;
   }
   if(q.kind === "draw"){ const n = Math.max(1, Math.min(10, parseInt(q.n, 10) || 1)); botDraw(n); botLog(`zieht ${n} Karte(n) (${String(q.src || "").slice(0, 60)})`); botChanged(); reply({n}); return; }
+  if(q.kind === "returnFromExile"){ const c = [...BOT.ex].reverse().find(x => x.n === q.n); if(c){ BOT.ex.splice(BOT.ex.indexOf(c), 1); c.tap = !!q.tapped; BOT.bf.push(c); botLog(`${c.n} kommt zurück`); botChanged(); } reply({ok:!!c}); return; }
+  if(q.kind === "exileUntilNonland"){ let hit = null; while(BOT.library.length){ const c = BOT.library.shift(); if(!isLand(c)){ hit = c; break; } BOT.ex.push(c); } if(hit) botLog(`verliert ${hit.n} ins Exil`); botChanged(); reply(hit ? {card:fullCard(hit)} : null); return; }
+  if(q.kind === "extraTurnAfter"){ botLog("nimmt nach dem nächsten Zug einen Zusatzzug"); reply({ok:true}); return; }
   if(q.kind === "cardText"){ const c = BOT.bf.find(x => x.u === q.u); reply(c ? {o:String(c.o || "")} : null); return; }
   if(q.kind === "peekTop"){ const c = BOT.library[0]; reply(c ? {card:pubCard(c)} : null); return; }
   if(q.kind === "searchBasic"){ const c = BOT.library.find(x => /\bBasic\b/.test(x.type || "") && isLand(x)); if(c){ BOT.library.splice(BOT.library.indexOf(c), 1); c.tap = !!q.tapped; BOT.bf.push(c); BOT.library = shuffle(BOT.library); botLog(`sucht ${c.n}`); botChanged(); } reply({ok:!!c}); return; }
@@ -7820,7 +7968,7 @@ function historyAdd(win){
 /* ---------- Automatische Updates ---------- */
 // Liegt die App im Web, prüft sie regelmässig version.json im selben Ordner und lädt sich bei einer neuen Version neu.
 // Alles Wichtige (Spielstand, Deck, Tisch) liegt im Browser-Speicher und ist nach dem Neuladen wieder da.
-const APP_VERSION = "2026.11.07-20";
+const APP_VERSION = "2026.11.07-21";
 const ONLINE = /^https?:$/.test(location.protocol);
 let updPending = null, updTimer = null, updSnoozeUntil = 0;
 function busyForUpdate(){ return botBusy || (!$("#modal").hidden && modalState && ["block","deck"].includes(modalState.kind)); }
