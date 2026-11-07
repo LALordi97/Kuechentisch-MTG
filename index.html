@@ -4460,8 +4460,8 @@ function matchStep2(p, src, full, SELF){
   // Badgermole Cub, Wild Growth: Bonus-Mana läuft über das Mana-System
   if(/^(?:its controller )?adds? an additional (?:\{[WUBRGC]\})+$/i.test(p)) return [{t:"skip"}];
   // Springheart Nantuko
-  if(/you may pay (\{.+?\}) if this permanent is attached to a creature you control\. If you do, create a token that's a copy of that land/i.test(full || "")){
-    const mm = (full || "").match(/you may pay (\{.+?\}) if this permanent is attached/i);
+  if(/you may pay (\{.+?\}) if this (?:permanent|creature|Aura) is attached to a creature you control/i.test(full || "")){
+    const mm = (full || "").match(/you may pay (\{.+?\}) if this (?:permanent|creature|Aura) is attached/i);
     if(/^you may pay \{/i.test(p)) return [{t:"nantuko", cost:mm[1]}];
     return [{t:"skip"}];
   }
@@ -5153,7 +5153,7 @@ function manaCounterCost(c){
   c.c = Math.max(0, (c.c || 0) - 1); act(`${c.n}: −1 ${m[1]}-Marke (noch ${c.c})`);
   if(!c.c && /If there are no \w+ counters on (?:this \w+|[^,]+?), sacrifice it/i.test(c.o || "")) setTimeout(() => { if(S.bf.includes(c)){ moveCard(c.u, "gy"); act(`${c.n}: keine Marken mehr, geopfert`); commit(); } }, 0);
 }
-function tapEvent(c){ if(c && typeof abilEvent === "function" && (/becomes tapped/i.test(c.o || "") || S.bf.some(x => !x.fd && /^Whenever an? \w+ you control becomes tapped/im.test(x.o || "")))) abilEvent({kind:"tapped", c}, [c]); }
+function tapEvent(c){ if(c){ const k = turnKey(); if(c._tapKey !== k){ c._tapKey = k; c._tapN = 0; } c._tapN++; } if(c && typeof abilEvent === "function" && (/becomes tapped/i.test(c.o || "") || S.bf.some(x => !x.fd && /Whenever an? \w+ you control becomes tapped/im.test(x.o || "")))) abilEvent({kind:"tapped", c}, [c]); }
 /* Esika: andere legendäre Kreaturen haben «{T}: Add one mana of any color» und Wachsamkeit */
 function esikaFor(c){
   if(!c || !/\bLegendary\b/.test(c.type || "") || !/\bCreature\b/.test(c.type || "") || typeof S === "undefined" || !S.bf || !S.bf.includes(c)) return false;
@@ -6772,7 +6772,7 @@ function trigMatches(ab, src, ev){
   if(ev.kind === "coinWin") return /^you win (?:one or more|a) coin flips?$/i.test(cond);
   if(ev.kind === "leaveGy"){ const lm = cond.match(/^an? (.+?) card leaves your graveyard$/i); return !!lm && cardFilter(lm[1])(ev.c); }
   if(ev.kind === "youSac"){ const sm = cond.match(/^you sacrifice (another|an?|one or more) (.+?)s?$/i); return !!sm && !(sm[1].toLowerCase() === "another" && ev.c === src) && cardFilter(sm[2])(ev.c); }
-  if(ev.kind === "tapped" && (m0 = cond.match(/^an? (\w+) you control becomes tapped$/i))) return S.bf.includes(ev.c) && (/^(creature|permanent)$/i.test(m0[1]) ? true : typeMatch(ev.c, m0[1]));
+  if(ev.kind === "tapped" && (m0 = cond.match(/^an? (\w+) you control becomes tapped( during your turn)?$/i))){ if(m0[2] && TURN.active !== me.id) return false; return S.bf.includes(ev.c) && (/^creature$/i.test(m0[1]) ? isCreature(ev.c) : /^permanent$/i.test(m0[1]) ? true : typeMatch(ev.c, m0[1])); }
   if(ev.kind === "tapped") return ev.c === src && new RegExp(`^(this creature|this permanent|${SELF}) becomes tapped$`, "i").test(cond) && !/^it deals \d+ damage to you\.?$/i.test(ab.text);
   if(ev.kind === "enter" || ev.kind === "die" || ev.kind === "attack" || ev.kind === "cast"){
     if(ev.opp){
@@ -6805,6 +6805,7 @@ function interveningIf(text, src){
   else if((k = c.match(/^you have (\d+) or more life$/))) ok = S.life >= +k[1];
   else if(/^it's not your turn$/.test(c)) ok = TURN.active !== me.id;
   else if(/^it was kicked$/.test(c)) ok = !!src.kicked;
+  else if(/^it's the first time that creature has become tapped this turn$/.test(c)){ const e = arguments[2] && arguments[2].ev; ok = e && e.c ? (e.c._tapKey === turnKey() && e.c._tapN === 1) : null; }
   else if(/^there are four or more card types among cards in your graveyard$/.test(c)) ok = deliriumOn();
   else if((k = c.match(/^((?:\{[wubrgc]\})+) was spent to cast it$/))){ if(!src.spent) ok = null; else { const need = {}; k[1].toUpperCase().match(/[WUBRGC]/g).forEach(x => need[x] = (need[x] || 0) + 1); ok = Object.entries(need).every(([x, n]) => (src.spent[x] || 0) >= n); } }
   else if(/^it isn't that player's turn$/.test(c)) ok = arguments[2] && arguments[2].pid ? TURN.active !== arguments[2].pid : null;
@@ -7033,7 +7034,7 @@ async function runAbility(src, ab, ctx, text){
   }
 }
 async function runTrigger(src, ab, ev){
-  const iff = interveningIf(ab.text, src, {free: ev.c && ev.c.free, cast: ev.kind === "enter" && ev.c === src ? !!src.wasCast : null, pid: ev.pid});
+  const iff = interveningIf(ab.text, src, {free: ev.c && ev.c.free, cast: ev.kind === "enter" && ev.c === src ? !!src.wasCast : null, pid: ev.pid, ev});
   if(iff.ok === false){ act(`${src.n}: Bedingung nicht erfüllt (${iff.cond})`); return; }
   const steps = parseSteps(iff.text, src);
   if(!steps.some(s => s.t !== "skip") && !(ab.modal && ab.modal.modes.length)) return;
@@ -7048,7 +7049,7 @@ async function runTrigger(src, ab, ev){
   act(`${src.n} löst aus: ${ab.line.slice(0, 140)}`);
   // «This ability triggers only once each turn» (Kwia)
   if(/this ability triggers only once each turn/i.test(ab.text)){ const k = `${ab.line}|${turnKey()}`; src._once = src._once || {}; if(src._once[k]) return; src._once[k] = true; }
-  await runAbility(src, ab, {X: ev.kind === "enter" && ev.c === src && src.lastX != null ? src.lastX : undefined, much: ev.much, pid: ev.pid, last: ev.kind === "die" || ev.kind === "youDiscard" || ev.kind === "youSac" ? ev.c : undefined, ev}, iff.text);
+  await runAbility(src, ab, {X: ev.kind === "enter" && ev.c === src && src.lastX != null ? src.lastX : undefined, much: ev.much, pid: ev.pid, last: ev.kind === "die" || ev.kind === "youDiscard" || ev.kind === "youSac" || ev.kind === "tapped" ? ev.c : undefined, ev}, iff.text);
 }
 /* ---------- Aktivierte Fähigkeiten, Loyalität, Kartenmenü ---------- */
 async function payAbilityCost(c, cost0, opts = {}){
@@ -7354,7 +7355,7 @@ function cardCheck(t){
     const texts = [mainText, ...(ab.modal ? ab.modal.modes.map(m => m.replace(/^[A-Z][^—.]{0,40} — /, "")) : [])].filter(Boolean);
     const steps = texts.flatMap(tx => parseSteps(tx, c));
     const man = steps.filter(s => s.t === "manual" || s.t === "note").map(s => s.text);
-    if(ab.kind === "trig" && /^if /i.test(ab.text)){ const iff = interveningIf(ab.text, c); if(iff.ok === null && !/^(no mana was spent to cast it|you cast it|it isn't that player's turn|it was kicked|there are four or more card types among cards in your graveyard|(?:\{[wubrgc]\})+ was spent to cast it)$/i.test(iff.cond || "")) man.unshift(`Bedingung «${iff.cond}» wird nachgefragt`); }
+    if(ab.kind === "trig" && /^if /i.test(ab.text)){ const iff = interveningIf(ab.text, c); if(iff.ok === null && !/^(no mana was spent to cast it|you cast it|it's the first time that creature has become tapped this turn|it isn't that player's turn|it was kicked|there are four or more card types among cards in your graveyard|(?:\{[wubrgc]\})+ was spent to cast it)$/i.test(iff.cond || "")) man.unshift(`Bedingung «${iff.cond}» wird nachgefragt`); }
     if(man.length) out.manual.push(`${line.slice(0, 90)} → selbst: ${man.join(" / ")}`);
     else out.auto.push(line);
   });
@@ -8136,7 +8137,7 @@ function historyAdd(win){
 /* ---------- Automatische Updates ---------- */
 // Liegt die App im Web, prüft sie regelmässig version.json im selben Ordner und lädt sich bei einer neuen Version neu.
 // Alles Wichtige (Spielstand, Deck, Tisch) liegt im Browser-Speicher und ist nach dem Neuladen wieder da.
-const APP_VERSION = "2026.11.07-22";
+const APP_VERSION = "2026.11.08-1";
 const ONLINE = /^https?:$/.test(location.protocol);
 let updPending = null, updTimer = null, updSnoozeUntil = 0;
 function busyForUpdate(){ return botBusy || (!$("#modal").hidden && modalState && ["block","deck"].includes(modalState.kind)); }
