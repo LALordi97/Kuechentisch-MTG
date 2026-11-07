@@ -1,4 +1,4 @@
 {
-  "version": "2026.11.07-3",
-  "notes": "Neu: Gleiche Token werden gestapelt, mit Anzahl und wie viele getappt sind"
+  "version": "2026.11.07-4",
+  "notes": "Neu: Rückgängig-Knopf, Fähigkeiten-Check in der Statistik, Kampfschaden-Auslöser, Hand zeigen/abwerfen/opfern bei Mitspielern"
 }

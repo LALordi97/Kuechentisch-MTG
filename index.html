@@ -238,6 +238,11 @@ table.stats th{color:var(--muted);font-weight:500;font-size:12px;text-transform:
 .stackbadge b{font-family:var(--f-display);font-size:17px}
 .card.tapped .stackbadge{transform:rotate(-90deg);transform-origin:50% 50%;bottom:14px;left:2px}
 .stackbadge small{font-size:11px;color:#e9c547}
+.chklist{list-style:none;padding:0;margin:8px 0;display:flex;flex-direction:column;gap:8px;max-height:55vh;overflow:auto}
+.chk{padding:6px 10px;border-radius:8px;border:1px solid var(--line);border-left-width:4px}
+.chk-auto{border-left-color:var(--green)}.chk-teil{border-left-color:#e9c547}.chk-manuell{border-left-color:#e0745e}.chk-leer{border-left-color:var(--line)}
+.chk .chip{font-size:11px;padding:1px 6px;border-radius:999px;border:1px solid var(--line);margin-left:6px}
+.chk .stat{margin-top:2px}
 .update-bar{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom, 0px));z-index:80;display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:center;background:var(--panel);border:1px solid var(--brass);border-radius:10px;padding:10px 14px;box-shadow:0 10px 30px rgba(0,0,0,.5);max-width:calc(100% - 32px)}
 .mybar{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center}
 .zones{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;margin-top:8px}
@@ -289,6 +294,7 @@ textarea{width:100%;min-height:240px;resize:vertical;font-size:14px}
     <button id="bDeck">Deck laden</button>
     <button id="bNew">Neues Spiel</button>
     <button id="bUntap">Alles enttappen</button>
+    <button id="bUndo" title="Letzte Aktion rückgängig (Ctrl+Z)">Rückgängig</button>
     <button id="bD6">W6</button>
     <button id="bD20">W20</button>
     <button id="bCoin">Münze</button>
@@ -445,7 +451,30 @@ function newCard(t){ return {n:t.n, img:t.img||null, back:t.back||null, type:t.t
 const isLand = c => /\bLand\b/.test(c.type||"") && !/\bCreature\b/.test(c.type||"");
 
 function save(){ LS.set("kt-state", S); LS.set("kt-me", me); }
-function commit(){ save(); renderAll(); schedulePush(); }
+function commit(){ save(); undoNote(); renderAll(); schedulePush(); }
+/* ---------- Rückgängig ---------- */
+// Vor jeder Aktion wird der eigene Spielstand gemerkt. Änderungen, die kurz hintereinander passieren, zählen als eine Aktion.
+const UNDO = {stack:[], last:null, lastT:0, restoring:false};
+const undoSnap = () => JSON.stringify(S, (k, v) => (k && (k[0] === "_" || k === "deck" || k === "deckText" || k === "cmdText")) ? undefined : v);
+function undoNote(){
+  if(UNDO.restoring) return;
+  let cur; try{ cur = undoSnap(); }catch(e){ return; }
+  const now = Date.now();
+  if(UNDO.last === null){ UNDO.last = cur; UNDO.lastT = now; return; }
+  if(cur === UNDO.last){ UNDO.lastT = now; return; }
+  if(now - UNDO.lastT > 600){ UNDO.stack.push(UNDO.last); if(UNDO.stack.length > 40) UNDO.stack.shift(); }
+  UNDO.last = cur; UNDO.lastT = now;
+}
+function undo(){
+  if(!UNDO.stack.length){ toast("Es gibt nichts mehr rückgängig zu machen."); return; }
+  const prev = UNDO.stack.pop();
+  const keep = {deck:S.deck, deckText:S.deckText, cmdText:S.cmdText};
+  closeMenu(); if(!$("#modal").hidden) closeModal();
+  UNDO.restoring = true;
+  try{ S = Object.assign(JSON.parse(prev), keep); UNDO.last = prev; UNDO.lastT = 0; act("macht die letzte Aktion rückgängig"); save(); renderAll(); schedulePush(); }
+  finally{ UNDO.restoring = false; }
+  toast(`Rückgängig gemacht (${UNDO.stack.length} weitere Schritte möglich). Schaden oder Nachrichten, die schon bei anderen Spielern angekommen sind, bleiben.`, 5000);
+}
 
 /* ---------- Log ---------- */
 function addLog(m){
@@ -936,6 +965,10 @@ function openMenu(e, items){
 }
 function closeMenu(){ $("#menu").hidden = true; }
 document.addEventListener("pointerdown", e => { if(!$("#menu").contains(e.target)) closeMenu(); });
+$("#bUndo").onclick = undo;
+document.addEventListener("keydown", e => {
+  if((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === "z" && !/^(INPUT|TEXTAREA|SELECT)$/.test((e.target && e.target.tagName) || "")){ e.preventDefault(); undo(); }
+});
 document.addEventListener("keydown", e => { if(e.key === "Escape"){ closeMenu(); if(!$("#modal").hidden && modalState && modalState.kind !== "block") closeModal(); } });
 
 /* ---------- Modale ---------- */
@@ -1391,7 +1424,7 @@ function applyAll(msg){
   renderAll();
 }
 /* Nachrichten an einen Spieler: über den Host weitergeleitet */
-const ROUTED = ["give", "hit", "attack", "blocks", "cres", "st_resolve"];
+const ROUTED = ["give", "hit", "attack", "blocks", "cres", "st_resolve", "req", "resp"];
 const HOSTED = ["pass", "roll", "phase", "st_push", "st_pass", "st_cancel"];
 function sendTo(pid, m){
   m.to = pid; m.from = me.id; m.by = me.name || "Gegner";
@@ -1426,6 +1459,8 @@ function deliver(m){
     case "blocks": return receiveBlocks(m);
     case "cres": return receiveCombatResult(m);
     case "st_resolve": return stackResolveMine(m);
+    case "req": return receiveReq(m);
+    case "resp": return receiveResp(m);
   }
 }
 function deliverBot(m){
@@ -1433,6 +1468,7 @@ function deliverBot(m){
   if(m.t === "hit") return receiveHitBot(m);
   if(m.t === "attack") return botReceiveAttack(m);
   if(m.t === "cres") return botReceiveCombat(m);
+  if(m.t === "req") return botReq(m);
 }
 function hostHandle(m){
   const from = m.from;
@@ -2204,12 +2240,12 @@ async function botTurn(){
 /* --- Kampf (gegen KI und Mitspieler) --- */
 function computeCombat(attackers, blocks){
   const lines = []; let dmg = 0, gain = 0, cmdDmg = 0;
-  const deadA = [], deadB = [];
+  const deadA = [], deadB = [], hits = [];
   attackers.forEach(a => {
     const b = blocks.get(a.u);
     const ap = power(a) * (kwHas(a, "double strike") ? 2 : 1);
     if(kwHas(a, "lifelink")) gain += ap;
-    if(!b){ dmg += ap; if(a.cmdr) cmdDmg += ap; lines.push(`${a.n} trifft für ${ap}`); return; }
+    if(!b){ dmg += ap; if(a.cmdr) cmdDmg += ap; if(ap > 0) hits.push({a, amount:ap}); lines.push(`${a.n} trifft für ${ap}`); return; }
     const bp = power(b);
     const aFirst = kwHas(a, "first strike") || kwHas(a, "double strike"), bFirst = kwHas(b, "first strike") || kwHas(b, "double strike");
     const lethalTo = (src, d, tgt) => d > 0 && !kwHas(tgt, "indestructible") && (d >= tough(tgt) || kwHas(src, "deathtouch"));
@@ -2217,21 +2253,27 @@ function computeCombat(attackers, blocks){
     if(aFirst && !bFirst){ bDies = lethalTo(a, ap, b); if(!bDies) aDies = lethalTo(b, bp, a); }
     else if(bFirst && !aFirst){ aDies = lethalTo(b, bp, a); if(!aDies) bDies = lethalTo(a, ap, b); }
     else { bDies = lethalTo(a, ap, b); aDies = lethalTo(b, bp, a); }
-    if(kwHas(a, "trample") && ap > tough(b)){ dmg += ap - tough(b); if(a.cmdr) cmdDmg += ap - tough(b); }
+    if(kwHas(a, "trample") && ap > tough(b)){ dmg += ap - tough(b); if(a.cmdr) cmdDmg += ap - tough(b); hits.push({a, amount:ap - tough(b)}); }
     lines.push(`${a.n} wird von ${b.n} geblockt${bDies ? ", " + b.n + " stirbt" : ""}${aDies ? ", " + a.n + " stirbt" : ""}`);
     if(aDies) deadA.push(a); if(bDies) deadB.push(b);
   });
-  return {lines, dmg, gain, cmdDmg, deadA, deadB};
+  return {lines, dmg, gain, cmdDmg, deadA, deadB, hits};
+}
+/* Kampfschaden-Auslöser: Ragavan, Psychic Frog … (eigene Angreifer) und «deals combat damage to you» */
+function combatHitEvents(hits, pid){
+  (hits || []).forEach((x, i) => { if(x.a && S.bf.includes(x.a) || x.a && S.gy.includes(x.a)) abilEvent({kind:"combatDamage", c:x.a, pid, much:x.amount, first:i === 0}, [x.a]); });
 }
 function resolveCombat(attackers, blocks, attackerIsBot){
   const r = computeCombat(attackers, blocks);
   if(attackerIsBot){
     S.life -= r.dmg; BOT.life += r.gain;
+    if(r.dmg > 0) abilEvent({kind:"combatDamageToYou", much:r.dmg});
     if(r.cmdDmg){ S.cmd.bot = (S.cmd.bot || 0) + r.cmdDmg; }
     r.deadA.forEach(c => botToZone(c, "gy"));
     r.deadB.forEach(c => moveCard(c.u, "gy"));
   } else {
     BOT.life -= r.dmg; S.life += r.gain;
+    combatHitEvents(r.hits, "bot");
     r.deadB.forEach(c => botToZone(c, "gy"));
     r.deadA.forEach(c => moveCard(c.u, "gy"));
   }
@@ -2366,6 +2408,7 @@ function receiveBlocks(m){
   (Array.isArray(m.blocks) ? m.blocks : []).forEach(x => { const b = cleanInfo(x && x.b); if(b && attackers.some(a => a.u === x.a) && ![...blocks.values()].some(y => y.u === b.u)) blocks.set(x.a, b); });
   const r = computeCombat(attackers, blocks);
   S.life += r.gain;
+  combatHitEvents(r.hits, P.target);
   r.deadA.forEach(c => moveCard(c.u, "gy"));
   const who = P.target === "bot" ? "die KI" : displayName(P.target);
   act(`Kampf gegen ${who}: ${r.lines.join("; ") || "keine Angreifer mehr"}${r.gain ? `. Lebensverknüpfung +${r.gain}` : ""}`);
@@ -2376,6 +2419,7 @@ function receiveCombatResult(m){
   const dmg = Math.max(0, Math.min(999, parseInt(m.dmg, 10) || 0));
   (Array.isArray(m.dead) ? m.dead : []).forEach(u => { if(S.bf.some(c => c.u === u)) moveCard(u, "gy"); });
   S.life -= dmg;
+  if(dmg > 0) abilEvent({kind:"combatDamageToYou", much:dmg, pid:m.from});
   const cd = Math.max(0, parseInt(m.cmdDmg, 10) || 0);
   if(cd){ S.cmd[m.from] = (S.cmd[m.from] || 0) + cd; }
   act(`verliert ${dmg} Leben im Kampf (Leben ${S.life})${cd ? `, Commander-Schaden von ${String(m.by || "").slice(0, 24)}: ${S.cmd[m.from]}` : ""}`);
@@ -4091,7 +4135,8 @@ function matchStep2(p, src, full, SELF){
   // Abwerfen
   if((m = p.match(/^(?:you )?discard (a|one|two|three|\d+) cards?(?: at random)?$/i))) return [W({t:"discard", n:m[1], random:/random/i.test(p)})];
   if(/^discard your hand$/i.test(p)) return [W({t:"discardHand"})];
-  if(/^(each opponent|target opponent|target player|each player) (discards|reveals)/i.test(p)) return [W({t:"askOpp", text:p})];
+  if(/^(each opponent|target opponent|target player|each player|up to one target player) (discards|reveals|sacrifices)/i.test(p)) return [W({t:"askOpp", text:p})];
+  if(/^look at (target player's|target opponent's|that player's) hand$/i.test(p)) return [W({t:"askOpp", text:p})];
   // Leben
   if((m = p.match(/^(?:you )?gain (\d+|x|that much) life(?: for each (.+))?$/i))) return [W({t:"gain", n:m[1], each:m[2] || null})];
   if((m = p.match(/^(?:you )?gain life equal to (.+)$/i))) return [W({t:"gain", n:"x", xexpr:m[1]})];
@@ -4151,6 +4196,7 @@ function cardFilter(desc, ctx){
   if((m = d.match(/with mana value (\d+|x)\b/))){ const n = m[1] === "x" ? (ctx && ctx.X || 0) : +m[1]; conds.push(c => (c.cmc || 0) === n); d = d.replace(m[0], ""); }
   d = d.replace(/\bwith .*$/, "").replace(/\b(if|that|unless|until)\b.*$/, "");
   d = d.replace(/\b(you control|an opponent controls|you don't control|from your graveyard|from a graveyard|in your graveyard|on the battlefield)\b/g, " ").replace(/\s+/g, " ").trim();
+  if(!/\bor\b/.test(d)) d = d.replace(/,/g, " ").replace(/\s+/g, " ").trim(); // «noncreature, nonland» = beides
   const alts = d ? d.split(/\s*,\s*(?:or\s+)?|\s+or\s+|\s+and\/or\s+/).map(x => x.trim()).filter(Boolean) : [];
   const base = c => !alts.length || alts.every(a => /^(card|permanent|spell)$/.test(a)) || alts.some(a => descMatch(a.replace(/^(card|permanent)$/, ""), c));
   return c => base(c) && conds.every(f => f(c));
@@ -4363,7 +4409,7 @@ async function runSteps(steps, src, ctx = {}){
         break;
       }
       case "discardHand": { const k = S.hand.length; S.gy.push(...S.hand); S.hand = []; act(`wirft die Hand ab (${k})`); break; }
-      case "askOpp": act(`${src.n}: ${st.text} – Mitspieler bitte ausführen`); toast(`<b>${esc(src.n)}:</b> ${esc(st.text)}. Das machen deine Mitspieler selbst.`); break;
+      case "askOpp": await oppInteraction(st.text, src, ctx); break;
       case "gain": { const n = await needX(); S.life += n; act(`${src.n}: du erhältst ${n} Leben`); break; }
       case "lose": { const n = await needX(); S.life -= n; act(`${src.n}: du verlierst ${n} Leben`); break; }
       case "pidLoss": case "pidGain": {
@@ -4530,6 +4576,7 @@ async function runSteps(steps, src, ctx = {}){
         break;
       }
       case "forPlayer": {
+        if(/^(target player|target opponent|each player) (discards|sacrifices|reveals)/i.test(st.text)){ await oppInteraction(st.text, src, ctx); break; }
         let pid = me.id;
         if(st.who !== "each player"){ const t = await pickTarget(`${src.n}: welcher Spieler?`, st.who === "target opponent" ? "target opponent" : "target player", false); if(!t) break; pid = t.pid; }
         if(pid === me.id || st.who === "each player"){ if(st.sub.length) await runSteps(st.sub, src, ctx); else manual.push(st.text); }
@@ -4624,6 +4671,16 @@ function trigMatches(ab, src, ev){
   }
   if(ev.kind === "oppDraw") return /^an opponent draws a card/i.test(cond) && !(ev.first && /except the first/i.test(cond));
   if(ev.kind === "youDraw") return /^you draw a card$/i.test(cond);
+  if(ev.kind === "combatDamage"){
+    const SELFc = selfPat(src);
+    if(new RegExp(`^${SELFc} deals combat damage to (a player|an opponent|a player or (?:a )?planeswalker|a player or battle|one or more players)$`, "i").test(cond)) return ev.c === src;
+    let m2 = cond.match(/^(a|another|an) (.*?)\s*creatures? you control deals combat damage to (a player|an opponent|a player or planeswalker)$/i);
+    if(m2) return !(m2[1].toLowerCase() === "another" && ev.c === src) && descMatch((m2[2] + " creature").trim(), ev.c);
+    m2 = cond.match(/^one or more (.*?)\s*creatures? you control deal combat damage to (a player|an opponent|one or more players)$/i);
+    if(m2) return ev.first && descMatch((m2[1] + " creature").trim(), ev.c);
+    return false;
+  }
+  if(ev.kind === "combatDamageToYou") return /^(a creature|one or more creatures|a source) deals? (combat )?damage to you$/i.test(cond);
   if(ev.kind === "castSelf") return /^you cast this spell$/i.test(cond) && ev.c === src;
   if(ev.kind === "enter" || ev.kind === "die" || ev.kind === "attack" || ev.kind === "cast"){
     if(ev.opp){
@@ -4789,7 +4846,7 @@ function abilMenuItems(c, zone){
   if(zone === "bf" && !c.fd){
     abs.filter(a => a.kind === "loy").forEach(a => items.push({l:`${a.cost.startsWith("-") ? "−" + a.cost.slice(1) : a.cost === "0" ? "0" : (a.cost.startsWith("+") ? a.cost : "+" + a.cost)}: ${short(a.text)}`, f:() => queued(() => activateLoyalty(c, a))}));
     abs.filter(a => a.kind === "act" && !/\{E\}/.test(a.cost)).forEach(a => items.push({l:`Fähigkeit: ${short(a.cost + ": " + a.text)}`, f:() => queued(() => activateAbility(c, a))}));
-    abs.filter(a => a.kind === "trig" && /deals (combat )?damage|blocks|becomes (blocked|tapped|the target|untapped)|leaves (your graveyard|the battlefield)|you discard|you sacrifice|turned face up|isn't blocked|you cycle|you activate|counters? (is|are) put|you scry|you surveil|explores|transforms|you expend|loses life|you search|attacks and|is dealt damage/i.test(a.cond))
+    abs.filter(a => a.kind === "trig" && !/deals combat damage to (a player|you|an opponent|one or more players)|deal combat damage to (a player|an opponent|one or more players)/i.test(a.cond) && /deals (combat )?damage|blocks|becomes (blocked|tapped|the target|untapped)|leaves (your graveyard|the battlefield)|you discard|you sacrifice|turned face up|isn't blocked|you cycle|you activate|counters? (is|are) put|you scry|you surveil|explores|transforms|you expend|loses life|you search|attacks and|is dealt damage/i.test(a.cond))
       .forEach(a => items.push({l:`Auslösen: ${short(a.cond)}`, f:() => queued(() => runTrigger(c, a, {kind:"manual"}))}));
     abs.filter(a => a.kind === "equip").forEach(a => items.push({l:`Ausrüsten ${a.cost}`, f:() => queued(async () => { const t = await pickTarget(`${c.n} ausrüsten an …`, "target creature you control", false); if(!t) return; if(!(await payFor({n:`Ausrüsten ${c.n}`, mc:a.cost, type:"Ability"}))) return; c.eq = t.card.u; act(`rüstet ${t.card.n} mit ${c.n} aus`); commit(); })}));
   }
@@ -4861,6 +4918,239 @@ function oppDrawScan(){
       abilEvent({kind:"oppDraw", opp:true, pid:id, first});
     }
   });
+}
+
+/* ---------- Fähigkeiten-Check: Was kann die App mit den Karten im Deck? ---------- */
+const HANDLED_STATIC = [
+  /spells you cast cost \{\d+\} less/i, /^Nonbasic lands are Mountains/i, /^Each land is an? (Swamp|Forest)/i, /^Creatures you control have "\{T\}: Add/i,
+  /^Skip your draw step/i, /enters(?: the battlefield)? with (an?|one|two|three|four|five|six|seven|eight|nine|ten|\d+|X) \S+ counters? on it/i,
+  /^If you would gain life/i, /^If you gaining life causes/i, /would enter, you may discard a land card instead/i, /becomes tapped, it deals \d+ damage to you/i,
+  /^Imprint — When/i, /^\(?As this Saga enters/i, /in your opening hand/i, /^Companion/i, /^You may reveal this card from your opening hand/i
+];
+function keywordOnly(line){
+  return line.split(/,\s*/).every(part => KEYWORD_LINE.test(part.trim()) || /^(Protection from|Ward|Hexproof from|Landwalk|Enchant|Equip|Crew|Cycling|Kicker|Flashback|Evoke|Dash|Escape|Ninjutsu|Suspend|Madness|Morph|Disguise|Plot|Bestow|Unearth|Embalm|Encore|Buyback|Overload|Prototype|Reconfigure|Blitz|Craft|Station|Warp)\b/i.test(part.trim()));
+}
+function cardCheck(t){
+  const c = newCard(t);
+  const out = {n:c.n, auto:[], manual:[], static:[], hand:[]};
+  const abs = parseAbilities(c);
+  const ltTexts = lifeTriggers(c).map(x => x.text.slice(0, 50));
+  const mk = markClauses(c);
+  String(c.o || "").split("\n").forEach(raw => {
+    let line = cleanLine(raw); if(!line) return;
+    if(/^[•●]/.test(line)) return;
+    line = line.replace(/^(Revolt|Converge|Threshold|Metalcraft|Delirium|Ferocious|Morbid|Raid|Spell mastery|Formidable|Coven|Hellbent|Domain|Landfall|Magecraft|Constellation|Heroic|Alliance|Celebration|Descend \d+|Fateful hour|Corrupted|Addendum|Adamant|Battalion|Lieutenant|Parley|Radiance|Rally|Strive|Undergrowth|Valiant|Void|Eerie|Survival|Max speed) — /i, "");
+    if(keywordOnly(line)){ out.auto.push("Schlüsselwort: " + line); return; }
+    if(/^[^:"]*:\s*Add\b/i.test(line) || /^[^:"]*\{T\}[^:"]*:\s*For each colou?r/i.test(line)){ out.auto.push("Mana: " + line); return; }
+    if(ltTexts.some(x => line.slice(0, 50) === x)){ out.auto.push("Lebens-Auslöser: " + line); return; }
+    if(isSaga(c) && /^(VII|VI|IV|V|III|II|I)(\s*,\s*(VII|VI|IV|V|III|II|I))*\s*[—-]/.test(line)){ out.auto.push("Saga-Kapitel: " + line); return; }
+    if(HANDLED_STATIC.some(r => r.test(line))){ out.auto.push("Sonderregel: " + line); return; }
+    const ab = abs.find(a => a.line === line);
+    if(!ab){
+      if(mk.some(m => line.includes(m.text.slice(0, 30)))){ out.auto.push("Marken: " + line); return; }
+      out.static.push(line); return;
+    }
+    if(["cycling", "evoke", "flashback", "equip"].includes(ab.kind)){ out.auto.push("Kartenmenü: " + line); return; }
+    if(ab.kind === "trig" && /deals (combat )?damage|blocks|becomes (blocked|tapped|the target|untapped)|leaves (your graveyard|the battlefield)|you discard|you sacrifice|turned face up|isn't blocked|you cycle|you activate|counters? (is|are) put|you scry|you surveil|explores|transforms|you expend|loses life|you search|attacks and|is dealt damage/i.test(ab.cond) && !/deals combat damage to (a player|you|an opponent)/i.test(ab.cond)){
+      out.hand.push(line);
+    }
+    const texts = [ab.text, ...(ab.modal ? ab.modal.modes : [])].filter(Boolean);
+    const steps = texts.flatMap(tx => parseSteps(tx, c));
+    const man = steps.filter(s => s.t === "manual" || s.t === "note").map(s => s.text);
+    if(ab.kind === "trig" && /^if /i.test(ab.text)){ const iff = interveningIf(ab.text, c); if(iff.ok === null) man.unshift(`Bedingung «${iff.cond}» wird nachgefragt`); }
+    if(man.length) out.manual.push(`${line.slice(0, 90)} → selbst: ${man.join(" / ")}`);
+    else out.auto.push(line);
+  });
+  out.status = !out.manual.length && !out.static.length && !out.hand.length ? (out.auto.length ? "auto" : "leer") : (out.auto.length ? "teil" : "manuell");
+  return out;
+}
+function abilityCheckHtml(deck){
+  if(!deck.length) return `<p class="muted">Lade zuerst ein Deck. Der Check verwendet die echten Kartentexte von Scryfall.</p>`;
+  const seen = new Set(), rows = [];
+  deck.forEach(t => { if(seen.has(t.n)) return; seen.add(t.n); rows.push(cardCheck(t)); });
+  const order = {manuell:0, teil:1, auto:2, leer:3};
+  rows.sort((a, b) => order[a.status] - order[b.status] || a.n.localeCompare(b.n));
+  const cnt = k => rows.filter(r => r.status === k).length;
+  const label = {auto:"automatisch", teil:"teilweise", manuell:"von Hand", leer:"ohne Text"};
+  const li = r => `<li class="chk chk-${r.status}"><b>${esc(r.n)}</b> <span class="chip">${label[r.status]}</span>
+    ${r.manual.map(x => `<div class="stat">• ${esc(x)}</div>`).join("")}
+    ${r.hand.map(x => `<div class="stat">• Auslöser im Kartenmenü («Auslösen»): ${esc(x.slice(0, 100))}</div>`).join("")}
+    ${r.static.map(x => `<div class="stat">• Dauereffekt, nicht automatisch: ${esc(x.slice(0, 110))}</div>`).join("")}</li>`;
+  const report = rows.filter(r => r.status === "teil" || r.status === "manuell").map(r => `${r.n} [${label[r.status]}]\n` + [...r.manual.map(x => "  - " + x), ...r.hand.map(x => "  - von Hand auslösen: " + x), ...r.static.map(x => "  - Dauereffekt: " + x)].join("\n")).join("\n");
+  ABILITY_REPORT = `Fähigkeiten-Check ${S.deckName || ""} (${new Date().toLocaleDateString("de-CH")}, App ${APP_VERSION})\n${cnt("auto")} automatisch, ${cnt("teil")} teilweise, ${cnt("manuell")} von Hand, ${cnt("leer")} ohne Text\n\n` + report;
+  return `<div class="statrow">
+      <div class="statcard"><span class="stat">Automatisch</span><b class="num">${cnt("auto")}</b></div>
+      <div class="statcard"><span class="stat">Teilweise</span><b class="num">${cnt("teil")}</b></div>
+      <div class="statcard"><span class="stat">Von Hand</span><b class="num">${cnt("manuell")}</b></div>
+      <div class="statcard"><span class="stat">Ohne Text</span><b class="num">${cnt("leer")}</b></div>
+    </div>
+    <p class="stat">«Teilweise»: die App macht einen Teil, den Rest zeigt sie dir als «bitte selbst ausführen». Schick den Bericht an Claude, dann werden die Lücken gezielt geschlossen.</p>
+    <div class="row"><button class="small primary" id="chkCopy">Bericht kopieren</button><label class="stat"><input type="checkbox" id="chkAll"> auch automatische Karten zeigen</label></div>
+    <ul class="chklist" id="chkList">${rows.filter(r => r.status === "teil" || r.status === "manuell").map(li).join("")}</ul>
+    <template id="chkFull">${rows.map(li).join("")}</template>`;
+}
+let ABILITY_REPORT = "";
+function bindAbilityCheck(body){
+  const cp = body.querySelector("#chkCopy"); if(!cp) return;
+  cp.onclick = async () => {
+    try{ await navigator.clipboard.writeText(ABILITY_REPORT); cp.textContent = "Kopiert ✓"; }
+    catch(e){ const ta = document.createElement("textarea"); ta.value = ABILITY_REPORT; ta.rows = 8; ta.style.width = "100%"; cp.after(ta); ta.select(); cp.textContent = "Text markiert, bitte kopieren"; }
+  };
+  const all = body.querySelector("#chkAll"), list = body.querySelector("#chkList"), full = body.querySelector("#chkFull");
+  const part = list.innerHTML;
+  all.onchange = () => { list.innerHTML = all.checked ? full.innerHTML : part; };
+}
+
+/* ---------- Anfragen an Mitspieler: Hand zeigen, abwerfen, opfern ---------- */
+// Thoughtseize, Grief, Duress: der Gegner zeigt seine Hand in deinem Fenster, du wählst, er wirft ab.
+// «Each opponent discards/sacrifices …»: der Gegner wählt selbst in seinem Fenster. Die KI antwortet sofort.
+const REQS = {};
+const pubCard = c => ({u:c.u, n:c.n, img:c.img, back:c.back, type:c.type, mc:c.mc, cmc:c.cmc, pw:c.pw, tg:c.tg, o:String(c.o || "").slice(0, 300)});
+function requestOpp(pid, req, ms = 180000){
+  return new Promise(res => {
+    const id = uid();
+    REQS[id] = res;
+    setTimeout(() => { if(REQS[id]){ delete REQS[id]; res(null); } }, ms);
+    sendTo(pid, {t:"req", id, req});
+  });
+}
+function receiveResp(m){ const r = REQS[m.id]; if(!r) return; delete REQS[m.id]; r(m.data && typeof m.data === "object" ? m.data : null); }
+function receiveReq(m){
+  const q = (m && m.req) || {}; const by = String(m.by || "Gegner").slice(0, 24), src = String(q.src || "").slice(0, 80);
+  const reply = data => sendTo(m.from, {t:"resp", id:m.id, data});
+  if(q.kind === "hand"){
+    act(`zeigt ${by} die Hand (${src})`); toast(`<b>${esc(by)}</b> sieht deine Hand (${esc(src)}).`);
+    reply({hand:S.hand.map(pubCard)}); return;
+  }
+  if(q.kind === "discardThis" || q.kind === "exileThis"){
+    const c = S.hand.find(x => x.u === q.u);
+    if(c){ moveCard(c.u, q.kind === "exileThis" ? "ex" : "gy"); act(`${q.kind === "exileThis" ? "verbannt" : "wirft"} ${c.n}${q.kind === "exileThis" ? " aus der Hand" : " ab"} (${by}: ${src})`); commit(); }
+    reply({ok:!!c, n:c && c.n}); return;
+  }
+  if(q.kind === "discard"){
+    const n = Math.max(1, Math.min(20, parseInt(q.n, 10) || 1));
+    queued(async () => {
+      let p;
+      if(q.random){ p = []; const h = S.hand.slice(); for(let i = 0; i < n && h.length; i++) p.push(h.splice(Math.floor(Math.random() * h.length), 1)[0]); }
+      else p = await pickCards(`${by} (${src}): wirf ${n} Karte(n) ab`, S.hand.slice(), n, {none:"Keine (Hand leer)"});
+      if(!q.random && S.hand.length && p.length < Math.min(n, S.hand.length)){ const rest = S.hand.filter(c => !p.includes(c)); while(p.length < Math.min(n, S.hand.length)) p.push(rest.shift()); }
+      p.forEach(c => moveCard(c.u, "gy"));
+      if(p.length) act(`wirft ${p.map(c => c.n).join(", ")} ab (${by}: ${src})`);
+      commit(); reply({cards:p.map(c => c.n)});
+    });
+    return;
+  }
+  if(q.kind === "sacrifice"){
+    const n = Math.max(1, Math.min(10, parseInt(q.n, 10) || 1));
+    const f = cardFilter(String(q.desc || "permanent").slice(0, 80));
+    queued(async () => {
+      const list = S.bf.filter(c => f(c));
+      let p = list.length <= n ? list : await pickCards(`${by} (${src}): opfere ${n}× ${q.desc}`, list, n, {none:"Abbrechen"});
+      if(p.length < Math.min(n, list.length)) p = list.slice(0, Math.min(n, list.length));
+      p.forEach(c => moveCard(c.u, "gy"));
+      act(p.length ? `opfert ${p.map(c => c.n).join(", ")} (${by}: ${src})` : `hat nichts zu opfern (${by}: ${src})`);
+      commit(); reply({cards:p.map(c => c.n)});
+    });
+    return;
+  }
+  reply(null);
+}
+/* Die KI beantwortet Anfragen sofort */
+function botReq(m){
+  const q = (m && m.req) || {};
+  const reply = data => route({t:"resp", to:m.from, from:"bot", by:"KI", id:m.id, data});
+  if(!BOT.active){ reply(null); return; }
+  if(q.kind === "hand"){ botLog(`zeigt die Hand (${String(q.src || "").slice(0, 60)})`); reply({hand:BOT.hand.map(pubCard)}); return; }
+  if(q.kind === "discardThis" || q.kind === "exileThis"){
+    const c = BOT.hand.find(x => x.u === q.u);
+    if(c){ BOT.hand.splice(BOT.hand.indexOf(c), 1); (q.kind === "exileThis" ? BOT.ex : BOT.gy).push(c); botLog(`${q.kind === "exileThis" ? "verliert" : "wirft"} ${c.n}${q.kind === "exileThis" ? " ins Exil" : " ab"}`); botChanged(); }
+    reply({ok:!!c, n:c && c.n}); return;
+  }
+  if(q.kind === "discard"){
+    const n = Math.max(1, parseInt(q.n, 10) || 1);
+    const lands = BOT.hand.filter(isLand).length;
+    const order = BOT.hand.slice().sort((a, b) => q.random ? Math.random() - .5 : ((isLand(b) && lands > 3) - (isLand(a) && lands > 3)) || ((b.cmc || 0) - (a.cmc || 0)));
+    const p = order.slice(0, n);
+    p.forEach(c => { BOT.hand.splice(BOT.hand.indexOf(c), 1); BOT.gy.push(c); });
+    if(p.length) botLog(`wirft ${p.map(c => c.n).join(", ")} ab`); botChanged();
+    reply({cards:p.map(c => c.n)}); return;
+  }
+  if(q.kind === "sacrifice"){
+    const n = Math.max(1, parseInt(q.n, 10) || 1);
+    const f = cardFilter(String(q.desc || "permanent"));
+    const p = BOT.bf.filter(f).sort((a, b) => ((a.tok ? 0 : 1) - (b.tok ? 0 : 1)) || (power(a) - power(b)) || ((a.cmc || 0) - (b.cmc || 0))).slice(0, n);
+    p.forEach(c => botToZone(c, "gy"));
+    botLog(p.length ? `opfert ${p.map(c => c.n).join(", ")}` : "hat nichts zu opfern"); botChanged();
+    reply({cards:p.map(c => c.n)}); return;
+  }
+  reply(null);
+}
+/* Fenster: Hand eines Gegners ansehen und ggf. eine Karte wählen */
+function showOppHand(title, hand, filter, choose){
+  return abilModal(title, (box, done) => {
+    if(!hand.length) box.append(Object.assign(document.createElement("p"), {className:"muted", textContent:"Die Hand ist leer."}));
+    const g = document.createElement("div"); g.className = "grid z-modal";
+    hand.forEach(c => {
+      const ok = !choose || filter(c);
+      const el = cardEl({...c}, false, "hand"); el.style.setProperty("--w", "96px");
+      if(!ok) el.style.opacity = ".4";
+      else if(choose){ el.style.cursor = "pointer"; el.addEventListener("click", () => done(c)); }
+      else el.addEventListener("click", () => showPreview(c, false));
+      g.append(el);
+    });
+    box.append(g, btn(choose ? "Keine wählen" : "Schliessen", () => done(null), choose ? "small" : "primary"));
+  });
+}
+/* Text eines Effekts für Gegner umsetzen */
+async function oppInteraction(text, src, ctx){
+  const t = String(text || "").toLowerCase();
+  let pids = [];
+  if(/^(each opponent)/.test(t)) pids = liveOpps().map(o => o.id);
+  else if(/^each player/.test(t)) pids = [me.id, ...liveOpps().map(o => o.id)];
+  else if(/^target opponent/.test(t) && liveOpps().length === 1) pids = [liveOpps()[0].id];
+  else if(/^(target player|target opponent|up to one target player)/.test(t)){
+    const p = await pickTarget(`${src.n}: welcher Spieler?`, /opponent/.test(t) ? "target opponent" : "target player", /^up to/.test(t));
+    if(!p) return; pids = [p.pid];
+  } else if(ctx && ctx.pid) pids = [ctx.pid];
+  else pids = liveOpps().map(o => o.id).slice(0, 1);
+  let m;
+  for(const pid of pids){
+    const name = pid === me.id ? "du" : oppByPid(pid);
+    // Hand zeigen + Karte wählen (Thoughtseize, Grief, Duress, Inquisition)
+    if(/reveals? (?:their|his or her) hand/.test(t) || /look at (?:target player's|that player's|their) hand/.test(t)){
+      const pick = t.match(/choose (?:an?|one|up to one) (.+?) from (?:it|among them|that player's hand)/);
+      const exile = /exile (?:that|the chosen) card/.test(t);
+      const desc = pick ? pick[1].replace(/\bcards?\b/g, "").trim() : "";
+      const filter = desc ? cardFilter(desc) : () => true;
+      const hand = pid === me.id ? S.hand.map(pubCard) : ((await requestOpp(pid, {kind:"hand", src:src.n})) || {}).hand;
+      if(!Array.isArray(hand)){ toast(`${esc(name)} hat nicht geantwortet.`); continue; }
+      act(`${src.n}: sieht die Hand von ${name} (${hand.length} Karten)`);
+      const chosen = await showOppHand(`${src.n}: Hand von ${name}${pick ? ` – wähle ${desc || "eine"} Karte` : ""}`, hand, filter, !!pick);
+      if(!pick || !chosen) continue;
+      if(pid === me.id){ moveCard(chosen.u, exile ? "ex" : "gy"); act(`${exile ? "verbannt" : "wirft"} ${chosen.n} ${exile ? "aus der Hand" : "ab"}`); commit(); }
+      else { const r = await requestOpp(pid, {kind: exile ? "exileThis" : "discardThis", u:chosen.u, src:src.n}); act(`${src.n}: ${name} ${exile ? "verbannt" : "wirft"} ${chosen.n}${r && r.ok ? "" : " (nicht gefunden)"}`); }
+      continue;
+    }
+    if((m = t.match(/discards? (a|one|two|three|four|\d+|their hand|x) cards?( at random)?|discards? their hand/))){
+      if(/their hand/.test(m[0])){ if(pid === me.id){ const k = S.hand.length; S.gy.push(...S.hand); S.hand = []; act(`wirft die Hand ab (${k})`); commit(); } else await requestOpp(pid, {kind:"discard", n:99, random:true, src:src.n}); continue; }
+      const n = nWord(m[1], ctx) || 1;
+      if(pid === me.id){ await runSteps([{t:"discard", n:String(n), random:!!m[2]}], src, ctx); continue; }
+      act(`${src.n}: ${name} wirft ${n} Karte(n) ab …`);
+      const r = await requestOpp(pid, {kind:"discard", n, random:!!m[2], src:src.n});
+      act(`${src.n}: ${name} hat ${r && r.cards && r.cards.length ? r.cards.join(", ") : "nichts"} abgeworfen`);
+      continue;
+    }
+    if((m = t.match(/sacrifices? (an?|one|two|three|\d+) (.+?)(?: of their choice)?(?:\.|$)/))){
+      const n = nWord(m[1]) || 1, desc = m[2].replace(/ of their choice$/, "");
+      if(pid === me.id){ await runSteps([{t:"sacOther", n:String(n), who:desc}], src, ctx); continue; }
+      act(`${src.n}: ${name} opfert ${n}× ${desc} …`);
+      const r = await requestOpp(pid, {kind:"sacrifice", n, desc, src:src.n});
+      act(`${src.n}: ${name} opfert ${r && r.cards && r.cards.length ? r.cards.join(", ") : "nichts"}`);
+      continue;
+    }
+    act(`${src.n}: ${text} – ${name} bitte ausführen`);
+    toast(`<b>${esc(src.n)}:</b> ${esc(text)}. Das macht ${esc(name)} selbst.`);
+  }
 }
 
 /* ---------- Grafik: Animationen, Pfeile, Effekte ---------- */
@@ -5313,11 +5603,12 @@ function openStats(tab){
   const body = document.createElement("div");
   const show = t => {
     tabs.querySelectorAll("button").forEach(b => b.classList.toggle("on", b.dataset.t === t));
-    body.innerHTML = t === "deck" ? deckAnalysisHtml(S.deck) : t === "life" ? lifeChartHtml() : historyHtml();
+    body.innerHTML = t === "deck" ? deckAnalysisHtml(S.deck) : t === "life" ? lifeChartHtml() : t === "check" ? abilityCheckHtml(S.deck) : historyHtml();
+    if(t === "check") bindAbilityCheck(body);
     const hc = body.querySelector("#histClear");
     if(hc) hc.onclick = () => { if(hc.dataset.sure){ LS.set("kt-history", []); show("hist"); } else { hc.dataset.sure = "1"; hc.textContent = "Wirklich löschen?"; } };
   };
-  [["deck", "Deck-Analyse"], ["life", "Lebensverlauf"], ["hist", "Match-Historie"]].forEach(([t, l]) => { const b = btn(l, () => show(t), "small"); b.dataset.t = t; tabs.append(b); });
+  [["deck", "Deck-Analyse"], ["check", "Fähigkeiten-Check"], ["life", "Lebensverlauf"], ["hist", "Match-Historie"]].forEach(([t, l]) => { const b = btn(l, () => show(t), "small"); b.dataset.t = t; tabs.append(b); });
   box.append(tabs, body);
   show(tab || "deck");
 }
@@ -5332,7 +5623,7 @@ function historyAdd(win){
 /* ---------- Automatische Updates ---------- */
 // Liegt die App im Web, prüft sie regelmässig version.json im selben Ordner und lädt sich bei einer neuen Version neu.
 // Alles Wichtige (Spielstand, Deck, Tisch) liegt im Browser-Speicher und ist nach dem Neuladen wieder da.
-const APP_VERSION = "2026.11.07-3";
+const APP_VERSION = "2026.11.07-4";
 const ONLINE = /^https?:$/.test(location.protocol);
 let updPending = null, updTimer = null, updSnoozeUntil = 0;
 function busyForUpdate(){ return botBusy || (!$("#modal").hidden && modalState && ["block","deck"].includes(modalState.kind)); }
