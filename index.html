@@ -4564,6 +4564,11 @@ function matchStep2(p, src, full, SELF){
   if(/Choose 1, 2, or 3 at random\. Its controller mills that many cards/i.test(full || "") && !/^counter target spell$/i.test(p)) return [{t:"skip"}];
   // Wheel of Misfortune
   if(/^Each player secretly chooses a number 0 or greater/i.test(full || "")) return [/^each player secretly chooses/i.test(p) ? {t:"wheelMis"} : {t:"skip"}];
+  // Will of the Jeskai: «Each player may discard their hand and draw five cards»
+  if((m = (full || "").match(/each player may discard their hand and draw (\w+) cards/i))){
+    if(/^each player may discard their hand( and draw \w+ cards)?$/i.test(p)) return [{t:"wheelMay", n:nWord(m[1]) || 5}];
+    if(/^(?:and )?draw \w+ cards$/i.test(p)) return [{t:"skip"}];
+  }
   // Highway Robbery
   if(/^(?:you may )?discard a card or sacrifice a land$/i.test(p)) return [{t:"discardOrSac"}];
   if((m = p.match(/^(?:you may )?discard up to (one|two|three) cards$/i))) return [{t:"discardUpTo", n:nWord(m[1])}];
@@ -5756,6 +5761,11 @@ async function runSteps(steps, src, ctx = {}){
         }
         break;
       }
+      case "wheelMay": {
+        if(await confirmMay(src, `deine Hand abwerfen und ${st.n} Karten ziehen`)){ const k = S.hand.length; S.gy.push(...S.hand.splice(0)); draw(st.n); act(`${src.n}: wirft ${k} Karten ab und zieht ${st.n}`); }
+        for(const o of liveOpps()){ const r = await requestOpp(o.id, {kind:"wheelMay", n:st.n, src:src.n}); act(`${src.n}: ${o.name} ${r && r.ok ? `zieht eine neue Hand (${st.n})` : "behält die Hand"}`); }
+        break;
+      }
       case "discardUpTo": { const p = (await pickCards(`${src.n}: bis zu ${st.n} Karten abwerfen (freiwillig)`, S.hand.slice(), st.n, {none:"Keine"})) || []; p.forEach(c => moveCard(c.u, "gy")); if(p.length) act(`${src.n}: wirft ${p.map(c => c.n).join(", ")} ab`); ctx.mayNo = !p.length; ctx.did = !!p.length; ctx.much = p.length; break; }
       case "discardOrSac": {
         const lands = S.bf.filter(c => isLand(c) && !c.fd);
@@ -6941,6 +6951,7 @@ function receiveReq(m){
     return;
   }
   if(q.kind === "secretNumber"){ queuedNow(async () => { const n = await askNumber(`${by} (${src}): deine geheime Zahl`, "Wähle eine Zahl (0 oder mehr). Alle zeigen gleichzeitig auf."); reply({n: Math.max(0, n || 0)}); }); return; }
+  if(q.kind === "wheelMay"){ const n = Math.max(1, Math.min(10, parseInt(q.n, 10) || 5)); queuedNow(async () => { const yes = await confirmMay({n:`${by}: ${src}`}, `deine Hand abwerfen und ${n} Karten ziehen`); if(yes){ const k = S.hand.length; S.gy.push(...S.hand.splice(0)); draw(n); act(`wirft ${k} Karten ab und zieht ${n} (${by}: ${src})`); commit(); } reply({ok:yes}); }); return; }
   if(q.kind === "wheel7"){ const k = S.hand.length; S.gy.push(...S.hand.splice(0)); draw(7); act(`wirft ${k} Karten ab und zieht sieben (${by}: ${src})`); commit(); reply({ok:true}); return; }
   if(q.kind === "giveExiled"){
     const c = S.ex.find(x => x.u === q.u);
@@ -7034,6 +7045,7 @@ function botReq(m){
   }
   if(q.kind === "draw"){ const n = Math.max(1, Math.min(10, parseInt(q.n, 10) || 1)); botDraw(n); botLog(`zieht ${n} Karte(n) (${String(q.src || "").slice(0, 60)})`); botChanged(); reply({n}); return; }
   if(q.kind === "secretNumber"){ const n = BOT.life > 10 ? Math.floor(Math.random() * 3) : 0; botLog(`wählt geheim ${n}`); reply({n}); return; }
+  if(q.kind === "wheelMay"){ const n = Math.max(1, parseInt(q.n, 10) || 5); const yes = BOT.hand.length < n; if(yes){ BOT.gy.push(...BOT.hand.splice(0)); botDraw(n); botLog(`wirft die Hand ab und zieht ${n}`); botChanged(); } else botLog("behält die Hand"); reply({ok:yes}); return; }
   if(q.kind === "wheel7"){ BOT.gy.push(...BOT.hand.splice(0)); botDraw(7); botLog("wirft die Hand ab und zieht sieben"); botChanged(); reply({ok:true}); return; }
   if(q.kind === "giveExiled"){ const c = BOT.ex.find(x => x.u === q.u); if(c){ BOT.ex.splice(BOT.ex.indexOf(c), 1); botLog(`${c.n} wird aus dem Exil gespielt`); botChanged(); } reply(c ? {card:fullCard(c)} : null); return; }
   if(q.kind === "chooseCards"){
@@ -7608,7 +7620,7 @@ function historyAdd(win){
 /* ---------- Automatische Updates ---------- */
 // Liegt die App im Web, prüft sie regelmässig version.json im selben Ordner und lädt sich bei einer neuen Version neu.
 // Alles Wichtige (Spielstand, Deck, Tisch) liegt im Browser-Speicher und ist nach dem Neuladen wieder da.
-const APP_VERSION = "2026.11.07-17";
+const APP_VERSION = "2026.11.07-18";
 const ONLINE = /^https?:$/.test(location.protocol);
 let updPending = null, updTimer = null, updSnoozeUntil = 0;
 function busyForUpdate(){ return botBusy || (!$("#modal").hidden && modalState && ["block","deck"].includes(modalState.kind)); }
