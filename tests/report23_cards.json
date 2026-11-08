@@ -1,0 +1,9 @@
+[
+["Kozilek's Command","Kindred Instant — Eldrazi","Choose two —\n• Target player creates X 0/1 colorless Eldrazi Spawn creature tokens with \"Sacrifice this token: Add {C}.\"\n• Target player scries X, then draws a card.\n• Kozilek's Command deals X damage to target creature or planeswalker.\n• Exile up to X target cards from graveyards.","{X}{C}",1],
+["Nature's Claim","Instant","Destroy target artifact or enchantment. Its controller gains 4 life.","{G}",1],
+["The Stone Brain","Legendary Artifact","{2}, {T}, Exile The Stone Brain: Choose a card name. Search target opponent's graveyard, hand, and library for up to four cards with that name and exile them. That player shuffles, then draws a card for each card exiled from their hand this way. Activate only as a sorcery.","{2}",2],
+["Trinisphere","Artifact","As long as this artifact is untapped, each spell that would cost less than three mana to cast costs three mana to cast.","{3}",3],
+["Blade of the Bloodchief","Artifact — Equipment","Whenever a creature dies, put a +1/+1 counter on equipped creature. If equipped creature is a Vampire, put two +1/+1 counters on it instead.\nEquip {1}","{1}",1],
+["Engineered Explosives","Artifact","Sunburst (This enters with a charge counter on it for each color of mana spent to cast it.)\n{2}, Sacrifice Engineered Explosives: Destroy each nonland permanent with mana value equal to the number of charge counters on Engineered Explosives.","{X}",0],
+["Ugin's Labyrinth","Land","Imprint — When Ugin's Labyrinth enters, you may exile a colorless card with mana value 7 or greater from your hand.\n{T}: Add {C}.\n{T}: Add {C}{C}. Activate only if a card is exiled with Ugin's Labyrinth.\n{T}: Return the exiled card to its owner's hand.","",0]
+]

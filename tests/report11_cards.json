@@ -1,0 +1,10 @@
+[
+["Doomsday","Sorcery","Search your library and graveyard for five cards and exile the rest. Put the chosen cards on top of your library in any order. You lose half your life, rounded up.","{B}{B}{B}",3],
+["Hide on the Ceiling","Instant","Exile X target artifacts and/or creatures. Return the exiled cards to the battlefield under their owners' control at the beginning of the next end step.","{X}{U}",1],
+["Barrowgoyf","Creature — Lhurgoyf","Deathtouch, lifelink\nBarrowgoyf's power is equal to the number of card types among cards in all graveyards and its toughness is equal to that number plus 1.\nWhenever this creature deals combat damage to a player, you may mill that many cards. If you do, you may put a creature card from among them into your hand.","{2}{B}",3],
+["Dauthi Voidwalker","Creature — Dauthi Minion","Shadow (This creature can block or be blocked by only creatures with shadow.)\nIf a card would be put into an opponent's graveyard from anywhere, instead exile it with a void counter on it.\n{T}, Sacrifice this creature: Choose an exiled card an opponent owns with a void counter on it. You may play it this turn without paying its mana cost.","{B}{B}",2],
+["Edge of Autumn","Sorcery","If you control four or fewer lands, search your library for a basic land card, put it onto the battlefield tapped, then shuffle.\nCycling—Sacrifice a land.","{G}",1],
+["Fatal Push","Instant","Destroy target creature if it has mana value 2 or less.\nRevolt — Destroy that creature if it has mana value 4 or less instead if a permanent left the battlefield under your control this turn.","{B}",1],
+["Murktide Regent","Creature — Dragon","Delve\nFlying\nMurktide Regent enters with a +1/+1 counter on it for each instant and sorcery card exiled with it.\nWhenever an instant or sorcery card leaves your graveyard, put a +1/+1 counter on Murktide Regent.","{5}{U}{U}",7],
+["Quantum Riddler","Creature — Sphinx","Flying\nWhen this creature enters, draw a card.\nAs long as you have one or fewer cards in hand, if you would draw one or more cards, you draw that many cards plus one instead.","{3}{U}{U}",5]
+]

@@ -1,0 +1,37 @@
+const {JSDOM} = require('jsdom'); const fs = require('fs');
+let html = fs.readFileSync(require('path').join(__dirname, '..', 'index.html'), 'utf8').replace(/<script src=[^>]+><\/script>/, '').replace(/<link[^>]+>/g, '');
+const dom = new JSDOM(html, {url:'https://x.org/', runScripts:'dangerously', pretendToBeVisual:true, beforeParse(w){ w.fetch = async () => ({ok:false, json: async () => ({})}); }});
+const w = dom.window, d = w.document, $ = s => d.querySelector(s), ev = c => w.eval(c);
+w.addEventListener('error', e => console.log('ERR', e.message));
+let fails = 0; const check = (ok, msg) => { console.log((ok ? 'OK     ' : 'FEHLER ') + msg); if(!ok) fails++; };
+const wait = ms => new Promise(r => setTimeout(r, ms));
+const T = Object.fromEntries(JSON.parse(fs.readFileSync('report13_cards.json', 'utf8')).map(([n, type, o, mc, cmc]) => [n, {n, type, o, mc, cmc}]));
+const C = (n, x = {}) => ev('newCard')({...T[n], img:null, ...x});
+const N = (n, type, o = '', x = {}) => ev('newCard')({n, type, o, img:null, ...x});
+const title = () => ($('#modalBox h2') || {}).textContent || '';
+const open = () => !$('#modal').hidden;
+const click = async t => { const b = [...d.querySelectorAll('#modalBox button')].find(b => b.textContent.trim().startsWith(t)); if(b){ b.click(); await wait(40); } return !!b; };
+const clickCard = async name => { const el = [...d.querySelectorAll('#modalBox .card')].find(e => !name || e.textContent.includes(name)); if(el){ el.click(); await wait(40); } return !!el; };
+(async () => {
+  $('#lName').value = 'Lukas'; $('#lSolo').click(); await wait(30); ev('closeModal()'); ev('LOOK.autoPay = false');
+  ev('startBot("Test", "Test", Array(30).fill(0).map(() => ({n:"Island", type:"Basic Land — Island", o:""})))'); ev('injectBot(); commit()'); await wait(30);
+  const S = () => ev('S'), B = () => ev('BOT.life');
+  const drain = async () => { for(let i = 0; i < 6 && open(); i++){ if(!(await click('Abbrechen')) && !(await click('Kein')) && !(await click('Nein')) && !(await click('Erledigt'))) break; await wait(40); } };
+  const reset0 = () => ev('S.bf = []; S.hand = []; S.gy = []; S.ex = []; S.library = []; S.pool = emptyPoolObj(); S.lifeLock = null; S.protect = null; BOT.bf = []; botChanged(); TURN = {active:me.id, n:20, starter:me.id, phase:2}; commit()');
+  const reset = async () => { await wait(80); await drain(); reset0(); await wait(20); };
+  const lib = (...c) => { S().library.push(...c); ev('commit()'); };
+  const btns = () => [...d.querySelectorAll('#modalBox button')].map(b => b.textContent.trim());
+  const M = n => ev('cardMenu')(n.c, n.z);
+  const cast = async c => { S().hand.push(c); ev('commit()'); ev('castSpell')(c.u); await wait(80); };
+  const opt = {mc:''};
+  // Demonic Consultation
+  await reset();
+  const pick = async re => { const b = [...d.querySelectorAll('#modalBox button')].find(b => re.test(b.textContent)); if(b){ b.click(); await wait(40); } return !!b; };
+  await reset(); ev('BOT.hand = [newCard({n:"x", type:"Instant"})]; BOT.library = Array(8).fill(0).map(() => newCard({n:"y", type:"Instant"})); botChanged()');
+  S().hand.push(N('h1', 'Instant'), N('h2', 'Instant')); lib(...Array(8).fill(0).map((_, i) => N('L' + i, 'Instant'))); const br = N('Brainstorm', 'Instant', 'Draw three cards.', {mc:'{U}'}); S().gy.push(br);
+  const cm = N('Kraum', 'Legendary Creature', '', {pw:4, tg:4}); cm.cmdr = true; S().bf.push(cm); ev('commit()');
+  await cast(C('Will of the Jeskai', opt)); await pick(/^Each player may/); await pick(/^Each instant/); await click('Ausführen'); await wait(60); await click('Ja'); await wait(80);
+  check(S().hand.length === 5 && ev('BOT.hand.length') === 5 && S().gy.some(c => c.n === 'h1'), `Will of the Jeskai: beide werfen ab und ziehen fünf (du ${S().hand.length}, KI ${ev('BOT.hand.length')})`);
+  check(ev('cardMenu')(br, 'gy').some(i => /Flashback/.test(i.l || '')), 'zweiter Modus: Brainstorm hat Flashback');
+  console.log(fails ? `\n${fails} FEHLER` : '\nALLES OK'); process.exit(0);
+})();

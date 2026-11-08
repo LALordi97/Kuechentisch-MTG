@@ -1,0 +1,11 @@
+[
+["Birgi, God of Storytelling // Harnfel, Horn of Bounty","Legendary Enchantment Creature — God","Whenever you cast a spell, add {R}. Until end of turn, you don't lose this mana as steps and phases end.\nCreatures you control can boast twice during each of your turns rather than once.","{2}{R}",3],
+["Gifts Ungiven","Instant","Search your library for up to four cards with different names and reveal them. Target opponent chooses two of those cards. Put the chosen cards into your graveyard and the rest into your hand, then shuffle.","{3}{U}",4],
+["Intuition","Instant","Search your library for three cards and reveal them. Target opponent chooses one. Put that card into your hand and the rest into your graveyard, then shuffle.","{2}{U}",3],
+["The Queen of Dale","Legendary Creature — Human Noble","Whenever an opponent casts their first noncreature spell each turn, you recruit. (Draw a card, then discard a card. If you discarded a nonland card, create a 1/1 white Human Soldier creature token.)","{2}{W}",3],
+["Curse of Opulence","Enchantment — Aura Curse","Enchant player\nWhenever enchanted player is attacked, create a Gold token. Each opponent attacking that player does the same. (A Gold token is an artifact with \"Sacrifice this token: Add one mana of any color.\")","{R}",1],
+["Hydroelectric Specimen // Hydroelectric Laboratory","Creature — Weird","Flash\nWhen this creature enters, you may change the target of target instant or sorcery spell with a single target to this creature.","{2}{U}",3],
+["Paradise Mantle","Artifact — Equipment","Equipped creature has \"{T}: Add one mana of any color.\"\nEquip {1}","{0}",0],
+["Sevinne's Reclamation","Sorcery","Return target permanent card with mana value 3 or less from your graveyard to the battlefield. If this spell was cast from a graveyard, you may copy this spell and may choose a new target for the copy.\nFlashback {4}{W}","{W}",1],
+["Storm-Kiln Artist","Creature — Dwarf Shaman","This creature gets +1/+0 for each artifact you control.\nMagecraft — Whenever you cast or copy an instant or sorcery spell, create a Treasure token.","{3}{R}",4]
+]

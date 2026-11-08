@@ -1,0 +1,27 @@
+const {JSDOM} = require('jsdom'); const fs = require('fs');
+let html = fs.readFileSync(require('path').join(__dirname, '..', 'index.html'), 'utf8').replace(/<script src=[^>]+><\/script>/, '').replace(/<link[^>]+>/g, '');
+const dom = new JSDOM(html, {url:'https://x.org/', runScripts:'dangerously', pretendToBeVisual:true, beforeParse(w){ w.fetch = async () => ({ok:false, json: async () => ({})}); }});
+const w = dom.window, d = w.document, $ = s => d.querySelector(s), ev = c => w.eval(c);
+w.addEventListener('error', e => console.log('ERR', e.message));
+let fails = 0; const check = (ok, msg) => { console.log((ok ? 'OK     ' : 'FEHLER ') + msg); if(!ok) fails++; };
+const wait = ms => new Promise(r => setTimeout(r, ms));
+const T = Object.fromEntries(JSON.parse(fs.readFileSync('report3_cards.json', 'utf8')).map(([n, type, o, mc, cmc]) => [n, {n, type, o, mc, cmc}]));
+const C = (n, x = {}) => ev('newCard')({...T[n], img:null, ...x});
+const N = (n, type, o = '', x = {}) => ev('newCard')({n, type, o, img:null, ...x});
+const title = () => ($('#modalBox h2') || {}).textContent || '';
+const open = () => !$('#modal').hidden;
+(async () => {
+  $('#lName').value = 'Lukas'; $('#lSolo').click(); await wait(30); ev('closeModal()');
+  ev('net.role = "host"; net.order = [me.id, "p2"]; net.players = {}; net.players[me.id] = {name:"Lukas"}; net.players.p2 = {name:"Anna"}; STACK = []');
+  ev('stackPush({id:"s1", n:"Mindbreak Trap", o:"Exile any number of target spells.", target:"a", targets:["b", 5, "c"], newTarget:"d", redirect:"Anna"}, "p2", "Anna")');
+  const it = ev('STACK.find(x => x.id === "s1")');
+  check(it && it.targets.join() === 'b,c' && it.newTarget === 'd' && it.redirect === 'Anna', 'stackPush: Ziele werden übernommen und bereinigt');
+  ev('STACK = []; TURN = {active:"p2", n:5, starter:me.id, phase:2, ex:0}');
+  ev('hostHandle({t:"pass", extra:true, from:"p2"})'); await wait(30);
+  check(ev('TURN.active') === 'p2' && ev('TURN.ex') === 1, `Mitspieler nimmt Zusatzzug (ex ${ev('TURN.ex')})`);
+  ev('hostHandle({t:"pass", extra:true, from:me.id})'); await wait(30);
+  check(ev('TURN.active') === 'p2' && ev('TURN.ex') === 1, 'Nicht am Zug: kein Zusatzzug');
+  ev('hostHandle({t:"pass", from:"p2"})'); await wait(30);
+  check(ev('TURN.active') === ev('me.id') && !ev('TURN.ex'), 'normaler Zugwechsel setzt Zusatzzug zurück');
+  console.log(fails ? `\n${fails} FEHLER` : '\nALLES OK'); process.exit(0);
+})();

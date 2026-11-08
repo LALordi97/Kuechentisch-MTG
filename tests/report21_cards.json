@@ -1,0 +1,6 @@
+[
+["Artist's Talent","Enchantment — Class","(Gain the next level as a sorcery to add its ability.)\nWhenever you cast a noncreature spell, you may discard a card. If you do, draw a card.\n{2}{R}: Level 2\nNoncreature spells you cast cost {1} less to cast.\n{2}{R}: Level 3\nIf a source you control would deal noncombat damage to an opponent or a permanent an opponent controls, it deals that much damage plus 2 instead.","{1}{R}",2],
+["Jeskai Ascendancy","Enchantment","Whenever you cast a noncreature spell, creatures you control get +1/+1 until end of turn. Untap those creatures.\nWhenever you cast a noncreature spell, you may draw a card. If you do, discard a card.","{U}{R}{W}",3],
+["Kellan, the Fae-Blooded // Birthright Boon","Legendary Creature — Human Faerie Warrior // Sorcery — Adventure","Double strike\nOther creatures you control get +1/+0 for each Aura and Equipment attached to Kellan.\n\nSearch your library for an Aura or Equipment card, reveal it, put it into your hand, then shuffle.","{2}{R}",3],
+["Seedtime","Instant","Cast this spell only during your turn.\nTake an extra turn after this one if an opponent cast a blue spell this turn.","{1}{G}",2]
+]

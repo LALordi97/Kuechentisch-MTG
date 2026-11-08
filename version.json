@@ -1,4 +1,4 @@
 {
-  "version": "2026.11.08-10",
-  "notes": "Fähigkeiten-Check 24 (Arcum Dagsson): Station und Raumschiffe, Encroaching Mycosynth, Damping Sphere, Unwinding Clock, Isochron Scepter, Nexus of Becoming, Mindslaver (Ansage), Gerrard's Hourglass Pendant, Mishra's Factory, Block-Auslöser, Trickbind-Sperre u. a. Fehler behoben: zwei gleichnamige Schritte überdeckten Dwarven Armorer und Emrakul."
+  "version": "2026.11.08-11",
+  "notes": "Fähigkeiten-Check-Bericht enthält jetzt den vollen Kartentext (Typ, Kosten, Stärke/Widerstand, Regeltext). Fehler behoben: Noxious Revival und ähnliche Karten zielten auf bleibende Karten statt auf eine Karte im Friedhof."
 }

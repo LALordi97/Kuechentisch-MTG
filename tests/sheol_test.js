@@ -1,0 +1,42 @@
+const {JSDOM} = require('jsdom'); const fs = require('fs');
+let html = fs.readFileSync(require('path').join(__dirname, '..', 'index.html'), 'utf8').replace(/<script src=[^>]+><\/script>/, '').replace(/<link[^>]+>/g, '');
+const dom = new JSDOM(html, {url:'https://x.org/', runScripts:'dangerously', pretendToBeVisual:true, beforeParse(w){ w.fetch = async () => ({ok:false, json: async () => ({})}); }});
+const w = dom.window, d = w.document, $ = s => d.querySelector(s), ev = c => w.eval(c);
+w.addEventListener('error', e => console.log('ERR', e.message));
+let fails = 0; const check = (ok, msg) => { console.log((ok ? 'OK     ' : 'FEHLER ') + msg); if(!ok) fails++; };
+const wait = ms => new Promise(r => setTimeout(r, ms));
+const C = (n, type, o, x = {}) => ev('newCard')({n, type, o, img:null, ...x});
+const btnT = t => [...d.querySelectorAll('#modalBox button')].find(b => b.textContent.trim().startsWith(t));
+(async () => {
+  $('#lName').value = 'Lukas'; $('#lSolo').click(); await wait(30); ev('closeModal()');
+  const S = ev('S'); ev('LOOK.autoPay = false');
+  ev('startBot("Test", "Test", Array(30).fill(0).map(() => ({n:"Island", type:"Basic Land — Island", o:""})))'); ev('injectBot(); commit()'); await wait(30);
+  const B = () => ev('BOT.life');
+  S.library.push(...Array(5).fill(0).map(() => C('Island', 'Basic Land — Island', '')));
+  const sh = C('Sheoldred, the Apocalypse', 'Legendary Creature — Phyrexian Praetor', 'Deathtouch\nWhenever you draw a card, you gain 2 life.\nWhenever an opponent draws a card, they lose 2 life.', {pw:4, tg:5, mc:'{2}{B}{B}', cmc:4});
+  S.bf.push(sh); ev('commit()'); await wait(10);
+  let l0 = S.life; ev('draw(2)'); await wait(40);
+  check(S.life === l0 + 4, `Du ziehst 2: +4 Leben (${S.life - l0})`);
+  let b0 = B(); ev('BOT.hand.push(BOT.library.shift()); botChanged()'); await wait(40);
+  check(B() === b0 - 2, `KI zieht 1: −2 (${b0} → ${B()})`);
+  ev('TURN = {active:"bot", n:3, starter:me.id, phase:0}'); b0 = B();
+  ev('BOT.hand.push(BOT.library.shift()); botChanged()'); await wait(40);
+  check(B() === b0 - 2, 'auch die erste Karte im Ziehschritt der KI zählt bei Sheoldred');
+  // Bowmasters zählt die erste nicht
+  ev('TURN = {active:"bot", n:4, starter:me.id, phase:0}');
+  const bow = C('Orcish Bowmasters', 'Creature — Orc Archer', 'When this creature enters and whenever an opponent draws a card except the first one they draw in each of their draw steps, this creature deals 1 damage to any target. Then amass Orcs 1.', {pw:1, tg:1});
+  S.bf = [bow]; ev('commit()'); await wait(10);
+  ev('BOT.hand.push(BOT.library.shift()); botChanged()'); await wait(40);
+  check(d.querySelector('#modal').hidden, 'Bowmasters: erste Karte im Ziehschritt löst nicht aus');
+  // Great Hall
+  ev('TURN = {active:null, n:0, starter:null, phase:2}');
+  const gh = C('Great Hall of the Citadel', 'Land', '{T}: Add {C}.\n{1}, {T}: Add two mana in any combination of colors. Spend this mana only to cast legendary spells.');
+  S.bf = [gh]; S.pool.R = 1; ev('commit()');
+  const opt = ev('manaChoices')(gh).find(o => o.combo);
+  check(!!opt && opt.combo === 2, 'Great Hall: «2 Mana in beliebigen Farben»');
+  const p = ev('tapForMana')(gh, opt); await wait(20);
+  btnT('{W}') ? btnT('{W}').click() : [...d.querySelectorAll('#modalBox button')].find(b => /Weiss/.test(b.textContent)).click(); await wait(20);
+  [...d.querySelectorAll('#modalBox button')].find(b => /Schwarz/.test(b.textContent)).click(); await p; await wait(20);
+  check(S.pool.W === 1 && S.pool.B === 1 && S.pool.R === 0 && gh.tap, `Pool: {W}{B}, {1} bezahlt (${ev('poolStr(S.pool)')})`);
+  console.log(fails ? `\n${fails} FEHLER` : '\nALLES OK'); process.exit(0);
+})();

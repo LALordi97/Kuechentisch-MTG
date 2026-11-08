@@ -1,0 +1,26 @@
+const {JSDOM} = require('jsdom'); const fs = require('fs');
+let html = fs.readFileSync(require('path').join(__dirname, '..', 'index.html'), 'utf8').replace(/<script src=[^>]+><\/script>/, '').replace(/<link[^>]+>/g, '');
+const dom = new JSDOM(html, {url:'https://x.org/', runScripts:'dangerously', pretendToBeVisual:true, beforeParse(w){ w.fetch = async () => ({ok:false, json: async () => ({})}); }});
+const w = dom.window, d = w.document, $ = s => d.querySelector(s), ev = c => w.eval(c);
+w.addEventListener('error', e => console.log('ERR', e.message));
+let fails = 0; const check = (ok, msg) => { console.log((ok ? 'OK     ' : 'FEHLER ') + msg); if(!ok) fails++; };
+const wait = ms => new Promise(r => setTimeout(r, ms));
+(async () => {
+  $('#lName').value = 'Lukas'; $('#lSolo').click(); await wait(30); ev('closeModal()');
+  ev('S.deck = Array(40).fill(0).map(() => ({n:"Island", type:"Basic Land — Island", o:"({T}: Add {U}.)"})); startGame()'); await wait(700);
+  const hand0 = ev('S.hand.length'), life0 = ev('S.life');
+  ev('play(S.hand[0].u)'); await wait(700);
+  check(ev('S.bf.length') === 1 && ev('S.hand.length') === hand0 - 1, 'Land gespielt');
+  ev('S.life -= 3; commit()'); await wait(700);
+  ev('toggleTap(S.bf[0])'); await wait(100);
+  check(ev('S.bf[0].tap') && ev('S.pool.U') === 1, 'Land getappt, {U} im Pool');
+  $('#bUndo').click(); await wait(50);
+  check(!ev('S.bf[0].tap') && ev('S.pool.U') === 0 && ev('S.life') === life0 - 3, 'Rückgängig: Tappen zurück, Leben bleibt');
+  d.dispatchEvent(new w.KeyboardEvent('keydown', {key:'z', ctrlKey:true})); await wait(50);
+  check(ev('S.life') === life0 && ev('S.bf.length') === 1, 'Ctrl+Z: Lebensverlust zurück');
+  $('#bUndo').click(); await wait(50);
+  check(ev('S.bf.length') === 0 && ev('S.hand.length') === hand0, 'nochmals: Land wieder auf der Hand');
+  check(ev('S.deck.length') === 40, 'Deckliste bleibt erhalten');
+  check(/rückgängig/.test($('#log').textContent), 'Log-Eintrag');
+  console.log(fails ? `\n${fails} FEHLER` : '\nALLES OK'); process.exit(0);
+})();

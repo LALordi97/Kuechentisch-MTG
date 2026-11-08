@@ -1,0 +1,20 @@
+const {JSDOM}=require('jsdom');const fs=require('fs');
+let h=fs.readFileSync(require('path').join(__dirname, '..', 'index.html'),'utf8').replace(/<script src=[^>]+><\/script>/,'').replace(/<link[^>]+>/g,'');
+const dom=new JSDOM(h,{url:'https://x.org/',runScripts:'dangerously',pretendToBeVisual:true,beforeParse(w){ w.fetch=async(u,o)=>/version/.test(u)?{ok:false}:({ok:true,json:async()=>({data:JSON.parse(o.body).identifiers.map((x,i)=>({name:x.name,set:'a',collector_number:String(i),type_line:x.name==='Territorial Kavu'?'Creature — Kavu':'Basic Land — Mountain',power:x.name==='Territorial Kavu'?'*':undefined,toughness:x.name==='Territorial Kavu'?'*':undefined,cmc:2,image_uris:{normal:'https://cards.scryfall.io/normal/x.jpg'}}))})}); }});
+const w=dom.window,d=w.document,$=s=>d.querySelector(s); w.addEventListener('error',e=>console.log('ERR',e.message));
+const wait=ms=>new Promise(r=>setTimeout(r,ms));
+(async()=>{
+ $('#lName').value='Lukas';$('#lSolo').click();await wait(50);
+ $('#dText').value='30 Mountain\n30 Territorial Kavu';$('#dGo').click();await wait(800);
+ const S=w.eval('S'); const k=[...S.library,...S.hand].find(c=>c.n==='Territorial Kavu'); console.log('geladen: pw', k.pw, 'tg', k.tg, 'unbekannt', w.eval('ptUnknown')(k));
+ const z=S.library.includes(k)?S.library:S.hand; z.splice(z.indexOf(k),1); k.pw=0; k.tg=0; k.x=10;k.y=10; S.bf.push(k);
+ w.eval("BOT.active=true; BOT.life=20; BOT.bf=[]; injectBot();");
+ w.openAttackDialog('bot'); await wait(10);
+ console.log('Im Angriffsdialog:', d.querySelectorAll('#modalBox .card').length, 'Kreatur(en), Eingabefelder', d.querySelectorAll('#modalBox .ptin input').length);
+ const ins=d.querySelectorAll('#modalBox .ptin input'); ins[0].value='4'; ins[0].onchange(); ins[1].value='4'; ins[1].onchange();
+ const cb=d.querySelector('#modalBox input[type=checkbox]'); cb.checked=true; cb.onchange();
+ [...d.querySelectorAll('#modalBox button')].find(b=>b.textContent==='Angreifen').click(); await wait(100);
+ console.log('KI-Leben nach Angriff:', w.eval('BOT.life'), '| Anzeige auf Karte:', d.querySelector('#myField .ptmark')?.textContent);
+ console.log('Menü:', w.cardMenu(k,'bf').map(i=>i.l).filter(x=>x&&/Stärke/.test(x)).join());
+ process.exit(0);
+})();

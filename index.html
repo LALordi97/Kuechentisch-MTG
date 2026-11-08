@@ -4816,7 +4816,7 @@ function matchStep2(p, src, full, SELF){
   // Thor, Virtue of Courage
   if(/^(?:you may )?exile that many cards from the top of your library$/i.test(p)) return [{t:"exileTop", n:"that much", may:/^you may/i.test(p)}];
   // Submerge
-  if((m = p.match(/^put (target .+?) on top of its owner's library$/i))) return [{t:"tuck", who:m[1], top:true}];
+  if((m = p.match(/^put (target .+?) on top of its owner's library$/i)) && !/\bfrom (?:a|your|an opponent's) graveyard\b/i.test(m[1])) return [{t:"tuck", who:m[1], top:true}];
   // Command Performance: Tickets, Attraktionen
   if((m = p.match(/^you get ((?:\{TK\})+)$/i))) return [{t:"tickets", n:(m[1].match(/\{TK\}/gi) || []).length}];
   if(/^roll to visit your attractions$/i.test(p)) return [{t:"rollVisit"}];
@@ -8452,7 +8452,7 @@ function keywordOnly(line){
 }
 function cardCheck(t){
   const c = newCard(t);
-  const out = {n:c.n, auto:[], manual:[], static:[], hand:[]};
+  const out = {n:c.n, auto:[], manual:[], static:[], hand:[], full:{type:String(t.type || ""), mc:String(t.mc || ""), o:String(t.o || ""), pt: t.pw != null ? `${t.pw}/${t.tg}` : ""}};
   const abs = parseAbilities(c);
   const ltTexts = lifeTriggers(c).map(x => x.text.slice(0, 50));
   const mk = markClauses(c);
@@ -8501,7 +8501,7 @@ function abilityCheckHtml(deck){
     ${r.manual.map(x => `<div class="stat">• ${esc(x)}</div>`).join("")}
     ${r.hand.map(x => `<div class="stat">• Auslöser im Kartenmenü («Auslösen»): ${esc(x.slice(0, 100))}</div>`).join("")}
     ${r.static.map(x => `<div class="stat">• Dauereffekt, nicht automatisch: ${esc(x.slice(0, 110))}</div>`).join("")}</li>`;
-  const report = rows.filter(r => r.status === "teil" || r.status === "manuell").map(r => `${r.n} [${label[r.status]}]\n` + [...r.manual.map(x => "  - " + x), ...r.hand.map(x => "  - von Hand auslösen: " + x), ...r.static.map(x => "  - Dauereffekt: " + x)].join("\n")).join("\n");
+  const report = rows.filter(r => r.status === "teil" || r.status === "manuell").map(r => `${r.n} [${label[r.status]}]\n` + [...r.manual.map(x => "  - " + x), ...r.hand.map(x => "  - von Hand auslösen: " + x), ...r.static.map(x => "  - Dauereffekt: " + x), `  Kartentext: ${r.full.type}${r.full.mc ? " · " + r.full.mc : ""}${r.full.pt ? " · " + r.full.pt : ""}`, ...r.full.o.split("\n").filter(Boolean).map(l => "    | " + l)].join("\n")).join("\n");
   ABILITY_REPORT = `Fähigkeiten-Check ${S.deckName || ""} (${new Date().toLocaleDateString("de-CH")}, App ${APP_VERSION})\n${cnt("auto")} automatisch, ${cnt("teil")} teilweise, ${cnt("manuell")} von Hand, ${cnt("leer")} ohne Text\n\n` + report;
   return `<div class="statrow">
       <div class="statcard"><span class="stat">Automatisch</span><b class="num">${cnt("auto")}</b></div>
@@ -9351,7 +9351,7 @@ function historyAdd(win){
 /* ---------- Automatische Updates ---------- */
 // Liegt die App im Web, prüft sie regelmässig version.json im selben Ordner und lädt sich bei einer neuen Version neu.
 // Alles Wichtige (Spielstand, Deck, Tisch) liegt im Browser-Speicher und ist nach dem Neuladen wieder da.
-const APP_VERSION = "2026.11.08-10";
+const APP_VERSION = "2026.11.08-11";
 const ONLINE = /^https?:$/.test(location.protocol);
 let updPending = null, updTimer = null, updSnoozeUntil = 0;
 function busyForUpdate(){ return botBusy || (!$("#modal").hidden && modalState && ["block","deck"].includes(modalState.kind)); }

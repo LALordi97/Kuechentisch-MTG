@@ -1,0 +1,16 @@
+[
+["Badgermole Cub","Creature — Badger Mole","When this creature enters, earthbend 1. (Target land you control becomes a 0/0 creature with haste that's still a land. Put a +1/+1 counter on it. When it dies or is exiled, return it to the battlefield tapped.)\nWhenever you tap a creature for mana, add an additional {G}.","{1}{G}",2],
+["Biomancer's Familiar","Creature — Frog Lizard","Activated abilities of creatures you control cost {2} less to activate. This effect can't reduce the mana in that cost to less than one mana.\n{T}: The next time target creature adapts this turn, it adapts as though it had no +1/+1 counters on it.","{G}{U}",2],
+["Candelabra of Tawnos","Artifact","{X}, {T}: Untap X target lands.","{1}",1],
+["Emerald Charm","Instant","Choose one —\n• Untap target permanent.\n• Destroy target non-Aura enchantment.\n• Target creature loses flying until end of turn.","{G}",1],
+["Magus of the Candelabra","Creature — Human Wizard","{X}, {T}: Untap X target lands.","{G}",1],
+["Snap","Instant","Return target creature to its owner's hand. Untap up to two lands.","{1}{U}",2],
+["Training Grounds","Enchantment","Activated abilities of creatures you control cost {2} less to activate. This effect can't reduce the mana in that cost to less than one mana.","{U}",1],
+["Cloud of Faeries","Creature — Faerie","Flying\nWhen this creature enters, untap up to two lands.\nCycling {2} ({2}, Discard this card: Draw a card.)","{1}{U}",2],
+["Hexing Squelcher","Creature — Goblin Sorcerer","This spell can't be countered.\nWard—Pay 2 life.\nSpells you control can't be countered.\nOther creatures you control have \"Ward—Pay 2 life.\"","{1}{R}",2],
+["Sowing Mycospawn","Creature — Eldrazi Drone","Kicker {1}{G}\nWhen you cast this spell, search your library for a land card, put it onto the battlefield, then shuffle.\nWhen you cast this spell, if it was kicked, exile target land.","{3}{G}",4],
+["Springheart Nantuko","Enchantment Creature — Insect Monk","Bestow {1}{G} (If you cast this card for its bestow cost, it's an Aura spell with enchant creature. It becomes a creature again if it's not attached.)\nEnchanted creature gets +1/+1.\nLandfall — Whenever a land you control enters, you may pay {1}{G} if this permanent is attached to a creature you control. If you do, create a token that's a copy of that land. If you didn't create a token this way, create a 1/1 green Insect creature token.","{1}{G}",2],
+["Talon Gates of Madara","Land","When this land enters, up to one target creature phases out.\n{T}: Add {C}.\n{1}, {T}: Add one mana of any color.\n{4}: Put this card from your hand onto the battlefield.","",0],
+["Vibrance","Creature — Elemental Incarnation","When this creature enters, if {R}{R} was spent to cast it, this creature deals 3 damage to any target.\nWhen this creature enters, if {G}{G} was spent to cast it, search your library for a land card, reveal it, put it into your hand, then shuffle. You gain 2 life.\nEvoke {R/G}{R/G}","{3}{R/G}{R/G}",5],
+["Wild Growth","Enchantment — Aura","Enchant land\nWhenever enchanted land is tapped for mana, its controller adds an additional {G}.","{G}",1]
+]

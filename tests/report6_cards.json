@@ -1,0 +1,7 @@
+[
+["Defense Grid","Artifact","Each spell costs {3} more to cast except during its controller's turn.","{2}",2],
+["Scroll Rack","Artifact","{1}, {T}: Exile any number of cards from your hand face down. Put that many cards from the top of your library into your hand. Then look at the exiled cards and put them on top of your library in any order.","{2}",2],
+["Manifold Key","Artifact","{1}, {T}: Untap another target artifact.\n{3}, {T}: Target creature can't be blocked this turn.","{1}",1],
+["Moonsnare Prototype","Artifact","{T}, Tap an untapped artifact or creature you control: Add {C}.\nChannel — {4}{U}, Discard this card: The owner of target nonland permanent puts it on their choice of the top or bottom of their library.","{U}",1],
+["Tezzeret, Cruel Captain","Legendary Planeswalker — Tezzeret","Whenever an artifact you control enters, put a loyalty counter on Tezzeret.\n0: Untap target artifact or creature. If it's an artifact creature, put a +1/+1 counter on it.\n−3: Search your library for an artifact card with mana value 1 or less, reveal it, put it into your hand, then shuffle.\n−7: You get an emblem with \"At the beginning of combat on your turn, put three +1/+1 counters on target artifact you control. If it's not a creature, it becomes a 0/0 Robot artifact creature.\"","{3}",3]
+]
