@@ -1,4 +1,4 @@
 {
-  "version": "2026.11.08-9",
-  "notes": "Fähigkeiten-Check 23 (Stammeskarten): Stammes-Schlüsselwörter und -Mana (Slivers, Ratten, Drachen), «X or another Y you control enters», Kreaturentyp wählen, Leylines, Cairn Wanderer, Giada, Maralen, Mirror Entity, Peer Pressure, Descendants' Path, Risen Reef, Rooftop Storm, Rivaz, Realmwalker, Realmbreaker, Regeneration, Gruppe (Party) u. a."
+  "version": "2026.11.08-10",
+  "notes": "Fähigkeiten-Check 24 (Arcum Dagsson): Station und Raumschiffe, Encroaching Mycosynth, Damping Sphere, Unwinding Clock, Isochron Scepter, Nexus of Becoming, Mindslaver (Ansage), Gerrard's Hourglass Pendant, Mishra's Factory, Block-Auslöser, Trickbind-Sperre u. a. Fehler behoben: zwei gleichnamige Schritte überdeckten Dwarven Armorer und Emrakul."
 }
