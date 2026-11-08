@@ -1,4 +1,4 @@
 {
-  "version": "2026.11.08-7",
-  "notes": "Fähigkeiten-Check 21 (Artefakte): Apple of Eden, Avarice Totem (Kontrolltausch), Token-Kopien mit Eile, Chrome Dome, Goblin Welder, Karn (Belebung, Sideboard-Wunsch, Sperre), Metalworker, Reckless Handling, Recommission, Chromatic Orrery, Liberator, Thran Spider, Zirda."
+  "version": "2026.11.08-8",
+  "notes": "Fähigkeiten-Check 22 (Weiss-Hate & Co.): Kämpfen, Leonin Arbiter, Aven Mindcensor, Sanctum Prelate, Soul Partition, Spirit of the Labyrinth, Angel's Grace, Charismatic Conqueror, Craterhoof, beide Elesh Norns, Linvala, Loran, Once Upon a Time, Riftstone Portal, Serra's Emissary, Swift Reconfiguration, Overload (Winds of Abandon), Yasharn. Fehler behoben: «target creature you control gets …» traf alle eigenen Kreaturen."
 }
