@@ -4449,6 +4449,8 @@ const cleanLine = s => String(s || "").replace(/\([^)]*\)/g, "").replace(/\s+/g,
 function xExpr(e, src){
   e = String(e || "").toLowerCase().replace(/\.$/, "");
   let m;
+  if(/^(?:other )?spells? you've cast before it this turn$/.test(e)) return Math.max(0, spellsThisTurn() - 1);
+  if(/^(?:other )?spells? you've cast this turn$/.test(e)) return spellsThisTurn();
   if((m = e.match(/^the number of (.+?) (?:target|an|each) opponent controls?$/))){ const f = m[1].replace(/s$/, ""); return Math.max(0, ...liveOpps().map(o => (Array.isArray(others[o.id].bf) ? others[o.id].bf : []).filter(x => x && descMatch(f, x)).length)); }
   if(/^the greatest power among creatures you control$/.test(e)) return Math.max(0, ...S.bf.filter(c => isCreature(c) && !c.fd).map(power));
   if((m = e.match(/your devotion to (white|blue|black|red|green)(?: and (white|blue|black|red|green))?/))){ const cols = [COLW[m[1]], m[2] && COLW[m[2]]].filter(Boolean); return S.bf.filter(c => !c.fd).reduce((s, c) => s + (String(c.mc || "").toUpperCase().match(/\{[^}]+\}/g) || []).filter(sym => cols.some(col => sym.includes(col))).length, 0); }
@@ -9011,6 +9013,7 @@ function cardCheck(t){
     const texts = [mainText, ...(ab.modal ? ab.modal.modes.map(m => m.replace(/^[A-Z][^—.]{0,40} — /, "")) : [])].filter(Boolean);
     const steps = texts.flatMap(tx => parseSteps(tx, c));
     const man = steps.filter(s => s.t === "manual" || s.t === "note").map(s => s.text);
+    steps.forEach(s => { if(typeof s.each === "string" && s.each){ let v = null; try{ v = xExpr(s.each, c); }catch(e){} if(v == null) man.push(`Anzahl «für jede(n) ${s.each}» wird nachgefragt`); } });
     if(ab.kind === "trig" && /^if /i.test(ab.text)){ const iff = interveningIf(ab.text, c); if(iff.ok === null && !/^(no mana was spent to cast it|you cast it|it's the first time that creature has become tapped this turn|it isn't that player's turn|it was kicked|there are four or more card types among cards in your graveyard|(?:\{[wubrgc]\})+ was spent to cast it)$/i.test(iff.cond || "")) man.unshift(`Bedingung «${iff.cond}» wird nachgefragt`); }
     if(man.length) out.manual.push(`${line.slice(0, 90)} → selbst: ${man.join(" / ")}`);
     else out.auto.push(line);
@@ -9886,7 +9889,7 @@ function historyAdd(win){
 /* ---------- Automatische Updates ---------- */
 // Liegt die App im Web, prüft sie regelmässig version.json im selben Ordner und lädt sich bei einer neuen Version neu.
 // Alles Wichtige (Spielstand, Deck, Tisch) liegt im Browser-Speicher und ist nach dem Neuladen wieder da.
-const APP_VERSION = "2026.11.08-12";
+const APP_VERSION = "2026.11.08-13";
 const ONLINE = /^https?:$/.test(location.protocol);
 let updPending = null, updTimer = null, updSnoozeUntil = 0;
 function busyForUpdate(){ return botBusy || (!$("#modal").hidden && modalState && ["block","deck"].includes(modalState.kind)); }
