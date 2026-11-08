@@ -103,7 +103,7 @@ const clickCard = async name => { const el = [...d.querySelectorAll('#modalBox .
   ev('activateAbility')(pg, acts(pg)[0]); await wait(150); await drain();
   check(S().hand.some(c => c.n === 'Opt'), 'Page: Spontanzauber auf die Hand');
   // Shield Sphere
-  await reset(); const ss = C('Shield Sphere', {pw:0, tg:6}); bf(ss); ev('abilEvent({kind:"block", c:S.bf[0]})'); await wait(120);
+  await reset(); const ss = C('Shield Sphere', {pw:0, tg:6}); bf(ss); ev('abilEvent({kind:"block", c:S.bf[0]})'); await wait(120); console.log('   SS:', JSON.stringify(ss.ptc), ss.tg, [...d.querySelectorAll('#log > div')].slice(-3).map(x => x.textContent).join(' || '));
   check(ev('tough')(ss) === 5, 'Shield Sphere: -0/-1 beim Blocken');
   // Tezzeret −5
   await reset(); const tz = C('Tezzeret the Seeker'); tz.c = 6; const rk = N('Stein', 'Artifact', ''); bf(tz, rk); ev('activateAbility')(tz, loys(tz)[2]); await wait(150);

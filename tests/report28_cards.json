@@ -1,0 +1,819 @@
+[
+[
+"Ainok Strike Leader",
+"Creature — Dog Warrior",
+"Whenever you attack with this creature and/or your commander, for each opponent, create a 1/1 red Goblin creature token that's tapped and attacking that player.\nSacrifice this creature: Creature tokens you control gain indestructible until end of turn.",
+"{1}{W}",
+2,
+2,
+2
+],
+[
+"Angrath's Marauders",
+"Creature — Human Pirate",
+"If a source you control would deal damage to a permanent or player, it deals double that damage to that permanent or player instead.",
+"{5}{R}{R}",
+7,
+4,
+4
+],
+[
+"Auratouched Mage",
+"Creature — Human Wizard",
+"When this creature enters, search your library for an Aura card that could enchant it. If this creature is still on the battlefield, put that Aura card onto the battlefield attached to it. Otherwise, reveal the Aura card and put it into your hand. Then shuffle.",
+"{5}{W}",
+6,
+3,
+3
+],
+[
+"Combat Celebrant",
+"Creature — Human Warrior",
+"If this creature hasn't been exerted this turn, you may exert it as it attacks. When you do, untap all other creatures you control and after this phase, there is an additional combat phase. (An exerted creature won't untap during your next untap step.)",
+"{2}{R}",
+3,
+4,
+1
+],
+[
+"Giver of Runes",
+"Creature — Kor Cleric",
+"{T}: Another target creature you control gains protection from colorless or from the color of your choice until end of turn.",
+"{W}",
+1,
+1,
+2
+],
+[
+"Kataki, War's Wage",
+"Legendary Creature — Spirit",
+"All artifacts have \"At the beginning of your upkeep, sacrifice this artifact unless you pay {1}.\"",
+"{1}{W}",
+2,
+2,
+1
+],
+[
+"Lena, Selfless Champion",
+"Legendary Creature — Human Knight",
+"When Lena enters, create a 1/1 white Soldier creature token for each nontoken creature you control.\nSacrifice Lena: Creatures you control with power less than Lena's power gain indestructible until end of turn.",
+"{4}{W}{W}",
+6,
+3,
+3
+],
+[
+"Scuzzback Scrounger",
+"Creature — Goblin Warrior",
+"At the beginning of your first main phase, you may blight 1. If you do, create a Treasure token. (To blight 1, put a -1/-1 counter on a creature you control. A Treasure token is an artifact with \"{T}, Sacrifice this token: Add one mana of any color.\")",
+"{1}{R}",
+2,
+3,
+2
+],
+[
+"Soulless Jailer",
+"Artifact Creature — Phyrexian Golem",
+"Permanent cards in graveyards can't enter the battlefield.\nPlayers can't cast noncreature spells from graveyards or exile.",
+"{2}",
+2,
+0,
+4
+],
+[
+"Winota, Joiner of Forces",
+"Legendary Creature — Human Warrior",
+"Whenever a non-Human creature you control attacks, look at the top six cards of your library. You may put a Human creature card from among them onto the battlefield tapped and attacking. It gains indestructible until end of turn. Put the rest of the cards on the bottom of your library in a random order.",
+"{2}{R}{W}",
+4,
+4,
+4
+],
+[
+"Alseid of Life's Bounty",
+"Enchantment Creature — Nymph",
+"Lifelink\n{1}, Sacrifice this creature: Target creature or enchantment you control gains protection from the color of your choice until end of turn.",
+"{W}",
+1,
+1,
+1
+],
+[
+"Breath of Fury",
+"Enchantment — Aura",
+"Enchant creature you control\nWhen enchanted creature deals combat damage to a player, sacrifice it and attach this Aura to a creature you control. If you do, untap all creatures you control and after this phase, there is an additional combat phase.",
+"{2}{R}{R}",
+4
+],
+[
+"Clarion Conqueror",
+"Creature — Dragon",
+"Flying\nActivated abilities of artifacts, creatures, and planeswalkers can't be activated.",
+"{2}{W}",
+3,
+3,
+3
+],
+[
+"Gingerbrute",
+"Artifact Creature — Food Golem",
+"Haste (This creature can attack and {T} as soon as it comes under your control.)\n{1}: This creature can't be blocked this turn except by creatures with haste.\n{2}, {T}, Sacrifice this creature: You gain 3 life.",
+"{1}",
+1,
+1,
+1
+],
+[
+"Goblin Rabblemaster",
+"Creature — Goblin Warrior",
+"Other Goblin creatures you control attack each combat if able.\nAt the beginning of combat on your turn, create a 1/1 red Goblin creature token with haste.\nWhenever this creature attacks, it gets +1/+0 until end of turn for each other attacking Goblin.",
+"{2}{R}",
+3,
+2,
+2
+],
+[
+"Greymond, Avacyn's Stalwart",
+"Legendary Creature — Human Soldier",
+"As Greymond, Avacyn's Stalwart enters, choose two abilities from among first strike, vigilance, and lifelink.\nHumans you control have each of the chosen abilities.\nAs long as you control four or more Humans, Humans you control get +2/+2.",
+"{2}{W}{W}",
+4,
+3,
+4
+],
+[
+"Hall of Echoes",
+"Land",
+"{T}: Add {C}.\n{5}: This land becomes a copy of target creature you control until end of turn. The \"legend rule\" doesn't apply to permanents you control this turn.",
+"",
+0
+],
+[
+"Howlsquad Heavy",
+"Creature — Goblin Mercenary",
+"Start your engines!\nOther Goblins you control have haste.\nAt the beginning of combat on your turn, create a 1/1 red Goblin creature token. That token attacks this combat if able.\nMax speed — {T}: Add {R} for each Goblin you control.",
+"{2}{R}",
+3,
+2,
+3
+],
+[
+"Loyal Apprentice",
+"Creature — Human Artificer",
+"Haste\nLieutenant — At the beginning of combat on your turn, if you control your commander, create a 1/1 colorless Thopter artifact creature token with flying. That token gains haste until end of turn.",
+"{1}{R}",
+2,
+2,
+1
+],
+[
+"Ocelot Pride",
+"Creature — Cat",
+"First strike, lifelink\nAscend (If you control ten or more permanents, you get the city's blessing for the rest of the game.)\nAt the beginning of your end step, if you gained life this turn, create a 1/1 white Cat creature token. Then if you have the city's blessing, for each token you control that entered this turn, create a token that's a copy of it.",
+"{W}",
+1,
+1,
+1
+],
+[
+"Phelia, Exuberant Shepherd",
+"Legendary Creature — Dog",
+"Flash\nWhenever Phelia attacks, exile up to one other target nonland permanent. At the beginning of the next end step, return that card to the battlefield under its owner's control. If it entered under your control, put a +1/+1 counter on Phelia.",
+"{1}{W}",
+2,
+2,
+2
+],
+[
+"Phyrexian Revoker",
+"Artifact Creature — Phyrexian Horror",
+"As this creature enters, choose a nonland card name.\nActivated abilities of sources with the chosen name can't be activated.",
+"{2}",
+2,
+2,
+1
+],
+[
+"Sokenzan, Crucible of Defiance",
+"Legendary Land",
+"{T}: Add {R}.\nChannel — {3}{R}, Discard this card: Create two 1/1 colorless Spirit creature tokens. They gain haste until end of turn. This ability costs {1} less to activate for each legendary creature you control.",
+"",
+0
+],
+[
+"Thalia, Heretic Cathar",
+"Legendary Creature — Human Soldier",
+"First strike\nCreatures and nonbasic lands your opponents control enter tapped.",
+"{2}{W}",
+3,
+3,
+2
+],
+[
+"Archdruid's Charm",
+"Instant",
+"Choose one —\n• Search your library for a creature or land card and reveal it. Put it onto the battlefield tapped if it's a land card. Otherwise, put it into your hand. Then shuffle.\n• Put a +1/+1 counter on target creature you control. It deals damage equal to its power to target creature you don't control.\n• Exile target artifact or enchantment.",
+"{G}{G}{G}",
+3
+],
+[
+"Ashaya, Soul of the Wild",
+"Legendary Creature — Elemental",
+"Ashaya's power and toughness are each equal to the number of lands you control.\nNontoken creatures you control are Forest lands in addition to their other types. (They're still affected by summoning sickness.)",
+"{3}{G}{G}",
+5
+],
+[
+"Collector Ouphe",
+"Creature — Ouphe",
+"Activated abilities of artifacts can't be activated.",
+"{1}{G}",
+2,
+2,
+2
+],
+[
+"Exploration",
+"Enchantment",
+"You may play an additional land on each of your turns.",
+"{G}",
+1
+],
+[
+"Fabled Passage",
+"Land",
+"{T}, Sacrifice this land: Search your library for a basic land card, put it onto the battlefield tapped, then shuffle. Then if you control four or more lands, untap that land.",
+"",
+0
+],
+[
+"Nissa, Resurgent Animist",
+"Legendary Creature — Elf Scout",
+"Landfall — Whenever a land you control enters, add one mana of any color. Then if this is the second time this ability has resolved this turn, reveal cards from the top of your library until you reveal an Elf or Elemental card. Put that card into your hand and the rest on the bottom of your library in a random order.",
+"{2}{G}",
+3,
+3,
+3
+],
+[
+"Rootpath Purifier",
+"Creature — Elf Druid",
+"Lands you control and land cards in your library are basic.",
+"{3}{G}",
+4,
+3,
+4
+],
+[
+"Scapeshift",
+"Sorcery",
+"Sacrifice any number of lands. Search your library for up to that many land cards, put them onto the battlefield tapped, then shuffle.",
+"{2}{G}{G}",
+4
+],
+[
+"Spelunking",
+"Enchantment",
+"When this enchantment enters, draw a card, then you may put a land card from your hand onto the battlefield. If you put a Cave onto the battlefield this way, you gain 4 life.\nLands you control enter untapped.",
+"{2}{G}",
+3
+],
+[
+"Tiller Engine",
+"Artifact Creature — Construct",
+"Whenever a land you control enters tapped, choose one —\n• Untap that land.\n• Tap target nonland permanent an opponent controls.",
+"{2}",
+2,
+1,
+3
+],
+[
+"Vesuva",
+"Land",
+"You may have this land enter tapped as a copy of any land on the battlefield.",
+"",
+0
+],
+[
+"Arid Archway",
+"Land — Desert",
+"This land enters tapped.\nWhen this land enters, return a land you control to its owner's hand. If another Desert was returned this way, surveil 1. (Look at the top card of your library. You may put it into your graveyard.)\n{T}: Add {C}{C}.",
+"",
+0
+],
+[
+"Blossoming Tortoise",
+"Creature — Turtle",
+"Whenever this creature enters or attacks, mill three cards, then return a land card from your graveyard to the battlefield tapped.\nActivated abilities of lands you control cost {1} less to activate.\nLand creatures you control get +1/+1.",
+"{2}{G}{G}",
+4,
+3,
+3
+],
+[
+"Echoing Deeps",
+"Land — Cave",
+"You may have this land enter tapped as a copy of any land card in a graveyard, except it's a Cave in addition to its other types.\n{T}: Add {C}.",
+"",
+0
+],
+[
+"Elvish Reclaimer",
+"Creature — Elf Warrior",
+"This creature gets +2/+2 as long as there are three or more land cards in your graveyard.\n{2}, {T}, Sacrifice a land: Search your library for a land card, put it onto the battlefield tapped, then shuffle.",
+"{G}",
+1,
+1,
+2
+],
+[
+"Famished Worldsire",
+"Creature — Leviathan",
+"Ward {3}\nDevour land 3 (As this creature enters, you may sacrifice any number of lands. It enters with three times that many +1/+1 counters on it.)\nWhen this creature enters, look at the top X cards of your library, where X is this creature's power. Put any number of land cards from among them onto the battlefield tapped, then shuffle.",
+"{5}{G}{G}{G}",
+8,
+0,
+0
+],
+[
+"Geier Reach Sanitarium",
+"Legendary Land",
+"{T}: Add {C}.\n{2}, {T}: Each player draws a card, then discards a card.",
+"",
+0
+],
+[
+"Ghost Quarter",
+"Land",
+"{T}: Add {C}.\n{T}, Sacrifice this land: Destroy target land. Its controller may search their library for a basic land card, put it onto the battlefield, then shuffle.",
+"",
+0
+],
+[
+"Horizon Explorer",
+"Creature — Insect Scout",
+"Lands you control enter untapped.\nWhenever you attack a player, create a Lander token. (It's an artifact with \"{2}, {T}, Sacrifice this token: Search your library for a basic land card, put it onto the battlefield tapped, then shuffle.\")",
+"{2}{G}",
+3,
+2,
+4
+],
+[
+"Icetill Explorer",
+"Creature — Insect Scout",
+"You may play an additional land on each of your turns.\nYou may play lands from your graveyard.\nLandfall — Whenever a land you control enters, mill a card.",
+"{2}{G}{G}",
+4,
+2,
+4
+],
+[
+"Lumra, Bellow of the Woods",
+"Legendary Creature — Elemental Bear",
+"Reach, vigilance\nLumra's power and toughness are each equal to the number of lands you control.\nWhen Lumra enters, mill four cards. Then return all land cards from your graveyard to the battlefield tapped.",
+"{4}{G}{G}",
+6
+],
+[
+"Mirrorpool",
+"Land",
+"This land enters tapped.\n{T}: Add {C}.\n{2}{C}, {T}, Sacrifice this land: Copy target instant or sorcery spell you control. You may choose new targets for the copy.\n{4}{C}, {T}, Sacrifice this land: Create a token that's a copy of target creature you control.",
+"",
+0
+],
+[
+"Sequestered Stash",
+"Land",
+"{T}: Add {C}.\n{4}, {T}, Sacrifice this land: Mill five cards. Then you may put an artifact card from your graveyard on top of your library.",
+"",
+0
+],
+[
+"Six",
+"Legendary Creature — Treefolk",
+"Reach\nWhenever Six attacks, mill three cards. You may put a land card from among them into your hand.\nDuring your turn, nonland permanent cards in your graveyard have retrace. (You may cast permanent cards from your graveyard by discarding a land card in addition to paying their other costs.)",
+"{2}{G}",
+3,
+2,
+4
+],
+[
+"Cursed Totem",
+"Artifact",
+"Activated abilities of creatures can't be activated.",
+"{2}",
+2
+],
+[
+"Mana Drain",
+"Instant",
+"Counter target spell. At the beginning of your next main phase, add an amount of {C} equal to that spell's mana value.",
+"{U}{U}",
+2
+],
+[
+"Trouble in Pairs",
+"Enchantment",
+"If an opponent would begin an extra turn, that player skips that turn instead.\nWhenever an opponent attacks you with two or more creatures, draws their second card each turn, or casts their second spell each turn, you draw a card.",
+"{2}{W}{W}",
+4
+],
+[
+"Arcane Denial",
+"Instant",
+"Counter target spell. Its controller may draw up to two cards at the beginning of the next turn's upkeep.\nYou draw a card at the beginning of the next turn's upkeep.",
+"{1}{U}",
+2
+],
+[
+"Deep Gnome Terramancer",
+"Creature — Gnome Wizard",
+"Flash\nMold Earth — Whenever one or more lands enter under an opponent's control without being played, you may search your library for a Plains card, put it onto the battlefield tapped, then shuffle. Do this only once each turn.",
+"{1}{W}",
+2,
+2,
+2
+],
+[
+"Drana and Linvala",
+"Legendary Creature — Vampire Angel",
+"Flying, vigilance\nActivated abilities of creatures your opponents control can't be activated.\nDrana and Linvala has all activated abilities of all creatures your opponents control. You may spend mana as though it were mana of any color to activate those abilities.",
+"{1}{W}{W}{B}",
+4,
+3,
+4
+],
+[
+"Notion Thief",
+"Creature — Human Rogue",
+"Flash\nIf an opponent would draw a card except the first one they draw in each of their draw steps, instead that player skips that draw and you draw a card.",
+"{2}{U}{B}",
+4,
+3,
+1
+],
+[
+"Talion, the Kindly Lord",
+"Legendary Creature — Faerie Noble",
+"Flying\nAs Talion enters, choose a number between 1 and 10.\nWhenever an opponent casts a spell with mana value, power, or toughness equal to the chosen number, that player loses 2 life and you draw a card.",
+"{2}{U}{B}",
+4,
+3,
+4
+],
+[
+"Tivit, Seller of Secrets",
+"Legendary Creature — Sphinx Rogue",
+"Flying, ward {3}\nCouncil's dilemma — Whenever Tivit enters or deals combat damage to a player, starting with you, each player votes for evidence or bribery. For each evidence vote, investigate. For each bribery vote, create a Treasure token.\nWhile voting, you may vote an additional time. (The votes can be for different choices or for the same choice.)",
+"{3}{W}{U}{B}",
+6,
+6,
+6
+],
+[
+"Ixidron",
+"Creature — Illusion",
+"As this creature enters, turn all other nontoken creatures face down. (They're 2/2 creatures.)\nIxidron's power and toughness are each equal to the number of face-down creatures on the battlefield.",
+"{3}{U}{U}",
+5
+],
+[
+"Jin-Gitaxias, Progress Tyrant",
+"Legendary Creature — Phyrexian Praetor",
+"Whenever you cast an artifact, instant, or sorcery spell, copy that spell. You may choose new targets for the copy. This ability triggers only once each turn. (A copy of a permanent spell becomes a token.)\nWhenever an opponent casts an artifact, instant, or sorcery spell, counter that spell. This ability triggers only once each turn.",
+"{5}{U}{U}",
+7,
+5,
+5
+],
+[
+"Kona, Rescue Beastie",
+"Legendary Creature — Beast Survivor",
+"Survival — At the beginning of your second main phase, if Kona is tapped, you may put a permanent card from your hand onto the battlefield.",
+"{3}{G}",
+4,
+4,
+3
+],
+[
+"Mystic Reflection",
+"Instant",
+"Choose target nonlegendary creature. The next time one or more creatures or planeswalkers enter this turn, they enter as copies of the chosen creature.\nForetell {U} (During your turn, you may pay {2} and exile this card from your hand face down. Cast it on a later turn for its foretell cost.)",
+"{1}{U}",
+2
+],
+[
+"Riptide Shapeshifter",
+"Creature — Shapeshifter",
+"{2}{U}{U}, Sacrifice this creature: Choose a creature type. Reveal cards from the top of your library until you reveal a creature card of that type. Put that card onto the battlefield and shuffle the rest into your library.",
+"{3}{U}{U}",
+5,
+3,
+3
+],
+[
+"Scour for Scrap",
+"Instant",
+"Choose one or both —\n• Search your library for an artifact card, reveal it, put it into your hand, then shuffle.\n• Return target artifact card from your graveyard to your hand.",
+"{3}{U}",
+4
+],
+[
+"Seedborn Muse",
+"Creature — Spirit",
+"Untap all permanents you control during each other player's untap step.",
+"{3}{G}{G}",
+5,
+2,
+4
+],
+[
+"Amphibian Downpour",
+"Enchantment — Aura",
+"Flash\nStorm (When you cast this spell, copy it for each spell cast before it this turn. You may choose new targets for the copies. Copies become tokens.)\nEnchant creature\nEnchanted creature loses all abilities and is a blue Frog creature with base power and toughness 1/1.",
+"{2}{U}",
+3
+],
+[
+"Anticausal Vestige",
+"Creature — Eldrazi",
+"When this creature leaves the battlefield, draw a card, then you may put a permanent card with mana value less than or equal to the number of lands you control from your hand onto the battlefield tapped.\nWarp {4} (You may cast this card from your hand for its warp cost. Exile this creature at the beginning of the next end step, then you may cast it from exile on a later turn.)",
+"{6}",
+6,
+7,
+5
+],
+[
+"Azure Beastbinder",
+"Creature — Rat Rogue",
+"Vigilance\nThis creature can't be blocked by creatures with power 2 or greater.\nWhenever this creature attacks, up to one target artifact, creature, or planeswalker an opponent controls loses all abilities until your next turn. If it's a creature, it also has base power and toughness 2/2 until your next turn.",
+"{1}{U}",
+2,
+1,
+3
+],
+[
+"Deadeye Navigator",
+"Creature — Spirit",
+"Soulbond (You may pair this creature with another unpaired creature when either enters. They remain paired for as long as you control both of them.)\nAs long as Deadeye Navigator is paired with another creature, each of those creatures has \"{1}{U}: Exile this creature, then return it to the battlefield under your control.\"",
+"{4}{U}{U}",
+6,
+5,
+5
+],
+[
+"Dimensional Infiltrator",
+"Creature — Eldrazi",
+"Devoid (This card has no color.)\nFlash\nFlying\n{1}{C}: Target opponent exiles the top card of their library. If it's a land card, you may return this creature to its owner's hand. ({C} represents colorless mana.)",
+"{1}{U}",
+2,
+2,
+1
+],
+[
+"Faerie Artisans",
+"Creature — Faerie Artificer",
+"Flying\nWhenever a nontoken creature an opponent controls enters, create a token that's a copy of that creature except it's an artifact in addition to its other types. Then exile all other tokens created with this creature.",
+"{3}{U}",
+4,
+2,
+2
+],
+[
+"Freed from the Real",
+"Enchantment — Aura",
+"Enchant creature\n{U}: Tap enchanted creature.\n{U}: Untap enchanted creature.",
+"{2}{U}",
+3
+],
+[
+"Life from the Loam",
+"Sorcery",
+"Return up to three target land cards from your graveyard to your hand.\nDredge 3 (If you would draw a card, you may mill three cards instead. If you do, return this card from your graveyard to your hand.)",
+"{1}{G}",
+2
+],
+[
+"Midnight Clock",
+"Artifact",
+"{T}: Add {U}.\n{2}{U}: Put an hour counter on this artifact.\nAt the beginning of each upkeep, put an hour counter on this artifact.\nWhen the twelfth hour counter is put on this artifact, shuffle your hand and graveyard into your library, then draw seven cards. Exile this artifact.",
+"{2}{U}",
+3
+],
+[
+"Nezahal, Primal Tide",
+"Legendary Creature — Elder Dinosaur",
+"This spell can't be countered.\nYou have no maximum hand size.\nWhenever an opponent casts a noncreature spell, draw a card.\nDiscard three cards: Exile Nezahal. Return it to the battlefield tapped under its owner's control at the beginning of the next end step.",
+"{5}{U}{U}",
+7,
+7,
+7
+],
+[
+"Nyxbloom Ancient",
+"Enchantment Creature — Elemental",
+"Trample\nIf you tap a permanent for mana, it produces three times as much of that mana instead.",
+"{4}{G}{G}{G}",
+7,
+5,
+5
+],
+[
+"Pemmin's Aura",
+"Enchantment — Aura",
+"Enchant creature\n{U}: Untap enchanted creature.\n{U}: Enchanted creature gains flying until end of turn.\n{U}: Enchanted creature gains shroud until end of turn. (It can't be the target of spells or abilities.)\n{1}: Enchanted creature gets +1/-1 or -1/+1 until end of turn.",
+"{1}{U}{U}",
+3
+],
+[
+"Simic Growth Chamber",
+"Land",
+"This land enters tapped.\nWhen this land enters, return a land you control to its owner's hand.\n{T}: Add {G}{U}.",
+"",
+0
+],
+[
+"Stonework Packbeast",
+"Artifact Creature — Beast",
+"Stonework Packbeast is also a Cleric, Rogue, Warrior, and Wizard.\n{2}: Add one mana of any color.",
+"{2}",
+2,
+2,
+1
+],
+[
+"Thada Adel, Acquisitor",
+"Legendary Creature — Merfolk Rogue",
+"Islandwalk (This creature can't be blocked as long as defending player controls an Island.)\nWhenever Thada Adel deals combat damage to a player, search that player's library for an artifact card and exile it. Then that player shuffles. Until end of turn, you may play that card.",
+"{1}{U}{U}",
+3,
+2,
+2
+],
+[
+"Tidal Barracuda",
+"Creature — Fish",
+"Any player may cast spells as though they had flash.\nYour opponents can't cast spells during your turn.",
+"{3}{U}",
+4,
+3,
+4
+],
+[
+"Tishana's Tidebinder",
+"Creature — Merfolk Wizard",
+"Flash\nWhen this creature enters, counter up to one target activated or triggered ability. If an ability of an artifact, creature, or planeswalker is countered this way, that permanent loses all abilities for as long as this creature remains on the battlefield. (Mana abilities can't be targeted.)",
+"{2}{U}",
+3,
+3,
+2
+],
+[
+"Ledger Shredder",
+"Creature — Bird Advisor",
+"Flying\nWhenever a player casts their second spell each turn, this creature connives. (Draw a card, then discard a card. If you discarded a nonland card, put a +1/+1 counter on this creature.)",
+"{1}{U}",
+2,
+1,
+3
+],
+[
+"March of Swirling Mist",
+"Instant",
+"As an additional cost to cast this spell, you may exile any number of blue cards from your hand. This spell costs {2} less to cast for each card exiled this way.\nUp to X target creatures phase out. (While they're phased out, they're treated as though they don't exist. Each one phases in before its controller untaps during their next untap step.)",
+"{X}{U}",
+1
+],
+[
+"Toxic Deluge",
+"Sorcery",
+"As an additional cost to cast this spell, pay X life.\nAll creatures get -X/-X until end of turn.",
+"{2}{B}",
+3
+],
+[
+"Burning Inquiry",
+"Sorcery",
+"Each player draws three cards, then discards three cards at random.",
+"{R}",
+1
+],
+[
+"Kederekt Parasite",
+"Creature — Horror",
+"Whenever an opponent draws a card, if you control a red permanent, you may have this creature deal 1 damage to that player.",
+"{B}",
+1,
+1,
+1
+],
+[
+"Party Thrasher",
+"Creature — Lizard Wizard",
+"Noncreature spells you cast from exile have convoke. (Each creature you tap while casting a noncreature spell from exile pays for {1} or one mana of that creature's color.)\nAt the beginning of your first main phase, you may discard a card. If you do, exile the top two cards of your library, then choose one of them. You may play that card this turn.",
+"{1}{R}",
+2,
+1,
+4
+],
+[
+"Black Mage's Rod",
+"Artifact — Equipment",
+"Job select (When this Equipment enters, create a 1/1 colorless Hero creature token, then attach this to it.)\nEquipped creature gets +1/+0, has \"Whenever you cast a noncreature spell, this creature deals 1 damage to each opponent,\" and is a Wizard in addition to its other types.\nEquip {3}",
+"{1}{B}",
+2
+],
+[
+"Conqueror's Flail",
+"Artifact — Equipment",
+"Equipped creature gets +1/+1 for each color among permanents you control.\nAs long as this Equipment is attached to a creature, your opponents can't cast spells during your turn.\nEquip {2}",
+"{2}",
+2
+],
+[
+"Ob Nixilis, Captive Kingpin",
+"Legendary Creature — Demon",
+"Flying, trample\nWhenever one or more opponents each lose exactly 1 life, put a +1/+1 counter on Ob Nixilis. Exile the top card of your library. Until your next end step, you may play that card.",
+"{2}{B}{R}",
+4,
+4,
+3
+],
+[
+"Razorkin Needlehead",
+"Creature — Human Assassin",
+"This creature has first strike during your turn.\nWhenever an opponent draws a card, this creature deals 1 damage to them.",
+"{R}{R}",
+2,
+2,
+2
+],
+[
+"Unstable Amulet",
+"Artifact",
+"When this artifact enters, you get {E}{E} (two energy counters).\nWhenever you cast a spell from anywhere other than your hand, this artifact deals 1 damage to each opponent.\n{T}, Pay {E}{E}: Exile the top card of your library. You may play it until you exile another card with this artifact.",
+"{1}{R}",
+2
+],
+[
+"Ertai Resurrected",
+"Legendary Creature — Phyrexian Human Wizard",
+"Flash\nWhen Ertai Resurrected enters, choose up to one —\n• Counter target spell, activated ability, or triggered ability. Its controller draws a card.\n• Destroy another target creature or planeswalker. Its controller draws a card.",
+"{2}{U}{B}",
+4,
+3,
+2
+],
+[
+"Birthing Ritual",
+"Enchantment",
+"At the beginning of your end step, if you control a creature, look at the top seven cards of your library. Then you may sacrifice a creature. If you do, you may put a creature card with mana value X or less from among those cards onto the battlefield, where X is 1 plus the sacrificed creature's mana value. Put the rest on the bottom of your library in a random order.",
+"{1}{G}",
+2
+],
+[
+"Katara, the Fearless",
+"Legendary Creature — Human Warrior Ally",
+"If a triggered ability of an Ally you control triggers, that ability triggers an additional time.",
+"{G}{W}{U}",
+3,
+3,
+3
+],
+[
+"Tax Collector",
+"Creature — Human Advisor",
+"When this creature enters, choose one —\n• Tax — Until your next turn, spells your opponents cast cost {1} more to cast.\n• Arrest — Detain target creature an opponent controls. (Until your next turn, that creature can't attack or block and its activated abilities can't be activated.)",
+"{1}{W}",
+2,
+2,
+2
+],
+[
+"Aang, at the Crossroads // Aang, Destined Savior",
+"Legendary Creature — Human Avatar Ally // Legendary Creature — Avatar Ally",
+"Flying\nWhen Aang enters, look at the top five cards of your library. You may put a creature card with mana value 4 or less from among them onto the battlefield. Put the rest on the bottom of your library in a random order.\nWhen another creature you control leaves the battlefield, transform Aang at the beginning of the next upkeep.",
+"{2}{G}{W}{U}",
+5,
+3,
+3
+],
+[
+"Misthollow Griffin",
+"Creature — Griffin",
+"Flying\nYou may cast this card from exile.",
+"{2}{U}{U}",
+4,
+3,
+3
+],
+[
+"Preston, the Vanisher",
+"Legendary Creature — Rabbit Wizard",
+"Whenever another nontoken creature you control enters, if it wasn't cast, create a token that's a copy of that creature, except it's a 0/1 white Illusion.\n{1}{W}, Sacrifice five Illusions: Exile target nonland permanent.",
+"{3}{W}",
+4,
+2,
+5
+]
+]

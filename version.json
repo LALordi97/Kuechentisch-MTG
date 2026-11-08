@@ -1,4 +1,4 @@
 {
-  "version": "2026.11.08-11",
-  "notes": "Fähigkeiten-Check-Bericht enthält jetzt den vollen Kartentext (Typ, Kosten, Stärke/Widerstand, Regeltext). Fehler behoben: Noxious Revival und ähnliche Karten zielten auf bleibende Karten statt auf eine Karte im Friedhof."
+  "version": "2026.11.08-12",
+  "notes": "Fähigkeiten-Check 25 (8 Berichte, 99 Karten): Sperren (Cursed Totem, Collector Ouphe, Clarion Conqueror, Soulless Jailer, Tidal Barracuda), Notion Thief, Nyxbloom, Angrath's Marauders, Seedborn Muse, Kataki, Stärke nach Anzahl (Ashaya, Lumra, Ixidron), Dredge, Foretell, Warp, Retrace, Devour, Job select, Connive, Abstimmen, Mana Drain, Arcane Denial, Jin-Gitaxias, Talion, Mystic Reflection u. v. m."
 }
