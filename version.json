@@ -1,4 +1,4 @@
 {
-  "version": "2026.11.08-14",
-  "notes": "CEDH-Bilbo-Karten automatisch: Monarch, Dungeons (Acererak), Convoke/Delve (Hogaak), Omniscience/Aluren gratis, Mycosynth Lattice, Choke, Tabernacle, Maze of Ith, Ensnaring Bridge, Leyline of the Void, Containment Priest, Miracle, Fuse, Unearth, Mystic Forge, Dark Depths, Terminus, Surgical Extraction, Aether Vial und mehr."
+  "version": "2026.11.08-15",
+  "notes": "Neu: Draft und Sealed. Beim Start wählst du «Normal spielen», «Draft» oder «Sealed». Booster kommen aus jeder Edition auf Scryfall, freie Draft-Plätze übernimmt die KI, danach Deckbau mit Vorschlag und Spiel gegen Freunde oder eine Draft-KI."
 }

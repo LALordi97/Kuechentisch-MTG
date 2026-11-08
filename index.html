@@ -266,6 +266,21 @@ table.stats th{color:var(--muted);font-weight:500;font-size:12px;text-transform:
 .chat input{flex:1;min-width:0}
 
 .overlay{position:fixed;inset:0;background:rgba(8,12,10,.72);display:grid;place-items:center;z-index:50;padding:16px}
+.dialog.limdlg{width:min(1280px,100%);max-height:94vh}
+.seg{gap:0}.seg button{border-radius:0;margin-left:-1px}.seg button:first-child{border-radius:6px 0 0 6px;margin-left:0}.seg button:last-child{border-radius:0 6px 6px 0}
+.limwrap{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:16px;align-items:start}
+.limmain{display:flex;flex-direction:column;gap:10px;min-width:0}
+.limprev{position:sticky;top:0}.limprev img{width:100%;border-radius:14px;display:block}
+.limtxt{padding:12px;background:var(--panel);border:1px solid var(--line);border-radius:10px}.limtxt p{margin:8px 0 0;line-height:1.35}
+@media (max-width:820px){.limwrap{grid-template-columns:minmax(0,1fr)}.limprev{display:none}}
+.card.limsel{outline:3px solid var(--brass);outline-offset:2px;transform:translateY(-4px)}
+.limh{font-family:var(--f-display);font-size:17px;font-weight:600;margin:6px 0 0;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.limpip{font:12px var(--f-body);padding:1px 8px;border-radius:999px;border:1px solid var(--line);border-left-width:4px;background:var(--panel)}
+.lim-W{border-left-color:var(--mW)}.lim-U{border-left-color:var(--mU)}.lim-B{border-left-color:var(--mB)}.lim-R{border-left-color:var(--mR)}.lim-G{border-left-color:var(--mG)}.lim-M{border-left-color:var(--brass)}.lim-C,.lim-L{border-left-color:var(--mC)}
+.limwait{font-size:18px;color:var(--muted);padding:28px 0;text-align:center;margin:0}
+.limcurve{display:flex;gap:10px;overflow-x:auto;padding:4px 2px 8px;align-items:flex-start}
+.limcol{display:flex;flex-direction:column;min-width:92px}.limcol .card+.card{margin-top:-100px}.limcol .card:hover,.limcol .card:focus{z-index:2}
+.limbasics{align-items:center;gap:6px 14px}.limb{display:inline-flex;align-items:center;gap:4px}
 .dialog{background:var(--felt-2);border:1px solid var(--line);border-radius:12px;padding:18px;width:min(920px,100%);max-height:90vh;overflow:auto;display:flex;flex-direction:column;gap:12px}
 .dialog.narrow{width:min(460px,100%)}
 .dhead{display:flex;justify-content:space-between;align-items:center;gap:10px}
@@ -293,6 +308,7 @@ textarea{width:100%;min-height:240px;resize:vertical;font-size:14px}
   <button class="small menu-toggle" id="bMenu" aria-expanded="false" aria-controls="hActions">Aktionen</button>
   <div class="hgroup" id="hActions">
     <button id="bDeck">Deck laden</button>
+    <button id="bLim">Draft/Sealed</button>
     <button id="bNew">Neues Spiel</button>
     <button id="bUntap">Alles enttappen</button>
     <button id="bUndo" title="Letzte Aktion rückgängig (Ctrl+Z)">Rückgängig</button>
@@ -394,6 +410,11 @@ textarea{width:100%;min-height:240px;resize:vertical;font-size:14px}
     <h2>Küchentisch MTG</h2>
     <p class="muted" style="margin:0">Einer eröffnet einen Tisch und schickt den Code an die anderen. Alle Kartenbilder kommen von Scryfall.</p>
     <label>Dein Name<br><input id="lName" maxlength="24" style="width:100%"></label>
+    <div>
+      <div class="stat">Was möchtest du machen?</div>
+      <div class="row seg" id="lMode" role="radiogroup" aria-label="Was möchtest du machen?"><button type="button" role="radio" data-m="play">Normal spielen</button><button type="button" role="radio" data-m="draft">Draft</button><button type="button" role="radio" data-m="sealed">Sealed</button></div>
+      <p class="muted" id="lModeTxt" style="margin:4px 0 0"></p>
+    </div>
     <button class="primary" id="lHost">Neuen Tisch eröffnen</button>
     <div class="row">
       <input id="lCode" placeholder="Code, z. B. k7mpq" maxlength="8" style="flex:1;text-transform:lowercase">
@@ -417,6 +438,9 @@ textarea{width:100%;min-height:240px;resize:vertical;font-size:14px}
 </div>
 
 <!-- Allgemeines Modal -->
+<div class="overlay" id="limit" hidden>
+  <div class="dialog limdlg" id="limBox" role="dialog" aria-label="Draft und Sealed"></div>
+</div>
 <div class="overlay" id="modal" hidden>
   <div class="dialog" id="modalBox"></div>
 </div>
@@ -1631,6 +1655,7 @@ function hostRecv(m, c){
   } else if(m.t === "log"){ relayLog(m); }
   else if(m.t === "fx" && m.fx && typeof m.fx === "object"){ relayFx(m, c); }
   else if(!c._pid) return;
+  else if(m.t === "draft"){ m.from = c._pid; drHostRecv(m); }
   else if(ROUTED.includes(m.t) && typeof m.to === "string"){ m.from = c._pid; m.by = (net.players[c._pid] || {}).name || "Gegner"; route(m); }
   else if(HOSTED.includes(m.t)){ m.from = c._pid; m.by = (net.players[c._pid] || {}).name || "Gegner"; hostHandle(m); }
 }
@@ -1655,6 +1680,7 @@ function connectToHost(){
   c.on("data", m => {
     if(!m || typeof m !== "object") return;
     if(m.t === "all") applyAll(m);
+    else if(m.t === "draft") drRecv(m);
     else if(m.t === "log") addLog({from:String(m.from||""), text:String(m.text||""), sys:!!m.sys});
     else if(m.t === "fx") drawFx(m.fx);
     else if(ROUTED.includes(m.t) && m.to === me.id) deliver(m);
@@ -10237,7 +10263,7 @@ function historyAdd(win){
 /* ---------- Automatische Updates ---------- */
 // Liegt die App im Web, prüft sie regelmässig version.json im selben Ordner und lädt sich bei einer neuen Version neu.
 // Alles Wichtige (Spielstand, Deck, Tisch) liegt im Browser-Speicher und ist nach dem Neuladen wieder da.
-const APP_VERSION = "2026.11.08-14";
+const APP_VERSION = "2026.11.08-15";
 const ONLINE = /^https?:$/.test(location.protocol);
 let updPending = null, updTimer = null, updSnoozeUntil = 0;
 function busyForUpdate(){ return botBusy || (!$("#modal").hidden && modalState && ["block","deck"].includes(modalState.kind)); }
@@ -10262,6 +10288,421 @@ $("#updLater").onclick = () => { clearTimeout(updTimer); updPending = null; $("#
 $("#lVer").textContent = `Version ${APP_VERSION}` + (ONLINE ? " · aktualisiert sich automatisch" : " · lokale Datei, keine automatischen Updates");
 if(ONLINE){ setInterval(checkUpdate, 3 * 60 * 1000); window.addEventListener("focus", checkUpdate); setTimeout(checkUpdate, 4000); }
 
+/* ---------- Draft und Sealed ---------- */
+// Der Gastgeber (oder wer allein spielt) erzeugt die Booster aus den Scryfall-Daten einer Edition und führt den Draft.
+// Leere Plätze übernimmt die KI. Jede Wahl geht an den Gastgeber, der das restliche Booster weitergibt.
+const LIM = {sets:null, cache:{}, basics:null};
+let DR = {on:false};   // eigene Sicht: aktuelles Booster, Pool
+let DH = null;         // Gastgeber: ganzer Draft
+let DB = null;         // Deckbau
+const LIM_RARE = {mythic:4.6, rare:4, special:3.4, bonus:3.4, uncommon:2.4, common:1.4};
+const LIM_COLS = ["W", "U", "B", "R", "G"];
+const LIM_COLNAME = {W:"Weiss", U:"Blau", B:"Schwarz", R:"Rot", G:"Grün", M:"Mehrfarbig", C:"Farblos", L:"Länder"};
+const LIM_BASIC = {W:"Plains", U:"Island", B:"Swamp", R:"Mountain", G:"Forest"};
+const limColors = c => Array.isArray(c.col) && c.col.length ? c.col.filter(k => LIM_COLS.includes(k)) : colorsOfMc(c.mc);
+const limGroup = c => isLand(c) ? "L" : (k => k.length > 1 ? "M" : k.length ? k[0] : "C")(limColors(c));
+
+async function limSets(){
+  if(LIM.sets) return LIM.sets;
+  const r = await fetch(API + "/sets"); if(!r.ok) throw new Error("Scryfall ist nicht erreichbar.");
+  const j = await r.json(); const today = new Date().toISOString().slice(0, 10);
+  LIM.sets = (j.data || []).filter(s => ["expansion", "core", "draft_innovation", "masters"].includes(s.set_type) && !s.digital && s.released_at && s.released_at <= today && (s.card_count || 0) >= 60)
+    .map(s => ({code:s.code, name:s.name, date:s.released_at, type:s.set_type}));
+  return LIM.sets;
+}
+async function limCards(code, onProg){
+  if(LIM.cache[code]) return LIM.cache[code];
+  const search = async q => {
+    const out = []; let url = API + "/cards/search?" + new URLSearchParams({q, unique:"cards", order:"set"}).toString();
+    for(let page = 0; url && page < 10; page++){
+      onProg && onProg(`Lade die Karten der Edition … ${out.length ? "(" + out.length + ")" : ""}`);
+      const r = await fetch(url); if(!r.ok) break;
+      const j = await r.json();
+      (j.data || []).forEach(sc => { const f0 = (sc.card_faces || [])[0] || {}; out.push({...tpl(sc), r:sc.rarity || "common", col:sc.colors || f0.colors || []}); });
+      url = j.has_more ? j.next_page : null; await sleep(110);
+    }
+    return out;
+  };
+  let cards = await search(`e:${code} is:booster -t:basic`);
+  if(cards.length < 40) cards = await search(`e:${code} -t:basic -is:digital`);
+  if(cards.length < 20) throw new Error("Für diese Edition hat Scryfall zu wenige Karten geliefert.");
+  return (LIM.cache[code] = cards);
+}
+async function limBasics(){
+  if(LIM.basics) return LIM.basics;
+  const fb = k => ({n:LIM_BASIC[k], type:`Basic Land — ${LIM_BASIC[k]}`, o:`({T}: Add {${k}}.)`, mc:"", cmc:0, pm:[k], kw:[], img:null, r:"common", col:[]});
+  const b = {}; LIM_COLS.forEach(k => b[k] = fb(k));
+  try{ const {deck} = await fetchCards(LIM_COLS.map(k => ({qty:1, name:LIM_BASIC[k]})), () => {}); deck.forEach(t => { const k = LIM_COLS.find(x => LIM_BASIC[x] === t.n); if(k) b[k] = {...t, r:"common", col:[]}; }); }catch(e){}
+  return (LIM.basics = b);
+}
+/* Booster: 1 Rare/Mythic, 3 Uncommons, 1 Joker, Rest Commons (14 Karten, keine Standardländer) */
+function limPack(cards, size = 14){
+  const by = r => cards.filter(c => r.includes(c.r));
+  const C = by(["common"]), U = by(["uncommon"]), R = by(["rare", "special", "bonus"]), M = by(["mythic"]);
+  const used = new Set(), pack = [];
+  const take = (arr, n) => { const a = shuffle((arr.length ? arr : cards).filter(c => !used.has(c.n))); a.slice(0, n).forEach(c => { used.add(c.n); pack.push({...c, pu:uid()}); }); };
+  take(M.length && (Math.random() < 1 / 7 || !R.length) ? M : R.length ? R : U, 1);
+  take(U, 3);
+  const w = Math.random(); take(w < .04 && M.length ? M : w < .18 && R.length ? R : w < .5 ? U : C, 1);
+  take(C, size - pack.length);
+  if(pack.length < size) take(cards, size - pack.length);
+  return pack;
+}
+/* KI: Seltenheit, Entfernung, Kreaturen, später die eigenen zwei Farben */
+function limScore0(c){
+  const o = String(c.o || "");
+  let s = LIM_RARE[c.r] || 1.4;
+  if(/\b(destroy|exile) target (creature|nonland permanent|permanent)|deals \d+ damage to (any target|target creature)|target creature (gets|an opponent controls gets) -\d+\/-\d+|fights? (target|another target)/i.test(o)) s += 1.3;
+  if(/\bCreature\b/.test(c.type || "")) s += .35;
+  if(/\bFlying\b/i.test(o)) s += .25;
+  if(isLand(c)) s -= 1;
+  if((c.cmc || 0) >= 7) s -= .6;
+  return s;
+}
+function limTopColors(pool, n = 2){
+  const w = {}; pool.forEach(p => limColors(p).forEach(k => w[k] = (w[k] || 0) + limScore0(p)));
+  return Object.entries(w).sort((a, b) => b[1] - a[1]).slice(0, n).map(x => x[0]);
+}
+function limScore(c, pool){
+  let s = limScore0(c);
+  if(pool.length >= 3){
+    const top = limTopColors(pool), cols = limColors(c), f = Math.min(1, pool.length / 12);
+    if(!cols.length) s += .4;
+    else if(cols.every(k => top.includes(k))) s += 1.6 * f + .3;
+    else s -= 2 * f * cols.filter(k => !top.includes(k)).length;
+  }
+  return s + Math.random() * .3;
+}
+function limBotPick(pack, pool){ return pack.slice().sort((a, b) => limScore(b, pool) - limScore(a, pool))[0]; }
+/* Deck automatisch: zwei Farben, 23 Zauber, 17 Standardländer */
+function limAutoBuild(pool, spells = 23, lands = 17){
+  const top = limTopColors(pool);
+  const fits = c => !isLand(c) && limColors(c).every(k => top.includes(k));
+  const cand = pool.filter(fits).sort((a, b) => limScore0(b) - limScore0(a));
+  let main = cand.slice(0, spells);
+  const cre = main.filter(c => /\bCreature\b/.test(c.type || "")).length;
+  if(cre < 13){ const more = cand.slice(spells).filter(c => /\bCreature\b/.test(c.type || "")).slice(0, 13 - cre); for(const c of more){ const i = main.map((x, j) => [x, j]).filter(([x]) => !/\bCreature\b/.test(x.type || "")).sort((a, b) => limScore0(a[0]) - limScore0(b[0]))[0]; if(i) main[i[1]] = c; } }
+  if(main.length < spells) main = [...main, ...pool.filter(c => !main.includes(c) && !isLand(c)).sort((a, b) => limScore0(b) - limScore0(a)).slice(0, spells - main.length)];
+  const sym = {}; main.forEach(c => (String(c.mc || "").match(/\{[^}]+\}/g) || []).forEach(x => LIM_COLS.forEach(k => { if(x.includes(k)) sym[k] = (sym[k] || 0) + 1; })));
+  const cols = (top.length ? top : ["W"]).filter(k => sym[k] || top.length === 1);
+  const use = cols.length ? cols : (top.length ? top : ["W"]);
+  const tot = use.reduce((a, k) => a + (sym[k] || 1), 0);
+  const basics = {W:0, U:0, B:0, R:0, G:0}; let left = lands;
+  use.forEach((k, i) => { const n = i === use.length - 1 ? left : Math.round(lands * (sym[k] || 1) / tot); basics[k] = Math.max(0, n); left -= basics[k]; });
+  return {main, basics};
+}
+function limDeckCards(pool, mainSet, basics){
+  const out = [];
+  pool.forEach(c => out.push({...c, sb:!mainSet.has(c.pu)}));
+  LIM_COLS.forEach(k => { for(let i = 0; i < (basics[k] || 0); i++) out.push({...LIM.basics[k], pu:uid(), sb:false}); });
+  return out;
+}
+function limDeckText(cards){
+  const cnt = (list) => { const m = new Map(); list.forEach(c => m.set(c.n, (m.get(c.n) || 0) + 1)); return [...m].map(([n, q]) => `${q} ${n}`).join("\n"); };
+  const sb = cards.filter(c => c.sb);
+  return cnt(cards.filter(c => !c.sb)) + (sb.length ? "\n\nSideboard\n" + cnt(sb) : "");
+}
+
+/* --- Gastgeber --- */
+function limHumans(){
+  const ids = [me.id];
+  if(net.role === "host") net.order.forEach(id => { if(id !== me.id && id !== "bot" && net.players[id] && !net.players[id].off) ids.push(id); });
+  return ids;
+}
+const limName = id => id === me.id ? (me.name || "Du") : ((net.players[id] || {}).name || "Mitspieler");
+function limSend(id, m){
+  m = {t:"draft", ...m};
+  if(id === me.id) return drRecv(m);
+  const c = net.conns.find(x => x._pid === id && x.open); if(c) c.send(m);
+}
+async function limStart(opts){
+  const {mode, set, setName} = opts;
+  const cards = await limCards(set, opts.onProg);
+  await limBasics();
+  const humans = limHumans();
+  if(mode === "sealed"){
+    const n = Math.max(3, Math.min(10, opts.packs || 6));
+    const botPool = [].concat(...Array.from({length:n}, () => limPack(cards)));
+    LIM.botPools = [{name:"KI", pool:botPool}];
+    humans.forEach(id => limSend(id, {op:"sealed", pool:[].concat(...Array.from({length:n}, () => limPack(cards))), setName, basics:LIM.basics}));
+    relayLogSafe(`startet Sealed mit ${setName} (${n} Booster pro Person)`);
+    return;
+  }
+  const seatsN = Math.max(humans.length, Math.min(8, opts.seats || 8));
+  const seats = shuffle([...humans.map(id => ({id, name:limName(id), bot:false})), ...Array.from({length:seatsN - humans.length}, (_, i) => ({id:"ki" + (i + 1), name:`KI ${i + 1}`, bot:true}))]);
+  seats.forEach(s => { s.pool = []; s.queue = []; s.sent = null; });
+  DH = {mode, set, setName, cards, seats, round:0, rounds:Math.max(1, Math.min(4, opts.rounds || 3)), size:opts.size || 14, picks:0, timer:null};
+  seats.filter(s => !s.bot).forEach(s => limSend(s.id, {op:"start", setName, rounds:DH.rounds, seats:seats.map(x => x.name), basics:LIM.basics}));
+  relayLogSafe(`startet einen Draft mit ${setName} (${seats.length} Plätze, ${seats.filter(s => s.bot).length} davon KI)`);
+  limNextRound();
+  clearInterval(LIM.offTimer); LIM.offTimer = setInterval(limCheckOff, 3000);
+}
+function relayLogSafe(text){ try{ (net.role === "host" ? relayLog : addLog)({from:me.name, text, sys:true}); }catch(e){} }
+function limNextRound(){
+  DH.round++; DH.picks = 0;
+  DH.seats.forEach(s => { s.queue.push({id:uid(), cards:limPack(DH.cards, DH.size)}); });
+  limPump();
+}
+function limCheckOff(){
+  if(!DH){ clearInterval(LIM.offTimer); return; }
+  let ch = false;
+  DH.seats.forEach(s => { if(!s.bot && s.id !== me.id && (!net.players[s.id] || net.players[s.id].off || net.role !== "host")){ s.bot = true; s.name += " (KI)"; ch = true; relayLogSafe(`${s.name.replace(/ \(KI\)$/, "")} ist weg – die KI wählt für diesen Platz weiter`); } });
+  if(ch) limPump();
+}
+function limPick(seat, packId, pu){
+  const pk = seat.queue[0]; if(!pk || pk.id !== packId) return false;
+  const i = pk.cards.findIndex(c => c.pu === pu); if(i < 0) return false;
+  const [c] = pk.cards.splice(i, 1); seat.pool.push(c); seat.queue.shift(); seat.sent = null; DH.picks++;
+  if(pk.cards.length){ const k = DH.seats.indexOf(seat), n = DH.seats.length; const to = DH.seats[(k + (DH.round % 2 ? 1 : -1) + n) % n]; to.queue.push(pk); }
+  return true;
+}
+function limPump(){
+  if(!DH) return;
+  clearTimeout(DH.timer);
+  // KI wählt sofort, mit kurzer Pause für die Darstellung
+  let any = false;
+  DH.seats.forEach(s => { if(s.bot && s.queue.length){ const pk = s.queue[0]; limPick(s, pk.id, limBotPick(pk.cards, s.pool).pu); any = true; } });
+  if(DH.picks >= DH.seats.length * DH.size){
+    if(DH.round < DH.rounds){ limNextRound(); return; }
+    return limFinish();
+  }
+  const status = DH.seats.map(s => ({n:s.name, q:s.queue.length, bot:s.bot}));
+  DH.seats.filter(s => !s.bot).forEach(s => {
+    const pk = s.queue[0];
+    if(pk && s.sent !== pk.id){ s.sent = pk.id; limSend(s.id, {op:"pack", packId:pk.id, cards:pk.cards, round:DH.round, rounds:DH.rounds, pick:DH.size - pk.cards.length + 1, dir:DH.round % 2 ? "links" : "rechts", status}); }
+    else if(!pk) limSend(s.id, {op:"wait", round:DH.round, status});
+  });
+  if(any) DH.timer = setTimeout(limPump, 60);
+}
+function limFinish(){
+  clearInterval(LIM.offTimer);
+  LIM.botPools = DH.seats.filter(s => s.bot && /^ki\d+$/.test(s.id)).map(s => ({name:s.name, pool:s.pool}));
+  DH.seats.filter(s => !s.bot).forEach(s => limSend(s.id, {op:"done", pool:s.pool, setName:DH.setName}));
+  relayLogSafe(`Draft beendet – jetzt Decks bauen`);
+  DH = null;
+}
+function drHostRecv(m){
+  if(!DH || !m || m.op !== "pick") return;
+  const s = DH.seats.find(x => x.id === m.from && !x.bot); if(!s) return;
+  if(limPick(s, String(m.packId || ""), String(m.pu || ""))) limPump();
+}
+
+/* --- Spieler --- */
+const limClean = c => c && typeof c === "object" ? {n:String(c.n || "Karte").slice(0, 150), img:okImg(c.img) ? c.img : null, back:okImg(c.back) ? c.back : null, type:String(c.type || "").slice(0, 120), o:String(c.o || "").slice(0, 1500), mc:String(c.mc || "").slice(0, 60), cmc:Number(c.cmc) || 0, pw:Number.isFinite(c.pw) ? c.pw : null, tg:Number.isFinite(c.tg) ? c.tg : null, kw:Array.isArray(c.kw) ? c.kw.map(String).slice(0, 12) : [], pm:Array.isArray(c.pm) ? c.pm.map(String).slice(0, 6) : [], tk:Array.isArray(c.tk) ? c.tk.slice(0, 6) : [], loy:c.loy ?? null, r:String(c.r || "common"), col:Array.isArray(c.col) ? c.col.map(String).slice(0, 5) : [], pu:String(c.pu || uid()).slice(0, 12)} : null;
+function drRecv(m){
+  if(!m || typeof m !== "object") return;
+  if(m.basics && typeof m.basics === "object" && !LIM.basics){ const b = {}; LIM_COLS.forEach(k => { const t = limClean(m.basics[k]); if(t) b[k] = t; }); if(Object.keys(b).length === 5) LIM.basics = b; }
+  if(m.op === "start"){ DR = {on:true, mode:"draft", setName:String(m.setName || ""), rounds:m.rounds || 3, pool:[], pack:null, sel:null, status:[], round:1}; limShow(); drRender(); limBtn(); }
+  else if(m.op === "pack"){ if(!DR.on) DR = {on:true, mode:"draft", setName:"", pool:[], status:[]}; DR.pack = (m.cards || []).map(limClean).filter(Boolean); DR.packId = String(m.packId || ""); DR.round = m.round; DR.rounds = m.rounds; DR.pick = m.pick; DR.dir = m.dir; DR.status = Array.isArray(m.status) ? m.status : []; DR.sel = null; if(!$("#limit").hidden) drRender(); else limBtn(true); }
+  else if(m.op === "wait"){ DR.pack = null; DR.status = Array.isArray(m.status) ? m.status : DR.status; DR.round = m.round || DR.round; if(!$("#limit").hidden) drRender(); }
+  else if(m.op === "done" || m.op === "sealed"){
+    const pool = (m.pool || []).map(limClean).filter(Boolean);
+    DR = {on:false}; limBtn();
+    limOpenBuilder({mode:m.op === "sealed" ? "sealed" : "draft", setName:String(m.setName || ""), pool});
+  }
+}
+function drTake(pu){
+  if(!DR.pack || !DR.pack.some(c => c.pu === pu)) return;
+  const c = DR.pack.find(x => x.pu === pu); DR.pool.push(c);
+  const msg = {t:"draft", op:"pick", packId:DR.packId, pu};
+  DR.pack = null; DR.sel = null; drRender();
+  if(net.role === "client"){ if(net.conn && net.conn.open) net.conn.send(msg); }
+  else drHostRecv({...msg, from:me.id});
+}
+
+/* --- Darstellung --- */
+function limShow(){ $("#limit").hidden = false; }
+function limHide(){ $("#limit").hidden = true; limBtn(); }
+function limBtn(flash){ const b = $("#bLim"); if(!b) return; b.textContent = DR.on ? (DR.pack && $("#limit").hidden ? "Draft: dein Pick!" : "Draft läuft") : DB ? "Deckbau" : "Draft/Sealed"; b.classList.toggle("primary", !!(DR.on && DR.pack && $("#limit").hidden)); }
+function limCard(c, onClick, w = 130, sel){
+  const el = cardEl({...c, u:null}, true, "modal"); el.style.setProperty("--w", `min(${w}px, 28vw)`);
+  if(sel) el.classList.add("limsel");
+  el.addEventListener("click", e => { e.stopPropagation(); onClick && onClick(e); });
+  el.addEventListener("mouseenter", () => limPreview(c)); el.addEventListener("focus", () => limPreview(c));
+  return el;
+}
+function limPreview(c){
+  const p = $("#limPrev"); if(!p || !c) return;
+  p.innerHTML = "";
+  if(okImg(c.img)){ const im = document.createElement("img"); im.src = c.img.replace("/normal/", "/large/"); im.alt = c.n; im.onerror = () => { im.onerror = null; im.src = c.img; }; p.append(im); }
+  else p.insertAdjacentHTML("beforeend", `<div class="limtxt"><b>${esc(c.n)}</b> <span class="muted">${esc(c.mc || "")}</span><div class="muted">${esc(c.type)}</div><p>${esc(c.o || "").replace(/\n/g, "<br>")}</p></div>`);
+}
+function limHead(title, sub){
+  const box = $("#limBox"); box.innerHTML = "";
+  const h = document.createElement("div"); h.className = "dhead";
+  h.innerHTML = `<div><h2>${esc(title)}</h2>${sub ? `<div class="stat">${esc(sub)}</div>` : ""}</div>`;
+  const r = document.createElement("div"); r.className = "row";
+  r.append(btn("Zum Spieltisch", limHide, "small")); h.append(r); box.append(h);
+  return box;
+}
+function limPoolSummary(pool){
+  const g = {}; pool.forEach(c => { const k = limGroup(c); g[k] = (g[k] || 0) + 1; });
+  return ["W", "U", "B", "R", "G", "M", "C", "L"].filter(k => g[k]).map(k => `<span class="limpip lim-${k}">${LIM_COLNAME[k]} ${g[k]}</span>`).join(" ");
+}
+function drRender(){
+  if(!DR.on) return;
+  const box = limHead(`Draft · ${DR.setName || "Booster"}`, DR.pack ? `Runde ${DR.round} von ${DR.rounds} · Pick ${DR.pick} · Weitergabe nach ${DR.dir}` : `Runde ${DR.round || 1} von ${DR.rounds || 3}`);
+  const wrap = document.createElement("div"); wrap.className = "limwrap"; box.append(wrap);
+  const left = document.createElement("div"); left.className = "limmain"; wrap.append(left);
+  const prev = document.createElement("div"); prev.className = "limprev"; prev.id = "limPrev"; wrap.append(prev);
+  if(DR.pack){
+    left.insertAdjacentHTML("beforeend", `<p class="muted" style="margin:0">Tippe eine Karte an und bestätige mit «Nehmen». Doppelklick nimmt sie direkt.</p>`);
+    const g = document.createElement("div"); g.className = "grid limgrid";
+    DR.pack.forEach(c => { const el = limCard(c, () => { DR.sel = c.pu; drRender(); limPreview(c); }, 130, DR.sel === c.pu); el.addEventListener("dblclick", () => drTake(c.pu)); g.append(el); });
+    left.append(g);
+    const r = document.createElement("div"); r.className = "row";
+    const take = btn(DR.sel ? `Nehmen: ${(DR.pack.find(c => c.pu === DR.sel) || {}).n}` : "Nehmen", () => DR.sel && drTake(DR.sel), "primary"); take.disabled = !DR.sel; take.id = "limTake"; r.append(take); left.append(r);
+    if(DR.sel) limPreview(DR.pack.find(c => c.pu === DR.sel)); else limPreview(DR.pack[0]);
+  } else {
+    left.insertAdjacentHTML("beforeend", `<p class="limwait">Warte auf das nächste Booster …</p>`);
+  }
+  if(DR.status && DR.status.length) left.insertAdjacentHTML("beforeend", `<div class="stat">Am Tisch: ${DR.status.map(s => `${esc(s.n)}${s.q ? ` <b>(${s.q} wartend)</b>` : ""}`).join(" · ")}</div>`);
+  left.insertAdjacentHTML("beforeend", `<h3 class="limh">Deine Karten (${DR.pool.length}) ${limPoolSummary(DR.pool)}</h3>`);
+  const pg = document.createElement("div"); pg.className = "grid limpool";
+  DR.pool.slice().sort(limSort).forEach(c => pg.append(limCard(c, () => limPreview(c), 72)));
+  left.append(pg);
+}
+const limSort = (a, b) => "WUBRGMCL".indexOf(limGroup(a)) - "WUBRGMCL".indexOf(limGroup(b)) || (a.cmc || 0) - (b.cmc || 0) || a.n.localeCompare(b.n);
+
+/* --- Deckbau --- */
+function limOpenBuilder(o){
+  if(!LIM.basics){ limBasics().then(() => limOpenBuilder(o)); return; }
+  DB = {mode:o.mode, setName:o.setName, pool:o.pool, main:new Set(o.main || []), basics:o.basics || {W:0, U:0, B:0, R:0, G:0}, filter:"all"};
+  if(!o.main){ const a = limAutoBuild(DB.pool); DB.main = new Set(a.main.map(c => c.pu)); DB.basics = a.basics; DB.auto = true; }
+  limSave(); limShow(); dbRender(); limBtn();
+}
+function limSave(){ if(!DB) return; LS.set("kt-lim", {mode:DB.mode, setName:DB.setName, pool:DB.pool, main:[...DB.main], basics:DB.basics, bots:(LIM.botPools || []).map(b => ({name:b.name, pool:b.pool.map(c => ({...c, o:String(c.o || "").slice(0, 900)}))}))}); }
+function limLoadSaved(){
+  const d = LS.get("kt-lim", null); if(!d || !Array.isArray(d.pool) || !d.pool.length) return false;
+  LIM.botPools = Array.isArray(d.bots) ? d.bots.map(b => ({name:String(b.name || "KI"), pool:(b.pool || []).map(limClean).filter(Boolean)})) : [];
+  limOpenBuilder({mode:d.mode === "sealed" ? "sealed" : "draft", setName:String(d.setName || ""), pool:d.pool.map(limClean).filter(Boolean), main:Array.isArray(d.main) ? d.main.map(String) : [], basics:d.basics && typeof d.basics === "object" ? d.basics : null});
+  return true;
+}
+function dbCounts(){
+  const main = DB.pool.filter(c => DB.main.has(c.pu)); const basicN = LIM_COLS.reduce((a, k) => a + (DB.basics[k] || 0), 0);
+  return {main, basicN, total:main.length + basicN, lands:main.filter(isLand).length + basicN, cre:main.filter(c => /\bCreature\b/.test(c.type || "")).length};
+}
+function dbRender(){
+  if(!DB) return;
+  const k = dbCounts();
+  const box = limHead(`Deck bauen · ${DB.mode === "sealed" ? "Sealed" : "Draft"}${DB.setName ? " · " + DB.setName : ""}`, `Deck ${k.total} Karten (${k.lands} Länder, ${k.cre} Kreaturen) · Limited: mindestens 40`);
+  const wrap = document.createElement("div"); wrap.className = "limwrap"; box.append(wrap);
+  const left = document.createElement("div"); left.className = "limmain"; wrap.append(left);
+  const prev = document.createElement("div"); prev.className = "limprev"; prev.id = "limPrev"; wrap.append(prev);
+  if(DB.auto) left.insertAdjacentHTML("beforeend", `<p class="muted" style="margin:0">Ein Vorschlag ist schon gebaut. Karte im Deck antippen = zurück in den Pool, Karte im Pool antippen = ins Deck.</p>`);
+  // Deck nach Manawert
+  left.insertAdjacentHTML("beforeend", `<h3 class="limh">Deck (${k.main.length} + ${k.basicN} Standardländer)</h3>`);
+  const curve = document.createElement("div"); curve.className = "limcurve";
+  const cols = {}; k.main.forEach(c => { const v = isLand(c) ? "L" : Math.min(7, c.cmc || 0); (cols[v] = cols[v] || []).push(c); });
+  ["0", "1", "2", "3", "4", "5", "6", "7", "L"].forEach(v => { if(!cols[v]) return; const col = document.createElement("div"); col.className = "limcol"; col.innerHTML = `<div class="stat">${v === "L" ? "Länder" : v === "7" ? "7+" : v} · ${cols[v].length}</div>`; cols[v].sort(limSort).forEach(c => col.append(limCard(c, () => { DB.main.delete(c.pu); DB.auto = false; limSave(); dbRender(); }, 92))); curve.append(col); });
+  if(!k.main.length) curve.innerHTML = `<p class="muted">Noch keine Karten im Deck.</p>`;
+  left.append(curve);
+  // Standardländer
+  const bl = document.createElement("div"); bl.className = "row limbasics";
+  LIM_COLS.forEach(c => {
+    const s = document.createElement("span"); s.className = `limpip lim-${c}`; s.textContent = `${LIM_BASIC[c]} ${DB.basics[c] || 0}`;
+    const g = document.createElement("span"); g.className = "limb";
+    g.append(btn("−", () => { DB.basics[c] = Math.max(0, (DB.basics[c] || 0) - 1); limSave(); dbRender(); }, "small"), s, btn("+", () => { DB.basics[c] = (DB.basics[c] || 0) + 1; limSave(); dbRender(); }, "small")); bl.append(g);
+  });
+  left.append(bl);
+  const acts = document.createElement("div"); acts.className = "row";
+  acts.append(
+    btn("Vorschlag neu bauen", () => { const a = limAutoBuild(DB.pool); DB.main = new Set(a.main.map(c => c.pu)); DB.basics = a.basics; DB.auto = true; limSave(); dbRender(); }, "small"),
+    btn("Länder auf 17 ergänzen", () => { const sym = {}; k.main.forEach(c => (String(c.mc || "").match(/\{[^}]+\}/g) || []).forEach(x => LIM_COLS.forEach(q => { if(x.includes(q)) sym[q] = (sym[q] || 0) + 1; }))); const use = LIM_COLS.filter(q => sym[q]); const need = 17 - k.lands; if(need <= 0 || !use.length) return; const tot = use.reduce((a, q) => a + sym[q], 0); let left2 = need; use.forEach((q, i) => { const n = i === use.length - 1 ? left2 : Math.round(need * sym[q] / tot); DB.basics[q] = (DB.basics[q] || 0) + n; left2 -= n; }); limSave(); dbRender(); }, "small"),
+    btn("Neuer Draft oder Sealed", () => { const md = DB.mode; DB = null; limBtn(); limOpenSetup(md); }, "small"),
+    btn("Alles in den Pool", () => { DB.main.clear(); DB.basics = {W:0, U:0, B:0, R:0, G:0}; DB.auto = false; limSave(); dbRender(); }, "small"));
+  left.append(acts);
+  const go = document.createElement("div"); go.className = "row";
+  const play = btn("Mit diesem Deck spielen", () => limPlay(false), "primary"); go.append(play);
+  if(net.role !== "client" && (LIM.botPools || []).length) go.append(btn(DB.mode === "sealed" ? "Gegen KI mit Sealed-Deck spielen" : "Gegen eine Draft-KI spielen", () => limPlay(true)));
+  go.append(btn("Deck speichern", () => { const name = `${DB.mode === "sealed" ? "Sealed" : "Draft"} ${DB.setName} ${new Date().toLocaleDateString("de-CH")}`.trim(); const list = LS.get("kt-decks", []); const cards = limDeckCards(DB.pool, DB.main, DB.basics); const i = list.findIndex(d => d.name === name); const e = {name, text:limDeckText(cards), cmd:""}; if(i >= 0) list[i] = e; else list.push(e); LS.set("kt-decks", list); $("#limErr").textContent = `Gespeichert als «${name}» (unter «Deck laden»).`; }, "small"));
+  left.append(go);
+  left.insertAdjacentHTML("beforeend", `<div class="err" id="limErr"></div>`);
+  // Pool
+  const rest = DB.pool.filter(c => !DB.main.has(c.pu));
+  const fr = document.createElement("div"); fr.className = "row";
+  fr.insertAdjacentHTML("beforeend", `<h3 class="limh" style="margin:0">Pool (${rest.length})</h3>`);
+  [["all", "Alle"], ...["W", "U", "B", "R", "G", "M", "C", "L"].map(q => [q, LIM_COLNAME[q]])].forEach(([q, l]) => { const n = q === "all" ? rest.length : rest.filter(c => limGroup(c) === q).length; if(q !== "all" && !n) return; const b = btn(`${l} ${n}`, () => { DB.filter = q; dbRender(); }, "small" + (DB.filter === q ? " primary" : "")); fr.append(b); });
+  left.append(fr);
+  const pg = document.createElement("div"); pg.className = "grid limpool";
+  rest.filter(c => DB.filter === "all" || limGroup(c) === DB.filter).sort(limSort).forEach(c => pg.append(limCard(c, () => { DB.main.add(c.pu); DB.auto = false; limSave(); dbRender(); }, 92)));
+  left.append(pg);
+  limPreview(k.main[0] || DB.pool[0]);
+}
+async function limPlay(vsBot){
+  const k = dbCounts();
+  if(k.total < 40 && !$("#limErr").dataset.warned){ $("#limErr").dataset.warned = "1"; $("#limErr").textContent = `Das Deck hat erst ${k.total} Karten (Limited: mindestens 40). Nochmals klicken, um trotzdem zu spielen.`; return; }
+  const cards = limDeckCards(DB.pool, DB.main, DB.basics);
+  S.deck = cards.map(c => { const {pu, r, col, ...t} = c; return t; });
+  S.deckText = limDeckText(cards); S.cmdText = ""; S.deckName = `${DB.mode === "sealed" ? "Sealed" : "Draft"} ${DB.setName}`.trim();
+  if(vsBot){
+    const bots = LIM.botPools || []; let b = bots[0];
+    if(bots.length > 1){ b = await abilModal("Gegen welche Draft-KI?", (box, done) => bots.forEach(x => box.append(btn(`${x.name} (${limTopColors(x.pool).map(q => LIM_COLNAME[q]).join("/") || "farblos"})`, () => done(x), "small")))); if(!b){ return; } }
+    const a = limAutoBuild(b.pool);
+    const deck = limDeckCards(b.pool, new Set(a.main.map(c => c.pu)), a.basics).filter(c => !c.sb).map(c => { const {pu, r, col, ...t} = c; return t; });
+    startBot(`${b.name} · ${DB.setName}`, "Limited", deck);
+    limHide(); startGame();
+    const pick = Math.random() < .5 ? "bot" : me.id;
+    BOT.onPlay = pick === "bot";
+    botLog(BOT.onPlay ? "beginnt das Spiel (Münzwurf)" : "Münzwurf: Du beginnst. Beende deinen Zug mit «Zug beenden» oben.");
+    saveBot(); TURN.active = null; botChanged();
+    applyTurn({active:pick, n:1, starter:pick});
+    return;
+  }
+  limHide(); startGame();
+}
+
+/* --- Einstieg --- */
+async function limOpenSetup(mode){
+  if(DR.on){ limShow(); drRender(); return; }
+  if(net.role === "client"){
+    const box = limHead("Draft und Sealed");
+    box.insertAdjacentHTML("beforeend", `<p>Den Draft oder das Sealed startet, wer den Tisch eröffnet hat. Sobald es losgeht, erscheint hier dein erstes Booster automatisch.</p>`);
+    if(LS.get("kt-lim", null)) box.append(btn("Letzten Pool öffnen (Deckbau)", () => limLoadSaved(), "small"));
+    limShow(); return;
+  }
+  mode = mode === "sealed" ? "sealed" : "draft";
+  const box = limHead("Draft oder Sealed starten");
+  box.insertAdjacentHTML("beforeend", `
+    <div class="row seg" id="limMode" role="radiogroup" aria-label="Spielart">
+      <button data-m="draft" role="radio">Draft</button><button data-m="sealed" role="radio">Sealed</button>
+    </div>
+    <p class="muted" id="limModeTxt" style="margin:0"></p>
+    <label class="stat">Edition <select id="limSet" style="width:100%"><option>Lade Editionen …</option></select></label>
+    <div class="row" id="limDraftOpts">
+      <label class="stat">Plätze am Tisch <select id="limSeats">${[2, 3, 4, 5, 6, 7, 8].map(n => `<option ${n === 8 ? "selected" : ""}>${n}</option>`).join("")}</select></label>
+      <label class="stat">Booster pro Person <select id="limRounds"><option>2</option><option selected>3</option><option>4</option></select></label>
+    </div>
+    <div class="row" id="limSealedOpts">
+      <label class="stat">Booster pro Person <select id="limPacks">${[4, 5, 6, 7, 8].map(n => `<option ${n === 6 ? "selected" : ""}>${n}</option>`).join("")}</select></label>
+    </div>
+    <div class="stat" id="limWho"></div>
+    <div class="row"><button class="primary" id="limGo">Starten</button><span class="stat" id="limProg"></span></div>
+    <div class="err" id="limErr"></div>`);
+  if(LS.get("kt-lim", null)) box.append(btn("Letzten Pool öffnen (Deckbau)", () => limLoadSaved(), "small"));
+  let m = mode;
+  const setMode = x => { m = x; box.querySelectorAll("#limMode button").forEach(b => { b.classList.toggle("primary", b.dataset.m === x); b.setAttribute("aria-checked", b.dataset.m === x); });
+    $("#limDraftOpts").hidden = x !== "draft"; $("#limSealedOpts").hidden = x !== "sealed";
+    $("#limModeTxt").textContent = x === "draft" ? "Alle am Tisch draften zusammen. Freie Plätze übernimmt die KI. Danach baut jeder sein Deck aus seinen Karten." : "Jeder öffnet seine Booster und baut daraus ein Deck mit mindestens 40 Karten.";
+  };
+  box.querySelectorAll("#limMode button").forEach(b => b.onclick = () => setMode(b.dataset.m)); setMode(m);
+  const who = () => { const el = $("#limWho"); if(!el){ clearInterval(LIM.whoTimer); return; } const h = limHumans(); el.textContent = `Mitspieler: ${h.map(limName).join(", ")}` + (net.role === "host" ? " · weitere können mit dem Tisch-Code noch beitreten" : ""); };
+  who(); clearInterval(LIM.whoTimer); LIM.whoTimer = setInterval(who, 1500);
+  limShow();
+  try{
+    const sets = await limSets(); const sel = $("#limSet"); if(!sel) return; sel.innerHTML = "";
+    const last = LS.get("kt-limset", null);
+    sets.forEach(s => sel.append(new Option(`${s.name} (${s.date.slice(0, 4)})`, s.code)));
+    const def = sets.find(s => s.code === last) || sets.find(s => s.type === "expansion") || sets[0]; if(def) sel.value = def.code;
+  }catch(e){ $("#limErr").textContent = "Die Editionen konnten nicht geladen werden. Draft und Sealed brauchen eine Verbindung zu Scryfall."; }
+  $("#limGo").onclick = async () => {
+    const sel = $("#limSet"); const code = sel.value; const s = (LIM.sets || []).find(x => x.code === code); if(!s) return;
+    LS.set("kt-limset", code); $("#limGo").disabled = true; $("#limErr").textContent = "";
+    try{ await limStart({mode:m, set:code, setName:s.name, seats:+$("#limSeats").value, rounds:+$("#limRounds").value, packs:+$("#limPacks").value, onProg:t => { const p = $("#limProg"); if(p) p.textContent = t; }}); clearInterval(LIM.whoTimer); }
+    catch(e){ const er = $("#limErr"); if(er) er.textContent = e.message || "Das hat nicht geklappt."; const g = $("#limGo"); if(g) g.disabled = false; }
+  };
+}
+
 /* ---------- Lobby ---------- */
 function newCode(){ const a = "abcdefghjkmnpqrstuvwxyz23456789"; let s = ""; for(let i=0;i<5;i++) s += a[Math.floor(Math.random()*a.length)]; return s; }
 function lobbyName(){
@@ -10272,7 +10713,11 @@ function lobbyName(){
 $("#lName").value = me.name || "";
 const last = LS.get("kt-last", null);
 if(last && last.code) $("#lCode").value = last.code;
-function enter(){ $("#lobby").hidden = true; renderAll(); if(!S.deck.length) openDeckDialog(); }
+function enter(){ $("#lobby").hidden = true; renderAll(); const md = LS.get("kt-mode", "play"); if(md === "draft" || md === "sealed"){ limOpenSetup(md); return; } if(!S.deck.length) openDeckDialog(); }
+const LMODE_TXT = {play:"Mit einem eigenen Deck oder einem Top-Deck spielen.", draft:"Booster öffnen, reihum Karten wählen, danach ein Deck bauen. Eröffne einen Tisch für Freunde oder teste allein – freie Plätze übernimmt die KI.", sealed:"Jeder öffnet sechs Booster und baut daraus ein Deck mit mindestens 40 Karten."};
+function setLobbyMode(md){ if(!LMODE_TXT[md]) md = "play"; LS.set("kt-mode", md); document.querySelectorAll("#lMode button").forEach(b => { b.classList.toggle("primary", b.dataset.m === md); b.setAttribute("aria-checked", b.dataset.m === md); }); $("#lModeTxt").textContent = LMODE_TXT[md]; }
+document.querySelectorAll("#lMode button").forEach(b => b.onclick = () => setLobbyMode(b.dataset.m));
+setLobbyMode(LS.get("kt-mode", "play"));
 $("#lHost").onclick = () => { if(!lobbyName()) return; const code = (last && last.role === "host" && last.code) || newCode(); hostTable(code); enter(); };
 $("#lJoin").onclick = () => {
   if(!lobbyName()) return;
@@ -10297,6 +10742,7 @@ document.querySelectorAll("[data-life]").forEach(b => b.onclick = () => {
 $("#poiP").onclick = () => { S.poison++; act(`Giftmarken → ${S.poison}`); commit(); };
 $("#poiM").onclick = () => { S.poison = Math.max(0, S.poison-1); act(`Giftmarken → ${S.poison}`); commit(); };
 $("#bDeck").onclick = openDeckDialog;
+$("#bLim").onclick = () => { if(DR.on){ limShow(); drRender(); } else if(DB){ limShow(); dbRender(); } else limOpenSetup(LS.get("kt-mode", "draft")); };
 $("#bNew").onclick = () => { if(!S.deck.length) return openDeckDialog(); startGame(); };
 $("#bTurn").onclick = () => passTurn();
 $("#bReroll").onclick = () => rollStarter(true);
