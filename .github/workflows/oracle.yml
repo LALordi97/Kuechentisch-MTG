@@ -1,7 +1,7 @@
 name: Kartentext für die Nachtarbeit
 on:
   schedule:
-    - cron: "52 23 * * *"   # 00:52 Uhr Zürich (Winterzeit), vor der Nachtarbeit um 01:34
+    - cron: "52 22 * * *"   # 23:52 Uhr Zürich (Winter) bzw. 00:52 (Sommer), vor der Nachtarbeit um 01:34
   workflow_dispatch:
   push:
     paths: ["decks/**", "tools/oracle.py"]
