@@ -336,6 +336,13 @@
 0
 ],
 [
+"Bedeck // Bedazzle",
+"Instant // Instant",
+"Target creature gets +3/-3 until end of turn.",
+"{B/R}{B/R} // {4}{B}{R}",
+8.0
+],
+[
 "Beseech the Mirror",
 "Sorcery",
 "Bargain (You may sacrifice an artifact, enchantment, or token as you cast this spell.)\nSearch your library for a card, exile it face down, then shuffle. If this spell was bargained, you may cast the exiled card without paying its mana cost if that spell's mana value is 4 or less. Put the exiled card into your hand if it wasn't cast this way.",
@@ -3059,6 +3066,13 @@
 0
 ],
 [
+"Lórien Revealed",
+"Sorcery",
+"Draw three cards.\nIslandcycling {1} ({1}, Discard this card: Search your library for an Island card, reveal it, put it into your hand, then shuffle.)",
+"{3}{U}{U}",
+5.0
+],
+[
 "Magda, Brazen Outlaw",
 "Legendary Creature — Dwarf Berserker",
 "Other Dwarves you control get +1/+0.\nWhenever a Dwarf you control becomes tapped, create a Treasure token.\nSacrifice five Treasures: Search your library for an artifact or Dragon card, put that card onto the battlefield, then shuffle.",
@@ -4247,6 +4261,13 @@
 "When Rosie Cotton enters, create a Food token. (It's an artifact with \"{2}, {T}, Sacrifice this token: You gain 3 life.\")\nWhenever you create a token, put a +1/+1 counter on target creature you control other than Rosie Cotton.",
 "{2}{W}",
 3.0
+],
+[
+"Rough // Tumble",
+"Sorcery // Sorcery",
+"Rough deals 2 damage to each creature without flying.",
+"{1}{R} // {5}{R}",
+8.0
 ],
 [
 "Ruby Medallion",
@@ -5446,6 +5467,13 @@
 5.0
 ],
 [
+"Troll of Khazad-dûm",
+"Creature — Troll",
+"This creature can't be blocked except by three or more creatures.\nSwampcycling {1} ({1}, Discard this card: Search your library for a Swamp card, reveal it, put it into your hand, then shuffle.)",
+"{5}{B}",
+6.0
+],
+[
 "Trophy Mage",
 "Creature — Human Wizard",
 "When this creature enters, you may search your library for an artifact card with mana value 3, reveal it, put it into your hand, then shuffle.",
@@ -5864,6 +5892,13 @@
 "({T}: Add {U} or {B}.)\nAs this land enters, you may pay 2 life. If you don't, it enters tapped.",
 "",
 0
+],
+[
+"Wear // Tear",
+"Instant // Instant",
+"Destroy target artifact.\nFuse (You may cast one or both halves of this card from your hand.)",
+"{1}{R} // {W}",
+3.0
 ],
 [
 "Weathered Wayfarer",
