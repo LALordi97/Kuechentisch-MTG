@@ -7,7 +7,7 @@ Der Text wird so übernommen, wie die App ihn sieht (wie tpl() in index.html: Vo
 Aufruf:  python3 tools/oracle.py            # lädt die aktuelle Datei von Scryfall
          python3 tools/oracle.py bulk.json  # nimmt eine schon geladene Datei (zum Testen)
 """
-import json, pathlib, re, sys, urllib.request
+import gzip, json, pathlib, re, sys, urllib.request
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 HEAD = {"User-Agent": "KuechentischMTG/1.0 (github.com/LALordi97/Kuechentisch-MTG)", "Accept": "application/json"}
@@ -16,7 +16,8 @@ BASIC = re.compile(r"^(Snow-Covered )?(Plains|Island|Swamp|Mountain|Forest|Waste
 
 def get(url):
     with urllib.request.urlopen(urllib.request.Request(url, headers=HEAD), timeout=300) as r:
-        return r.read()
+        data = r.read()
+    return gzip.decompress(data) if data[:2] == b"\x1f\x8b" else data
 
 
 def deck_names():
