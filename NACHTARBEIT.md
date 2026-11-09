@@ -19,9 +19,9 @@ Diese Anleitung führt eine geplante Aufgabe jede Nacht ohne Rückfragen aus. Si
 1. `cd tests && npm install && ./reg.sh`
 2. Ist etwas rot: Ursache suchen und beheben. Ein Mehrspieler-Test (`mp*`, `req`, `life`), der einzeln dreimal grün ist, gilt als wackelig, nicht als Fehler.
 
-## 2. Karten aus den Top-Decks (pro Nacht bis zu 30 Karten)
+## 2. Karten aus den Top-Decks (pro Nacht bis zu 30 nicht automatische Karten)
 
-1. `cd tests && node night_cards.js 30` schreibt die nächsten 30 ungeprüften Karten aus den Top-Decks mit ihrem echten Kartentext in `tests/nightJJJJMMTT_cards.json`. Der Text stammt aus `tests/oracle_decks.json`, das ein GitHub-Ablauf (`.github/workflows/oracle.yml`) jede Nacht um ca. 00:52 Uhr aus den Scryfall-Massendaten erneuert. Das ist echter Kartentext von Scryfall, kein Gedächtnis.
+1. `cd tests && node night_cards.js 100` schreibt die nächsten 100 ungeprüften Karten (erfahrungsgemäss sind rund 80 % davon schon automatisch; davon höchstens 30 nicht automatische einbauen) aus den Top-Decks mit ihrem echten Kartentext in `tests/nightJJJJMMTT_cards.json`. Der Text stammt aus `tests/oracle_decks.json`, das ein GitHub-Ablauf (`.github/workflows/oracle.yml`) jede Nacht um ca. 00:52 Uhr aus den Scryfall-Massendaten erneuert. Das ist echter Kartentext von Scryfall, kein Gedächtnis.
 2. Fehlt `oracle_decks.json` (Ablauf noch nie gelaufen oder fehlgeschlagen), ersatzweise `node tests/deck_cards.js 30` und den Text Karte für Karte mit WebFetch holen: `https://api.scryfall.com/cards/named?exact=<Name, URL-kodiert>&format=text`, **wörtlich** übernehmen; unsichere Karten weglassen. Klappt auch das nicht, Schritt 2 auslassen und das in der Zusammenfassung sagen.
 3. Format der Prüfdateien: `["Name", "Typzeile", "Regeltext", "{Manakosten}", Manawert]`.
 4. `node tests/chk_file.js tests/nightJJJJMMTT_cards.json` zeigt, was «automatisch», «teilweise» oder «von Hand» ist. `node tests/manual_dump.js` und `node tests/parse_dump.js <datei>` helfen beim Zerlegen.
@@ -48,4 +48,4 @@ Eine offene Lücke wählen, umsetzen, testen, hier abhaken (`[x]` mit Datum):
 
 ## Protokoll
 
-- 2026-11-09: Nachtarbeit eingerichtet (522 Karten aus den Top-Decks ohne Prüfdatei).
+- 2026-11-09: Nachtarbeit eingerichtet. GitHub-Ablauf liefert den Kartentext aller 877 Karten der Top-Decks; 506 davon noch ohne Prüfdatei.
