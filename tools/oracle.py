@@ -40,8 +40,11 @@ def main():
     if len(sys.argv) > 1:
         cards = json.loads(pathlib.Path(sys.argv[1]).read_text(encoding="utf8"))
     else:
-        meta = json.loads(get("https://api.scryfall.com/bulk-data/oracle-cards"))
-        cards = json.loads(get(meta["download_uri"]))
+        meta = json.loads(get("https://api.scryfall.com/bulk-data"))
+        item = next((b for b in meta.get("data", []) if b.get("type") == "oracle_cards"), None)
+        if not item:
+            sys.exit("Scryfall-Antwort ohne oracle_cards: " + json.dumps(meta)[:500])
+        cards = json.loads(get(item["download_uri"]))
     idx = {}
     for sc in cards:
         if sc.get("layout") in ("token", "double_faced_token", "emblem", "art_series"):
