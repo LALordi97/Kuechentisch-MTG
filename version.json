@@ -1,4 +1,4 @@
 {
-  "version": "2026.11.08-15",
-  "notes": "Neu: Draft und Sealed. Beim Start wählst du «Normal spielen», «Draft» oder «Sealed». Booster kommen aus jeder Edition auf Scryfall, freie Draft-Plätze übernimmt die KI, danach Deckbau mit Vorschlag und Spiel gegen Freunde oder eine Draft-KI."
+  "version": "2026.11.09-1",
+  "notes": "Nur noch ein Knopf «Ausspielen»: Spontanzauber und Hexereien wirken und kommen in den Friedhof, Kreaturen, Artefakte und Länder kommen ins Spiel. Auch Ziehen aufs Spielfeld unterscheidet das automatisch."
 }

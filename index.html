@@ -609,6 +609,9 @@ async function play(u, faceDown){
   }
   moveCard(u, "bf");
 }
+/* Ausspielen ohne Unterscheidung: Spontanzauber und Hexereien gehen nach dem Auflösen auf den Friedhof, alles andere ins Spiel */
+function isSpellCard(c){ return /\b(Instant|Sorcery)\b/.test(String((c && c.type) || "").split(" // ")[0]); }
+async function playAuto(u){ const f = findCard(u); if(!f) return; return isSpellCard(f.c) ? castSpell(u) : play(u); }
 async function castSpell(u){
   const f = findCard(u); if(!f) return;
   if(f.z === "hand" || f.z === "cz"){
@@ -816,7 +819,7 @@ function makeDraggable(el, c, zone){
         const y = Math.round(ev.clientY - grab.y - fr.top - ch / 2);
         c.x = Math.max(0, Math.min(x, fr.width - cw)); c.y = Math.max(0, Math.min(y, FIELD_H - ch));
         if(zone === "bf"){ const i = S.bf.indexOf(c); if(i >= 0){ S.bf.splice(i, 1); S.bf.push(c); } commit(); }
-        else play(c.u);
+        else playAuto(c.u);
       }
       else if(z === "opp"){
         if(zone === "bf") giveControl(c.u, t.dataset.pid);
@@ -1026,8 +1029,8 @@ function cardMenu(c, zone){
     items.push("-");
   }
   if(zone === "hand"){
-    items.push({l:"Ausspielen", f:() => play(c.u)});
-    items.push({l:"Wirken (Spontanzauber/Hexerei → Friedhof)", f:() => castSpell(c.u)});
+    items.push({l: isSpellCard(c) ? "Ausspielen → Friedhof" : isLand(c) ? "Ausspielen (Land)" : "Ausspielen → Spielfeld", f:() => playAuto(c.u)});
+    if(!/\bLand\b/.test(String(c.type || "").split(" // ")[0]) && /\bLand\b/.test(String(c.type || "").split(" // ")[1] || "")) items.push({l:"Rückseite als Land spielen", f:() => { c.flip = true; moveCard(c.u, "bf"); act(`spielt ${c.n} als Land (Rückseite)`); commit(); }});
     items.push({l:"Verdeckt ausspielen", f:() => play(c.u, true)});
     items.push({l:"Zeigen", f:() => act(`zeigt ${c.n}`)});
     handManaItems(c).forEach(it => items.push(it));
@@ -10263,7 +10266,7 @@ function historyAdd(win){
 /* ---------- Automatische Updates ---------- */
 // Liegt die App im Web, prüft sie regelmässig version.json im selben Ordner und lädt sich bei einer neuen Version neu.
 // Alles Wichtige (Spielstand, Deck, Tisch) liegt im Browser-Speicher und ist nach dem Neuladen wieder da.
-const APP_VERSION = "2026.11.08-15";
+const APP_VERSION = "2026.11.09-1";
 const ONLINE = /^https?:$/.test(location.protocol);
 let updPending = null, updTimer = null, updSnoozeUntil = 0;
 function busyForUpdate(){ return botBusy || (!$("#modal").hidden && modalState && ["block","deck"].includes(modalState.kind)); }
