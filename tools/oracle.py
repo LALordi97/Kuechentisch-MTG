@@ -7,7 +7,7 @@ Der Text wird so übernommen, wie die App ihn sieht (wie tpl() in index.html: Vo
 Aufruf:  python3 tools/oracle.py            # lädt die aktuelle Datei von Scryfall
          python3 tools/oracle.py bulk.json  # nimmt eine schon geladene Datei (zum Testen)
 """
-import gzip, json, pathlib, re, sys, urllib.request
+import gzip, json, pathlib, re, sys, unicodedata, urllib.request
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 HEAD = {"User-Agent": "KuechentischMTG/1.0 (github.com/LALordi97/Kuechentisch-MTG)", "Accept": "application/json"}
@@ -18,6 +18,13 @@ def get(url):
     with urllib.request.urlopen(urllib.request.Request(url, headers=HEAD), timeout=300) as r:
         data = r.read()
     return gzip.decompress(data) if data[:2] == b"\x1f\x8b" else data
+
+
+def norm(n):
+    """Vergleichsform: ohne Akzente (Khazad-dûm), «A/B» wie «A // B», klein."""
+    n = unicodedata.normalize("NFKD", n).encode("ascii", "ignore").decode()
+    n = re.sub(r"\s*/{1,2}\s*", " // ", n)
+    return n.strip().lower()
 
 
 def parse_cards(raw):
@@ -71,10 +78,10 @@ def main():
         keys = [sc.get("name", "")] + [f.get("name", "") for f in (sc.get("card_faces") or [])[:1]]
         for k in keys:
             if k:
-                idx.setdefault(k.lower(), sc)
+                idx.setdefault(norm(k), sc)
     out, missing = [], []
     for n in deck_names():
-        sc = idx.get(n.lower()) or idx.get(n.split(" // ")[0].lower())
+        sc = idx.get(norm(n)) or idx.get(norm(n).split(" // ")[0])
         if not sc:
             missing.append(n)
             continue
