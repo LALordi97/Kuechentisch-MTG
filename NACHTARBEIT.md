@@ -21,10 +21,9 @@ Diese Anleitung führt eine geplante Aufgabe jede Nacht ohne Rückfragen aus. Si
 
 ## 2. Karten aus den Top-Decks (pro Nacht bis zu 30 Karten)
 
-1. `node tests/deck_cards.js 30` listet Karten aus `decks/*.txt`, die noch in keiner `tests/*_cards.json` stehen.
-2. Kartentext holen, Karte für Karte mit WebFetch: `https://api.scryfall.com/cards/named?exact=<Name, URL-kodiert>&format=text`. Den Text **wörtlich** übernehmen (Name, Manakosten, Typzeile, Regeltext). Doppelseitige Karten: beide Seiten. Ist der Text unsicher oder abgeschnitten, die Karte für diese Nacht weglassen.
-   - Klappt WebFetch gar nicht (keine Freigabe, gesperrt), Schritt 2 auslassen und das in der Zusammenfassung sagen.
-3. Datei `tests/nightJJJJMMTT_cards.json` schreiben, Format wie die anderen: `["Name", "Typzeile", "Regeltext", "{Manakosten}", Manawert]`. Erinnerungstext in Klammern weglassen, wie in den Berichten.
+1. `cd tests && node night_cards.js 30` schreibt die nächsten 30 ungeprüften Karten aus den Top-Decks mit ihrem echten Kartentext in `tests/nightJJJJMMTT_cards.json`. Der Text stammt aus `tests/oracle_decks.json`, das ein GitHub-Ablauf (`.github/workflows/oracle.yml`) jede Nacht um ca. 00:52 Uhr aus den Scryfall-Massendaten erneuert. Das ist echter Kartentext von Scryfall, kein Gedächtnis.
+2. Fehlt `oracle_decks.json` (Ablauf noch nie gelaufen oder fehlgeschlagen), ersatzweise `node tests/deck_cards.js 30` und den Text Karte für Karte mit WebFetch holen: `https://api.scryfall.com/cards/named?exact=<Name, URL-kodiert>&format=text`, **wörtlich** übernehmen; unsichere Karten weglassen. Klappt auch das nicht, Schritt 2 auslassen und das in der Zusammenfassung sagen.
+3. Format der Prüfdateien: `["Name", "Typzeile", "Regeltext", "{Manakosten}", Manawert]`.
 4. `node tests/chk_file.js tests/nightJJJJMMTT_cards.json` zeigt, was «automatisch», «teilweise» oder «von Hand» ist. `node tests/manual_dump.js` und `node tests/parse_dump.js <datei>` helfen beim Zerlegen.
 5. Die nicht automatischen Karten einbauen wie in den bisherigen Runden (Muster in `matchStep`, Signaturen `sig`, Fälle in `runSteps`, `HANDLED_STATIC`). Neue `case`-Namen vorher mit `grep` prüfen. Zwischendurch `node tests/lint.js`.
 6. Für eingebaute Karten Verhaltenstests in `tests/nightJJJJMMTT_test.js` (Kopf von `report30_test.js` übernehmen, Kartendatei austauschen).

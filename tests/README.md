@@ -15,3 +15,4 @@ node parse_dump.js report27_cards.json   # zeigt, wie die App Kartentexte zerleg
 - Mehrspieler-Tests (`mp*`, `req`, `life`) sind zeitkritisch und laufen am Schluss allein.
 - `node deck_cards.js 30`: Karten aus `../decks/*.txt`, die noch keine Prüfdatei haben.
 - `node chk_file.js <karten.json>`: Fähigkeiten-Check für eine beliebige Kartendatei.
+- `node night_cards.js 30`: nächste ungeprüfte Karten aus `oracle_decks.json` (vom GitHub-Ablauf) als Prüfdatei.

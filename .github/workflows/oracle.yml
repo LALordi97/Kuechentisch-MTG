@@ -1,0 +1,24 @@
+name: Kartentext für die Nachtarbeit
+on:
+  schedule:
+    - cron: "52 23 * * *"   # 00:52 Uhr Zürich (Winterzeit), vor der Nachtarbeit um 01:34
+  workflow_dispatch:
+  push:
+    paths: ["decks/**", "tools/oracle.py"]
+permissions:
+  contents: write
+jobs:
+  oracle:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Kartentext aus den Scryfall-Massendaten holen
+        run: python3 tools/oracle.py
+      - name: Committen, falls geändert
+        run: |
+          if git diff --quiet -- tests/oracle_decks.json && git ls-files --error-unmatch tests/oracle_decks.json >/dev/null 2>&1; then echo "unverändert"; exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add tests/oracle_decks.json
+          git commit -m "Kartentext der Top-Decks aktualisiert (Scryfall)"
+          git pull --rebase -q && git push
