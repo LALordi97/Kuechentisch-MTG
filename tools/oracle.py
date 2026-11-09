@@ -20,6 +20,21 @@ def get(url):
     return gzip.decompress(data) if data[:2] == b"\x1f\x8b" else data
 
 
+def parse_cards(raw):
+    """Massendaten als JSON-Liste oder als eine Karte pro Zeile (JSON Lines)."""
+    text = raw.decode("utf8")
+    try:
+        data = json.loads(text)
+        return data if isinstance(data, list) else data.get("data", [])
+    except json.JSONDecodeError:
+        out = []
+        for line in text.splitlines():
+            line = line.strip().rstrip(",")
+            if line and line not in ("[", "]"):
+                out.append(json.loads(line))
+        return out
+
+
 def deck_names():
     names = []
     for f in ("cedh.txt", "modern.txt", "legacy.txt"):
@@ -48,7 +63,7 @@ def main():
         url = item.get("download_uri") or next((v for k, v in item.items() if "download" in k and isinstance(v, str) and v.startswith("http")), None)
         if not url:
             sys.exit("oracle_cards ohne Download-Adresse: " + json.dumps(item)[:800])
-        cards = json.loads(get(url))
+        cards = parse_cards(get(url))
     idx = {}
     for sc in cards:
         if sc.get("layout") in ("token", "double_faced_token", "emblem", "art_series"):
