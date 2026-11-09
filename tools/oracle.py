@@ -44,7 +44,10 @@ def main():
         item = next((b for b in meta.get("data", []) if b.get("type") == "oracle_cards"), None)
         if not item:
             sys.exit("Scryfall-Antwort ohne oracle_cards: " + json.dumps(meta)[:500])
-        cards = json.loads(get(item["download_uri"]))
+        url = item.get("download_uri") or next((v for k, v in item.items() if "download" in k and isinstance(v, str) and v.startswith("http")), None)
+        if not url:
+            sys.exit("oracle_cards ohne Download-Adresse: " + json.dumps(item)[:800])
+        cards = json.loads(get(url))
     idx = {}
     for sc in cards:
         if sc.get("layout") in ("token", "double_faced_token", "emblem", "art_series"):
