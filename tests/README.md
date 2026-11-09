@@ -13,3 +13,5 @@ node parse_dump.js report27_cards.json   # zeigt, wie die App Kartentexte zerleg
 - `chkN_test.js`: Fähigkeiten-Check für die Karten in `reportN_cards.json` (Ziel: alles automatisch).
 - `reportN_test.js`: Verhalten der Karten aus Bericht N.
 - Mehrspieler-Tests (`mp*`, `req`, `life`) sind zeitkritisch und laufen am Schluss allein.
+- `node deck_cards.js 30`: Karten aus `../decks/*.txt`, die noch keine Prüfdatei haben.
+- `node chk_file.js <karten.json>`: Fähigkeiten-Check für eine beliebige Kartendatei.

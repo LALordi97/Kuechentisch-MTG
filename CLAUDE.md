@@ -5,3 +5,4 @@
 - Fähigkeiten-Check-Berichte enthalten den vollen Kartentext: daraus `tests/reportN_cards.json` bauen (nicht aus dem Gedächtnis).
 - Vor jedem Push: `cd tests && npm install && ./reg.sh` (Lint + alle Tests, ca. 4 Min). Schnell zwischendurch: `node lint.js`.
 - Neue Schritt-Namen (`case "..."`) vorher mit `grep` prüfen; Lint meldet doppelte Namen.
+- Nächtliche Aufgabe: `NACHTARBEIT.md` (Gesundheitscheck, Karten aus den Top-Decks, bekannte Lücken). Werkzeuge: `tests/deck_cards.js`, `tests/chk_file.js`.
