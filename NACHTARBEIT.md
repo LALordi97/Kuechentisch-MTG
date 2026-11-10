@@ -35,7 +35,7 @@ Eine offene Lücke wählen, umsetzen, testen, hier abhaken (`[x]` mit Datum):
 
 - [ ] Mindslaver: den nächsten Zug des Gegners wirklich steuern (heute nur Hinweis).
 - [ ] Zusätzliche Kampfphasen ausführen (heute nur Hinweis).
-- [ ] Ainok- und Winota-Angreifer automatisch in den Angriff aufnehmen.
+- [x] Ainok- und Winota-Angreifer automatisch in den Angriff aufnehmen. (2026-11-10)
 - [ ] Kostensenkung von March of Otherworldly Light / March-Zyklus anwenden.
 - [ ] Convoke für Zauber aus dem Exil prüfen.
 - [ ] Trickbind/Tidebinder: Fähigkeiten auf dem Stapel neutralisieren.
@@ -49,3 +49,4 @@ Eine offene Lücke wählen, umsetzen, testen, hier abhaken (`[x]` mit Datum):
 ## Protokoll
 
 - 2026-11-09: Nachtarbeit eingerichtet. GitHub-Ablauf liefert den Kartentext aller 877 Karten der Top-Decks; 506 davon noch ohne Prüfdatei.
+- 2026-11-10: Regression grün. 100 Karten geprüft (85 schon automatisch), 13 eingebaut (Azusa, Boomerang Basics, Damnation, Day's Undoing, Abhorrent Oculus, Archon of Cruelty, Basim Ibn Ishaq, Celestial Colonnade, Cephalid Coliseum, Cling to Dust, Crystal Barricade, Cultivator Colossus, Dalkovan Encampment). Lücke Ainok/Winota erledigt. Nebenbei: Timetwister/Day's Undoing zogen 14 statt 7; «if it's a … card» prüfte das Wort «card» mit. Version 2026.11.10-1.
