@@ -1525,6 +1525,7 @@ function applyAll(msg){
   order.forEach(id => { if(id !== me.id && msg.players[id] && typeof msg.players[id] === "object") others[id] = msg.players[id]; });
   if(typeof msg.host === "string") net.hostId = msg.host;
   STACK = Array.isArray(msg.stack) ? msg.stack.filter(x => x && typeof x === "object") : [];
+  STACK.forEach(x => { if(typeof x.u === "string" && !/\bLand\b/.test(String(x.type || ""))) noteSpellSeen(x.u); });
   injectBot();
   if(msg.turn && typeof msg.turn === "object") setTurn(msg.turn);
   renderAll();
@@ -1796,6 +1797,7 @@ function stackPush(raw, from, by){
     newTarget: typeof raw.newTarget === "string" ? raw.newTarget.slice(0, 20) : null, redirect: typeof raw.redirect === "string" ? raw.redirect.slice(0, 80) : null,
     owner: from, by: String(by || "Jemand").slice(0, 24), passes: [from], countered: false, free: !!raw.free};
   STACK.push(it);
+  if(!/\bLand\b/.test(it.type)) noteSpellSeen(it.u || it.id);
   const tgt = it.target && STACK.find(x => x.id === it.target);
   relayLog({from:it.by, text:`wirkt ${it.n}${tgt ? " gegen " + tgt.n : ""} (liegt auf dem Stapel)`, sys:true});
   broadcastAll();
@@ -2204,7 +2206,7 @@ function discardFromMe(card){
 }
 function castFromHand(c, plan, extra){
   payPlan(plan);
-  if(!isLand(c)) abilEvent({kind:"oppCast", c, opp:true});
+  if(!isLand(c)){ abilEvent({kind:"oppCast", c, opp:true}); noteSpellSeen(c.u); }
   const fromCz = BOT.cz.includes(c);
   if(fromCz){ BOT.cz.splice(BOT.cz.indexOf(c), 1); BOT.cmdCasts++; c.cmdr = true; }
   else BOT.hand.splice(BOT.hand.indexOf(c), 1);
@@ -3061,12 +3063,13 @@ function turnIds(){
 }
 function setTurn(t){
   const prev = TURN.active, prevKey = TURN.active + "|" + TURN.n, prevPhase = TURN.phase;
-  const prevEx = TURN.ex || 0;
+  const prevEx = TURN.ex || 0, oldTK = turnKey();
   TURN = {active: typeof t.active === "string" ? t.active : null, n: Number(t.n) || 0, starter: typeof t.starter === "string" ? t.starter : null,
     phase: Number.isInteger(t.phase) ? Math.max(0, Math.min(PHASES.length - 1, t.phase)) : 2, ex: Math.max(0, Math.min(99, parseInt(t.ex, 10) || 0))};
   LS.set("kt-turn", TURN);
   const newTurn = TURN.active + "|" + TURN.n !== prevKey || (TURN.ex || 0) !== prevEx;
   if(newTurn){
+    if(prev) S.prevTK = oldTK;
     expireCastable();
     clearPumps();
     if(TURN.active === me.id) onMyTurnStart();
@@ -3635,7 +3638,7 @@ function markOnMove(c, from, to, wasFd){
 function markOnCast(c){ if(c && !isLand(c)) S.gameSpells = (S.gameSpells || 0) + 1; if(c && !c.tok && /^Casualty (?:X|\d+)\b/im.test(c.o || "") && typeof abilAuto === "function" && abilAuto()) queued(() => casualtyPrompt(c)); if(c && !isLand(c) && !/\bArtifact\b/.test(c.type || "")){ const k = turnKey(); if(S.naKey !== k){ S.naKey = k; S.naCount = 0; } S.naCount++; }
   if(c && !isLand(c) && !isCreature(c)){ const k = turnKey(); if(S.ncKey !== k){ S.ncKey = k; S.ncCount = 0; } S.ncCount++; }
   if(c && /\b(Instant|Sorcery)\b/.test(c.type || "")){ const k = turnKey(); if(S.isKey !== k){ S.isKey = k; S.isCount = 0; } S.isCount++; }
-  if(c && !isLand(c)){ c.wasCast = true; noteSpellCast(); c.stormN = ((c.kw || []).some(k => /^storm$/i.test(k)) || /^Storm\b/m.test(c.o || "")) ? Math.max(0, (S.spellsCast || 1) - 1) : 0; markEvent({kind:"cast", c}); abilEvent({kind:"cast", c}); abilEvent({kind:"castSelf", c}, [c]); } }
+  if(c && !isLand(c)){ c.wasCast = true; noteSpellCast(); noteSpellSeen(c.u); c.stormN = ((c.kw || []).some(k => /^storm$/i.test(k)) || /^Storm\b/m.test(c.o || "")) ? Math.max(0, (S.spellsCast || 1) - 1) : 0; markEvent({kind:"cast", c}); abilEvent({kind:"cast", c}); abilEvent({kind:"castSelf", c}, [c]); } }
 function markOnAttack(attackers){ S.attacking = attackers.map(c => c.u); S.attackKey = turnKey();
   attackers.forEach(c => { if(/If this creature hasn't been exerted this turn, you may exert it as it attacks\. When you do, untap all other creatures you control and after this phase, there is an additional combat phase/i.test(c.o || "") && c.exertTurn !== S.turn) queued(async () => { if(!(await confirmMay(c, `${c.n} anstrengen (zusätzliche Kampfphase)`))) return; c.exertTurn = S.turn; c.exertKey = S.turn; S.bf.filter(x => x !== c && isCreature(x)).forEach(x => { x.tap = false; }); act(`${c.n} wird angestrengt: andere Kreaturen enttappt, zusätzliche Kampfphase`); toast(`<b>${esc(c.n)}:</b> Nach dieser Phase folgt eine zusätzliche Kampfphase.`); commit(); }); }); attackers.forEach((c, i) => { markEvent({kind:"attack", c, first: i === 0}); abilEvent({kind:"attack", c, first: i === 0}); }); }
 /* Spontanzauber und Hexereien: «You get {E}{E}{E}» beim Verrechnen */
@@ -4468,6 +4471,9 @@ function spellsThisTurn(){
   return S.spellsCast || 0;
 }
 function noteSpellCast(){ spellsThisTurn(); S.spellsCast = (S.spellsCast || 0) + 1; }
+/* Werwölfe: gewirkte Zauber aller Spieler pro Zug merken (eigene, Stapel, KI) */
+function noteSpellSeen(u, key){ if(!u) return; key = key || turnKey(); S.spellSeen = Array.isArray(S.spellSeen) ? S.spellSeen : []; if(S.spellSeen.some(x => x[0] === key && x[1] === u)) return; S.spellSeen.push([key, String(u)]); if(S.spellSeen.length > 80) S.spellSeen.splice(0, S.spellSeen.length - 80); }
+function spellsInTurn(key){ return (Array.isArray(S.spellSeen) ? S.spellSeen : []).filter(x => x[0] === key).length; }
 function costMods(spell){
   const t = String(spell.type || ""), mc = String(spell.mc || "");
   const isType = w => {
@@ -4679,6 +4685,11 @@ function matchStep2(p, src, full, SELF){
   p = p.replace(/^(he|she) deals /i, "it deals ");
   if(/^exile target spell$/i.test(p)) return [{t:"stackExile", plot:/It becomes plotted/i.test(full || "")}];
   if(/^it becomes plotted$/i.test(p)) return [{t:"skip"}];
+  // Nacht 11.11.2026: Fallaji Archaeologist, Golos, Field of Ruin
+  if((m = p.match(/^(?:you may )?put an? ([a-z, ]+?) card from among the cards milled this way into your hand$/i))) return [{t:"millPick", desc:m[1].replace(/,/g, "")}];
+  if((m = p.match(/^(?:you may )?play them this turn( without paying their mana costs)?$/i)) && /exile the top (?:\w+) cards of your library/i.test(full || "")) return [{t:"playExTurn", free:!!m[1]}];
+  if(/^each player searches their library for a basic land card, puts it onto the battlefield(?:, then shuffles)?$/i.test(p)) return [{t:"eachBasic"}];
+  if(/^(?:then )?shuffles$/i.test(p) && /Each player searches their library for a basic land card, puts it onto the battlefield, then shuffles/i.test(full || "")) return [{t:"skip"}];
   // Nacht 10.11.2026: Archon of Cruelty, Boomerang Basics, Basim, Celestial Colonnade, Cephalid Coliseum, Cling to Dust, Cultivator Colossus, Dalkovan Encampment, Day's Undoing, Abhorrent Oculus, Damnation
   if((m = p.match(/^(target opponent|each opponent) sacrifices (an? [a-z ]+?) of their choice, discards (a|one|two) cards?, and loses (\d+) life$/i))) return [{t:"oppTriple", who:m[1].toLowerCase(), sac:m[2], disc:m[3], n:+m[4]}];
   if((m = p.match(/^you draw (a|one|two|three) cards? and gain (\d+) life$/i))) return [...matchStep2(`draw ${m[1]} card${/^(a|one)$/i.test(m[1]) ? "" : "s"}`, src, full, SELF), ...matchStep2(`gain ${m[2]} life`, src, full, SELF)];
@@ -7946,6 +7957,24 @@ async function runSteps(steps, src, ctx = {}){
         ctx.lastMany = got; act(`${src.n}: verbannt ${got.map(c => c.n).join(", ")} (Manawert ${sum})`);
         break;
       }
+      case "millPick": {
+        const list = (ctx.lastMany || []).filter(c => S.gy.includes(c) && descMatch(st.desc, c));
+        const p = list.length ? ((await pickCards(`${src.n}: eine Karte (${st.desc}) auf die Hand nehmen?`, list, 1, {none:"Keine"})) || []) : [];
+        if(p[0]){ moveCard(p[0].u, "hand"); act(`${src.n}: nimmt ${p[0].n} aus dem Friedhof auf die Hand`); }
+        ctx.mayNo = !p[0]; ctx.did = !!p[0];
+        break;
+      }
+      case "playExTurn": {
+        const list = (ctx.lastMany || []).filter(c => S.ex.includes(c));
+        list.forEach(c => { c.castKey = turnKey(); c.playOk = true; if(st.free) c.freeCast = true; });
+        if(list.length) act(`${src.n}: ${list.map(c => c.n).join(", ")} darfst du diesen Zug spielen${st.free ? " (ohne Manakosten)" : ""}`);
+        commit(); break;
+      }
+      case "eachBasic": {
+        await searchStep({what:"a basic land card", rest:"put it onto the battlefield"}, src, ctx);
+        for(const o of liveOpps()){ const r = await requestOpp(o.id, {kind:"searchBasic", tapped:false, src:src.n}); act(`${src.n}: ${o.name} ${r && r.ok ? "sucht ein Standardland" : "sucht nicht"}`); }
+        break;
+      }
       case "castAmong": {
         const list = (ctx.lastMany || []).filter(c => !isLand(c) && S.ex.includes(c));
         const p = (await pickCards(`${src.n}: welche Zauber gratis wirken?`, list, list.length, {none:"Keine"})) || [];
@@ -8746,6 +8775,7 @@ function interveningIf(text, src, opts){
   else if(/^it was kicked$/.test(c)) ok = !!src.kicked;
   else if(/^it's the first time that creature has become tapped this turn$/.test(c)){ const e = arguments[2] && arguments[2].ev; ok = e && e.c ? (e.c._tapKey === turnKey() && e.c._tapN === 1) : null; }
   else if(/^there are four or more card types among cards in your graveyard$/.test(c)) ok = deliriumOn();
+  else if(/^no spells were cast last turn$/.test(c)){ if(!S.prevTK) ok = null; else { const n = spellsInTurn(S.prevTK); ok = src && src.flip ? n >= 2 : n === 0; } }
   else if(/^this spell is the first spell you've cast this game$/.test(c)) ok = !(S.gameSpells > 0);
   else if(/^you've cast a noncreature spell this turn$/.test(c)) ok = S.ncKey === turnKey() && (S.ncCount || 0) > 0;
   else if(/^an opponent controls more lands than you$/.test(c)) ok = oppBfCards().length >= 0 && liveOpps().some(o => ((o.id === "bot" ? BOT.bf : ((others[o.id] || {}).bf || [])) || []).filter(x => x && isLand(x)).length > S.bf.filter(x => !x.fd && isLand(x)).length);
@@ -9488,7 +9518,7 @@ function cardCheck(t){
     const steps = texts.flatMap(tx => parseSteps(tx, c));
     const man = steps.filter(s => s.t === "manual" || s.t === "note").map(s => s.text);
     steps.forEach(s => { if(typeof s.each === "string" && s.each){ let v = null; try{ v = xExpr(s.each, c); }catch(e){} if(v == null) man.push(`Anzahl «für jede(n) ${s.each}» wird nachgefragt`); } });
-    if(ab.kind === "trig" && /^if /i.test(ab.text)){ const iff = interveningIf(ab.text, c); if(iff.ok === null && !/^(no mana was spent to cast it|you cast it|it's the first time that creature has become tapped this turn|it isn't that player's turn|it was kicked|there are four or more card types among cards in your graveyard|(?:\{[wubrgc]\})+ was spent to cast it)$/i.test(iff.cond || "")) man.unshift(`Bedingung «${iff.cond}» wird nachgefragt`); }
+    if(ab.kind === "trig" && /^if /i.test(ab.text)){ const iff = interveningIf(ab.text, c); if(iff.ok === null && !/^(no mana was spent to cast it|you cast it|it's the first time that creature has become tapped this turn|no spells were cast last turn|it isn't that player's turn|it was kicked|there are four or more card types among cards in your graveyard|(?:\{[wubrgc]\})+ was spent to cast it)$/i.test(iff.cond || "")) man.unshift(`Bedingung «${iff.cond}» wird nachgefragt`); }
     if(man.length) out.manual.push(`${line.slice(0, 90)} → selbst: ${man.join(" / ")}`);
     else out.auto.push(line);
   });
@@ -10369,7 +10399,7 @@ function historyAdd(win){
 /* ---------- Automatische Updates ---------- */
 // Liegt die App im Web, prüft sie regelmässig version.json im selben Ordner und lädt sich bei einer neuen Version neu.
 // Alles Wichtige (Spielstand, Deck, Tisch) liegt im Browser-Speicher und ist nach dem Neuladen wieder da.
-const APP_VERSION = "2026.11.10-1";
+const APP_VERSION = "2026.11.11-1";
 const ONLINE = /^https?:$/.test(location.protocol);
 let updPending = null, updTimer = null, updSnoozeUntil = 0;
 function busyForUpdate(){ return botBusy || (!$("#modal").hidden && modalState && ["block","deck"].includes(modalState.kind)); }

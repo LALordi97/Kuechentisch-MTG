@@ -1,4 +1,4 @@
 {
-  "version": "2026.11.10-1",
-  "notes": "Nachtarbeit: 13 weitere Karten aus den Top-Decks laufen automatisch (u. a. Archon of Cruelty, Day's Undoing, Damnation, Cling to Dust, Cultivator Colossus, Abhorrent Oculus mit Manifest dread, Celestial Colonnade, Dalkovan Encampment, Crystal Barricade). Goblins von Ainok Strike Leader und Menschen von Winota greifen jetzt wirklich mit an. Timetwister und Day's Undoing ziehen nur noch sieben Karten."
+  "version": "2026.11.11-1",
+  "notes": "Nachtarbeit: 4 weitere Karten aus den Top-Decks laufen automatisch: Fallaji Archaeologist (Karte aus den gemahlenen nehmen, sonst +1/+1-Marke), Golos (oberste drei Karten diesen Zug gratis spielbar), Field of Ruin (alle suchen ein Standardland) und Duskwatch Recruiter (Werwolf verwandelt sich je nach Zaubern im letzten Zug, Rückseite bei zwei oder mehr Zaubern zurück). Convoke für Zauber aus dem Exil (Party Thrasher) geprüft."
 }
