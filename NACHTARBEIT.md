@@ -36,7 +36,7 @@ Eine offene Lücke wählen, umsetzen, testen, hier abhaken (`[x]` mit Datum):
 - [ ] Mindslaver: den nächsten Zug des Gegners wirklich steuern (heute nur Hinweis).
 - [ ] Zusätzliche Kampfphasen ausführen (heute nur Hinweis).
 - [x] Ainok- und Winota-Angreifer automatisch in den Angriff aufnehmen. (2026-11-10)
-- [ ] Kostensenkung von March of Otherworldly Light / March-Zyklus anwenden.
+- [x] Kostensenkung von March of Otherworldly Light / March-Zyklus anwenden. (2026-11-12, getestet mit March of Swirling Mist)
 - [x] Convoke für Zauber aus dem Exil prüfen. (2026-11-11: funktioniert schon, Tests ergänzt)
 - [ ] Trickbind/Tidebinder: Fähigkeiten auf dem Stapel neutralisieren.
 
@@ -51,3 +51,4 @@ Eine offene Lücke wählen, umsetzen, testen, hier abhaken (`[x]` mit Datum):
 - 2026-11-09: Nachtarbeit eingerichtet. GitHub-Ablauf liefert den Kartentext aller 877 Karten der Top-Decks; 506 davon noch ohne Prüfdatei.
 - 2026-11-10: Regression grün. 100 Karten geprüft (85 schon automatisch), 13 eingebaut (Azusa, Boomerang Basics, Damnation, Day's Undoing, Abhorrent Oculus, Archon of Cruelty, Basim Ibn Ishaq, Celestial Colonnade, Cephalid Coliseum, Cling to Dust, Crystal Barricade, Cultivator Colossus, Dalkovan Encampment). Lücke Ainok/Winota erledigt. Nebenbei: Timetwister/Day's Undoing zogen 14 statt 7; «if it's a … card» prüfte das Wort «card» mit. Version 2026.11.10-1.
 - 2026-11-11: Regression grün. 100 Karten geprüft (94 schon automatisch, 2 ohne Text), 4 eingebaut (Fallaji Archaeologist, Golos, Field of Ruin, Duskwatch Recruiter; dafür neu: Zauber aller Spieler pro Zug gemerkt). Lücke Convoke aus dem Exil geprüft (lief schon, Tests ergänzt). Version 2026.11.11-1.
+- 2026-11-12: Regression grün. 100 Karten geprüft (90 schon automatisch, 1 ohne Text), 8 eingebaut (Oliphaunt, Kraul Harpooner, Inevitable Betrayal, Living End, Oblivion Stone, Narset, Parter of Veils, Karn, Argent Defender; dazu Ziele «with flying» u. ä. gefiltert, KI-Karten zeigen ihre Schlüsselwörter). Offen: Harbinger of the Seas, Hanweir Battlements (Meld). Lücke March-Zyklus erledigt. Scryfall-WebFetch war nicht freigegeben (Text kam aus oracle_decks.json). Version 2026.11.12-1.

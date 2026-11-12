@@ -1,4 +1,4 @@
 {
-  "version": "2026.11.11-1",
-  "notes": "Nachtarbeit: 4 weitere Karten aus den Top-Decks laufen automatisch: Fallaji Archaeologist (Karte aus den gemahlenen nehmen, sonst +1/+1-Marke), Golos (oberste drei Karten diesen Zug gratis spielbar), Field of Ruin (alle suchen ein Standardland) und Duskwatch Recruiter (Werwolf verwandelt sich je nach Zaubern im letzten Zug, Rückseite bei zwei oder mehr Zaubern zurück). Convoke für Zauber aus dem Exil (Party Thrasher) geprüft."
+  "version": "2026.11.12-1",
+  "notes": "Nachtarbeit: 8 weitere Karten aus den Top-Decks laufen automatisch: Oliphaunt (andere eigene Kreatur +2/+0 und Trample), Kraul Harpooner (Flieger wählen, +X/+0, freiwillig kämpfen), Inevitable Betrayal (Kreatur aus der gegnerischen Bibliothek ins Spiel), Living End (bei allen Spielern), Oblivion Stone (Schicksalsmarken), Narset, Parter of Veils (Gegner ziehen höchstens eine Karte pro Zug), Karn, Argent Defender (eintretende Artefakte und Kreaturen lösen nichts aus). March-Zyklus: farbige Karten aus der Hand verbannen macht den Zauber je {2} billiger."
 }
