@@ -1,4 +1,4 @@
 {
-  "version": "2026.11.12-1",
-  "notes": "Nachtarbeit: 8 weitere Karten aus den Top-Decks laufen automatisch: Oliphaunt (andere eigene Kreatur +2/+0 und Trample), Kraul Harpooner (Flieger wählen, +X/+0, freiwillig kämpfen), Inevitable Betrayal (Kreatur aus der gegnerischen Bibliothek ins Spiel), Living End (bei allen Spielern), Oblivion Stone (Schicksalsmarken), Narset, Parter of Veils (Gegner ziehen höchstens eine Karte pro Zug), Karn, Argent Defender (eintretende Artefakte und Kreaturen lösen nichts aus). March-Zyklus: farbige Karten aus der Hand verbannen macht den Zauber je {2} billiger."
+  "version": "2026.11.13-1",
+  "notes": "Nachtarbeit: 9 weitere Karten aus den Top-Decks laufen automatisch: Persist (nicht legendäre Kreatur mit -1/-1-Marke zurück), Requiting Hex (Blight als freiwillige Zusatzkosten, dann 2 Leben), Roiling Canopy (Bedingung «fünf andere Wälder» wird geprüft), Sanctifier en-Vec (schwarze und rote Karten ins Exil statt in den Friedhof), Scion of Draco (Schlüsselwörter nach Farbe), Seasoned Pyromancer (Elementare für abgeworfene Nichtland-Karten), Seasoned Cryomancer (Kreaturen tappen und betäuben), Shadowspear (Gegner verlieren Fluchsicherheit und Unzerstörbarkeit), Portent of Calamity (pro Kartentyp verbannen, ab vier gratis wirken)."
 }

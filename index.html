@@ -528,11 +528,15 @@ let CASTING_U = null;
 function gyToExile(c){
   if(c.exileOnLeave){ delete c.exileOnLeave; return true; }
   if(!c.ow && oppBfCards().some(x => x.n === "Leyline of the Void" || /^If a card would be put into an opponent's graveyard from anywhere, exile it instead/im.test(x.o || ""))) return true;
+  if(sanctifierHits(c)) return true;
   if(c.tok) return false;
   if(S.ywExile === turnKey()) return true;
   if(S.bf.some(x => !x.fd && /If a card or token would be put into (your|a) graveyard from anywhere, exile it instead/i.test(x.o || ""))) return true;
   return Object.values(others).some(o => (Array.isArray(o && o.bf) ? o.bf : []).some(x => x && !x.fd && /^(Rest in Peace|Leyline of the Void|Planar Void|Dauthi Voidwalker)$/.test(x.n || "")));
 }
+/* Sanctifier en-Vec: schwarze und rote Karten kommen ins Exil statt in den Friedhof */
+const SANCT_RE = /If a black or red permanent, spell, or card not on the battlefield would be put into a graveyard, exile it instead/i;
+function sanctifierHits(c){ if(!c) return false; const col = colorsOfMc(c.mc); if(!col.includes("B") && !col.includes("R")) return false; return allBfCards().some(x => x.n === "Sanctifier en-Vec" || SANCT_RE.test(x.o || "")); }
 const dauthiOpp = () => Object.entries(others).some(([id, o]) => id !== me.id && (Array.isArray(o && o.bf) ? o.bf : []).some(x => x && !x.fd && x.n === "Dauthi Voidwalker"));
 const dauthiMine = () => (S.bf || []).some(x => !x.fd && /If a card would be put into an opponent's graveyard from anywhere, instead exile it with a void counter/i.test(x.o || ""));
 function jailerBlocks(c, from, to){ return to === "bf" && from === "gy" && c && isPermanentType(c) && typeof allBfCards === "function" && allBfCards().some(x => x.n === "Soulless Jailer" || /^Permanent cards in graveyards can't enter the battlefield/im.test(x.o || "")); }
@@ -2063,7 +2067,7 @@ function botDraw(n = 1){
   return true;
 }
 function botRemove(c){ const i = BOT.bf.indexOf(c); if(i >= 0) BOT.bf.splice(i, 1); }
-function botToZone(c, zone){ if(zone === "gy" && !c.tok && typeof S !== "undefined" && S.bf && S.bf.some(x => !x.fd && /^If a card would be put into an opponent's graveyard from anywhere, exile it instead/im.test(x.o || ""))) zone = "ex"; botRemove(c); c.tap = false; c.sick = false; c.c = 0; if(c.tok) return; if(zone === "gy" && typeof dauthiMine === "function" && dauthiMine()){ zone = "ex"; c.void = true; } (zone === "hand" ? BOT.hand : zone === "ex" ? BOT.ex : BOT.gy).push(c); }
+function botToZone(c, zone){ if(zone === "gy" && !c.tok && typeof S !== "undefined" && S.bf && S.bf.some(x => !x.fd && /^If a card would be put into an opponent's graveyard from anywhere, exile it instead/im.test(x.o || ""))) zone = "ex"; if(zone === "gy" && typeof S !== "undefined" && S.bf && sanctifierHits(c)) zone = "ex"; botRemove(c); c.tap = false; c.sick = false; c.c = 0; if(c.tok) return; if(zone === "gy" && typeof dauthiMine === "function" && dauthiMine()){ zone = "ex"; c.void = true; } (zone === "hand" ? BOT.hand : zone === "ex" ? BOT.ex : BOT.gy).push(c); }
 
 /* --- Mana mit Farben --- */
 const COLORS = ["W","U","B","R","G"];
@@ -4696,6 +4700,14 @@ function matchStep2(p, src, full, SELF){
   p = p.replace(/^(he|she) deals /i, "it deals ");
   if(/^exile target spell$/i.test(p)) return [{t:"stackExile", plot:/It becomes plotted/i.test(full || "")}];
   if(/^it becomes plotted$/i.test(p)) return [{t:"skip"}];
+  // Nacht 13.11.2026: Seasoned Pyromancer, Seasoned Cryomancer, Shadowspear, Portent of Calamity
+  if(/For each nonland card discarded this way, create/i.test(full || "")){
+    if(/^for each nonland card discarded this way$/i.test(p)) return [{t:"discNonland"}];
+    if((m = p.match(/^create an? (.+?) tokens?$/i)) && new RegExp("discarded this way, " + p.replace(/[.*+?^${}()|[\]\\/]/g, "\\$&"), "i").test(full)) return [{t:"token", n:"that many", tapped:false, desc:m[1], extra:""}];
+  }
+  if(/^when you discard one or more nonland cards this way, tap up to that many target creatures and put a stun counter on each of them$/i.test(p)) return [{t:"cryoStun"}];
+  if(/^permanents your opponents control lose hexproof and indestructible until end of turn$/i.test(p)) return [{t:"shadowspear"}];
+  if(/Reveal the top X cards of your library\. For each card type, you may exile a card of that type from among them\. Put the rest into your graveyard\. You may cast a spell from among the exiled cards without paying its mana cost if you exiled four or more cards this way\. Then put the rest of the exiled cards into your hand/i.test(full || "")) return [/^reveal the top x cards of your library$/i.test(p) ? {t:"portent", n:"X"} : {t:"skip"}];
   // Nacht 12.11.2026: Oliphaunt, Kraul Harpooner, Inevitable Betrayal, Living End, Oblivion Stone
   if((m = p.match(/^another target creature you control gets ([+-]\d+)\/([+-]\d+)(?: and gains ([a-z ,]+?))? until end of turn$/i))) return [{t:"pump", who:"another target creature you control", p:m[1], tg:m[2], kw:m[3] || ""}];
   if(/^(?:then )?you may have (?:this creature|it) fight that creature$/i.test(p)) return [{t:"fightThat"}];
@@ -5222,6 +5234,7 @@ function matchStep2(p, src, full, SELF){
   // Orim's Chant: «Target player can't cast spells this turn», «creatures can't attack this turn»
   if(/^target (player|opponent) can't cast spells this turn$/i.test(p)) return [{t:"lock", target:true, text:p}];
   if(/^creatures can't attack this turn$/i.test(p)) return [{t:"lock", noAttack:true, text:p}];
+  if((m = p.match(/^if this spell's additional cost was paid, (.+)$/i))){ const sub = matchStep2(m[1], src, full, SELF); sub.forEach(x => x.ifKicked = true); return sub; }
   if((m = p.match(/^if this spell was kicked, (.+)$/i))){ const sub = matchStep2(m[1], src, full, SELF); sub.forEach(x => x.ifKicked = true); return sub; }
   // Geschenk (Gift): «If the gift was promised, (instead) …»
   if((m = p.match(/^if the gift was promised, (instead )?(.+)$/i))){ const sub = matchStep2(m[2], src, full, SELF); sub.forEach(x => x.ifGift = true); if(m[1] && sub[0]) sub[0].instead = true; return sub; }
@@ -5277,7 +5290,7 @@ function matchStep2(p, src, full, SELF){
   if(/you win the game$/i.test(p)) return [{t:"note", text:p + " – prüfe die Bedingung, dann hast du gewonnen!"}];
   if((m = p.match(/^put an? (.+?) card from your hand onto the battlefield( tapped)?$/i))) return [W({t:"putFromHand", who:m[1], tapped:!!m[2]})];
   if((m = p.match(/^each player may put an? (.+?) card from their hand onto the battlefield$/i))) return [{t:"putFromHand", who:m[1], may:true}, {t:"askOpp", text:"Jeder andere Spieler darf ebenfalls eine solche Karte ins Spiel bringen"}];
-  if((m = p.match(/^(?:put|return) target (.+?) card from (?:a|your) graveyard (?:onto|to) the battlefield(?: under your control)?( tapped)?$/i))) return [W({t:"gyReturn", who:m[1], dest:"bf", tapped:!!m[2], n:1})];
+  if((m = p.match(/^(?:put|return) target (.+?) card from (?:a|your) graveyard (?:onto|to) the battlefield(?: under your control)?( tapped)?(?: with an? ([+-]1\/[+-]1) counter on it)?$/i))) return [W({t:"gyReturn", who:m[1], dest:"bf", tapped:!!m[2], n:1, ctr:m[3] ? (m[3][0] === "-" ? -1 : 1) : 0})];
   if(/^choose (two|\w+) cards in your hand drawn this turn$/i.test(p)) return [{t:"skip"}];
   if((m = p.match(/^for each of those cards, pay (\d+) life or put the card on top of your library$/i))) return [{t:"payOrTop", life:+m[1], n:2}];
   // Bedingte Schritte: «Draw a card if an opponent has cast a blue or black spell this turn»
@@ -5943,6 +5956,7 @@ function tribalKw(c, k){
   if(!c || typeof S === "undefined" || !S || !Array.isArray(S.bf) || !S.bf.includes(c) || !isCreature(c)) return false;
   for(const x of S.bf){
     if(x.fd || !x.o) continue;
+    if(/^Each creature you control has vigilance if it's white, hexproof if it's blue, lifelink if it's black, first strike if it's red, and trample if it's green/im.test(x.o)){ const col = {vigilance:"W", hexproof:"U", lifelink:"B", "first strike":"R", trample:"G"}[k]; if(col && colorsOfMc(c.mc).includes(col)) return true; }
     const re = /^(?:Other )?([A-Z][a-z]+?)(?: creatures)?s? (?:you|your team) controls? have ([a-z ,]+?)\.?$/gm; let m;
     while((m = re.exec(x.o))){ if(/^(Other )/.test(m[0]) && x === c) continue; const ty = m[1]; if(!typeMatch(c, ty)) continue; if(m[2].split(/,\s*(?:and\s+)?|\s+and\s+/).map(z => z.trim().toLowerCase()).includes(k)) return true; }
   }
@@ -6512,7 +6526,7 @@ async function runSteps(steps, src, ctx = {}){
     if(st.ifNot && !ctx.mayNo) continue;
     if(st.ifGift && !src.gift) continue;
     if(st.ifNoGift && src.gift) continue;
-    if(st.ifKicked && !src.kicked) continue;
+    if(st.ifKicked && !src.kicked && !src.blighted) continue;
     if(st.ifTgtMine && !(ctx.target && ctx.target.mine)) continue;
     if(st.ifFlip && ctx.flip !== st.ifFlip) continue;
     if(st.ifControl){ const k = S.bf.filter(c => !c.fd && descMatch(st.ifControl.desc.replace(/s$/, ""), c)).length; const ok = st.ifControl.dir === "fewer" ? k <= st.ifControl.n : k >= st.ifControl.n; if(!ok){ act(`${src.n}: Bedingung nicht erfüllt (${k} ${st.ifControl.desc})`); continue; } }
@@ -6550,9 +6564,9 @@ async function runSteps(steps, src, ctx = {}){
       }
       case "discard": {
         const n = await needX();
-        if(st.random){ for(let k = 0; k < n && S.hand.length; k++){ const c = S.hand[Math.floor(Math.random() * S.hand.length)]; moveCard(c.u, "gy"); act(`wirft zufällig ${c.n} ab`); } break; }
+        if(st.random){ ctx.discarded = []; for(let k = 0; k < n && S.hand.length; k++){ const c = S.hand[Math.floor(Math.random() * S.hand.length)]; ctx.discarded.push(c); moveCard(c.u, "gy"); act(`wirft zufällig ${c.n} ab`); } break; }
         const p = await pickCards(`${src.n}: ${n} Karte(n) abwerfen`, S.hand.slice(), n, {none:"Keine"});
-        p.forEach(c => moveCard(c.u, "gy")); if(p.length) act(`wirft ${p.map(c => c.n).join(", ")} ab`);
+        ctx.discarded = (p || []).slice(); p.forEach(c => moveCard(c.u, "gy")); if(p.length) act(`wirft ${p.map(c => c.n).join(", ")} ab`);
         break;
       }
       case "discardHand": { const k = S.hand.length; S.gy.push(...S.hand); S.hand = []; act(`wirft die Hand ab (${k})`); break; }
@@ -6620,7 +6634,7 @@ async function runSteps(steps, src, ctx = {}){
         let p = /^all\b/i.test(st.who) ? S.gy.filter(f) : await pickCards(`${src.n}: aus dem Friedhof (${st.who}${st.totalMv != null ? `, zusammen Manawert bis ${st.totalMv}` : ""})`, S.gy.filter(f), st.n || 1, {none:"Keine"});
         if(st.totalMv != null){ const keep = []; let sum = 0; (p || []).forEach(c => { if(sum + (c.cmc || 0) <= st.totalMv){ keep.push(c); sum += c.cmc || 0; } }); if(keep.length < p.length) toast("Zusammen höchstens Manawert " + st.totalMv + ". Zu viel gewählte Karten bleiben im Friedhof."); p = keep; }
         ctx.last = p[0] || ctx.last;
-        p.forEach(c => { moveCard(c.u, st.dest); if(st.tapped) c.tap = true; act(`holt ${c.n} aus dem Friedhof ${st.dest === "hand" ? "auf die Hand" : "ins Spiel"}`); });
+        p.forEach(c => { moveCard(c.u, st.dest); if(st.tapped) c.tap = true; if(st.ctr && st.dest === "bf" && S.bf.includes(c)){ c.c = (c.c || 0) + st.ctr; if(st.ctr > 0) abilEvent({kind:"countersOn", c}); } act(`holt ${c.n} aus dem Friedhof ${st.dest === "hand" ? "auf die Hand" : "ins Spiel"}${st.ctr ? ` (mit einer ${st.ctr > 0 ? "+1/+1" : "-1/-1"}-Marke)` : ""}`); });
         break;
       }
       case "selfCounter": { const n = await needX(); if(S.bf.includes(src)){ src.c = (src.c || 0) + n; act(`${src.n}: +${n} Marke (jetzt ${src.c})`); if(n > 0) abilEvent({kind:"countersOn", c:src}); } break; }
@@ -7980,6 +7994,39 @@ async function runSteps(steps, src, ctx = {}){
         ctx.lastMany = got; act(`${src.n}: verbannt ${got.map(c => c.n).join(", ")} (Manawert ${sum})`);
         break;
       }
+      case "discNonland": { ctx.much = (ctx.discarded || []).filter(c => !isLand(c)).length; break; }
+      case "cryoStun": {
+        const n = (ctx.discarded || []).filter(c => !isLand(c)).length; if(!n) break;
+        const done = [];
+        for(let i = 0; i < n; i++){
+          const t = await pickTarget(`${src.n}: Kreatur tappen und betäuben (${i + 1} von bis zu ${n})`, "target creature", false); if(!t || t.kind !== "card") break;
+          if(done.includes(t.card.u)){ toast("Diese Kreatur ist schon gewählt."); i--; continue; } done.push(t.card.u);
+          if(t.mine){ t.card.tap = true; t.card.stun = (t.card.stun || 0) + 1; act(`${src.n}: tappt ${t.card.n} und legt eine Betäubungsmarke darauf`); }
+          else { hitOpponent(t.pid, {kind:"tap", card:t.card.u, src:src.n}); hitOpponent(t.pid, {kind:"stun", amount:1, card:t.card.u, src:src.n}); act(`${src.n}: tappt ${t.card.n} (${oppByPid(t.pid)}) mit Betäubungsmarke`); }
+        }
+        commit(); break;
+      }
+      case "shadowspear": {
+        let n = 0; const has = (c, k) => (c.kw || []).some(z => String(z).toLowerCase() === k) || new RegExp(`(?:^|\\n|, )${k}(?:,|\\n|$)`, "i").test(c.o || "");
+        liveOpps().forEach(o => (Array.isArray((others[o.id] || {}).bf) ? others[o.id].bf : []).forEach(c => { if(!c || c.fd) return;
+          ["hexproof", "indestructible"].forEach(k => { if(has(c, k)){ n++; hitOpponent(o.id, {kind:"loseKw", kw:k, card:c.u, src:src.n}); } }); }));
+        act(`${src.n}: bleibende Karten der Gegner verlieren Fluchsicherheit und Unzerstörbarkeit bis Ende des Zuges${n ? "" : " (keine betroffen)"}`); commit(); break;
+      }
+      case "portent": {
+        const x = await needX(), top = S.library.slice(0, x); if(!top.length) break;
+        act(`${src.n}: zeigt ${top.map(c => c.n).join(", ")}`);
+        const TYPES = ["Artifact", "Battle", "Creature", "Enchantment", "Instant", "Kindred", "Land", "Planeswalker", "Sorcery"], chosen = [];
+        for(const ty of TYPES){
+          const list = top.filter(c => !chosen.includes(c) && new RegExp(`\\b${ty}\\b`).test(String(c.type || "").split("—")[0])); if(!list.length) continue;
+          const p = (await pickCards(`${src.n}: eine Karte vom Typ ${ty} verbannen? (${chosen.length} gewählt)`, list, 1, {none:"Keine"})) || []; if(p[0]) chosen.push(p[0]);
+        }
+        top.forEach(c => { if(S.library.includes(c)) moveCard(c.u, chosen.includes(c) ? "ex" : "gy"); });
+        act(`${src.n}: verbannt ${chosen.length ? chosen.map(c => c.n).join(", ") : "nichts"}, der Rest kommt in den Friedhof`);
+        if(chosen.length >= 4){ const sp = chosen.filter(c => !isLand(c) && S.ex.includes(c)); const p = sp.length ? ((await pickCards(`${src.n}: einen Zauber davon gratis wirken?`, sp, 1, {none:"Keinen"})) || []) : [];
+          if(p[0]){ chosen.splice(chosen.indexOf(p[0]), 1); await castFree(p[0], {}); } }
+        chosen.filter(c => S.ex.includes(c)).forEach(c => moveCard(c.u, "hand"));
+        commit(); break;
+      }
       case "fightThat": {
         const t = ctx.target;
         if(!t || t.kind !== "card" || t.mine || !S.bf.includes(src)) break;
@@ -8826,6 +8873,7 @@ function interveningIf(text, src, opts){
   if((k = c.match(/^you gained (\d+|one|two|three) or more life this turn$/))) ok = lifeGainedThisTurn() >= nWord(k[1]);
   else if(/^you gained life this turn$/.test(c)) ok = lifeGainedThisTurn() > 0;
   else if((k = c.match(/^you control (\w+) or more (.+)$/))) ok = S.bf.filter(x => !x.fd && descMatch(k[2].replace(/s$/, ""), x)).length >= (nWord(k[1]) || 0);
+  else if((k = c.match(/^you control at least (\w+) other (.+)$/))){ const ex = (opts && opts.ev && opts.ev.c) || src; ok = S.bf.filter(x => !x.fd && x !== ex && descMatch(k[2].replace(/s$/, ""), x)).length >= (nWord(k[1]) || 0); }
   else if((k = c.match(/^you control an? (.+)$/))) ok = S.bf.some(x => !x.fd && x !== src && descMatch(k[1], x));
   else if(/^it's your turn$/.test(c)) ok = TURN.active === me.id;
   else if((k = c.match(/^(?:this \w+|it) is tapped$/))) ok = !!src.tap;
@@ -8992,6 +9040,10 @@ async function castCosts(c){
       const list = S.hand.filter(x => x !== c && colorsOfMc(x.mc || "").includes(col));
       const p = list.length ? ((await pickCards(`${c.n}: ${mar[1]} Karten aus der Hand ins Exil (macht den Zauber billiger)`, list, list.length, {none:"Keine"})) || []) : [];
       if(p.length){ p.forEach(x => moveCard(x.u, "ex")); c.marchN = p.length; act(`${c.n}: verbannt ${p.map(x => x.n).join(", ")} aus der Hand (billiger)`); } } }
+  { const bl = o.match(/As an additional cost to cast this spell, you may blight (\d+)\./i);
+    if(bl){ c.blighted = false; const n = +bl[1], list = S.bf.filter(x => !x.fd && isCreature(x));
+      const p = list.length ? ((await pickCards(`${c.n}: Blight ${n} – zusätzliche Kosten (eine -1/-1-Marke auf eine deiner Kreaturen)? Freiwillig.`, list, 1, {none:"Nicht"})) || []) : [];
+      if(p[0]){ p[0].c = (p[0].c || 0) - n; c.blighted = true; act(`${c.n}: Blight ${n} auf ${p[0].n}`); if(tough(p[0]) <= 0){ moveCard(p[0].u, "gy"); abilEvent({kind:"die", c:p[0]}, [p[0]]); } } } }
   const add = o.match(/As an additional cost to cast this spell, ([^.]+)\./i);
   if(add && !/\bor\b|bargain|\bmay\b/i.test(add[1])){
     if(!(await payAbilityCost(c, add[1], {free:true}))){ delete c.payMc; return false; }
@@ -9487,6 +9539,7 @@ function oppDrawScan(){
 
 /* ---------- Fähigkeiten-Check: Was kann die App mit den Karten im Deck? ---------- */
 const HANDLED_STATIC = [
+  /^If a black or red permanent, spell, or card not on the battlefield would be put into a graveyard, exile it instead/i, /^Each creature you control has vigilance if it's white, hexproof if it's blue, lifelink if it's black, first strike if it's red, and trample if it's green/i,
   /^(?:White|Blue|Black|Red|Green) creatures get [+-]\d+\/[+-]\d+\.?$/i, /^You can't spend mana to cast this spell/i, /^Convoke\b/i, /^If a card would be put into an opponent's graveyard from anywhere, exile it instead/i,
   /^If a nontoken creature would enter and it wasn't cast, exile it instead/i, /^Miracle\b/i, /^Fuse\b/i, /^During your turn, as long as \w+ has one or more loyalty counters on/i,
   /^You may cast spells from your hand without paying their mana costs/i, /^Colorless spells you cast with mana value \d+ or greater cost \{\d+\} less/i, /^Creatures with power greater than the number of cards in your hand can't attack/i,
@@ -10472,7 +10525,7 @@ function historyAdd(win){
 /* ---------- Automatische Updates ---------- */
 // Liegt die App im Web, prüft sie regelmässig version.json im selben Ordner und lädt sich bei einer neuen Version neu.
 // Alles Wichtige (Spielstand, Deck, Tisch) liegt im Browser-Speicher und ist nach dem Neuladen wieder da.
-const APP_VERSION = "2026.11.12-1";
+const APP_VERSION = "2026.11.13-1";
 const ONLINE = /^https?:$/.test(location.protocol);
 let updPending = null, updTimer = null, updSnoozeUntil = 0;
 function busyForUpdate(){ return botBusy || (!$("#modal").hidden && modalState && ["block","deck"].includes(modalState.kind)); }
