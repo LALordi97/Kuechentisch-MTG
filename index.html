@@ -3091,8 +3091,22 @@ function setTurn(t){
   renderTurn();
 }
 function applyTurn(t){ if(net.role === "host") broadcastAll(t); else { setTurn(t); renderAll(); } }
+/* Zusätzliche Kampfphasen: «after this phase» (im Kampf) und «after this main phase … followed by an additional main phase» */
+function addExtraCombat(main){
+  const k = turnKey(); if(!S.xCombat || S.xCombat.key !== k) S.xCombat = {key:k, n:0, main:0};
+  if(main) S.xCombat.main++; else S.xCombat.n++;
+}
+function extraCombatRedirect(i){
+  const x = S.xCombat; if(!x || x.key !== turnKey() || TURN.active !== me.id) return i;
+  const from = TURN.phase;
+  if(from === 2 && i >= 3 && x.main > 0){ x.n += x.main; x.main = 0; }
+  if(from === 4 && i > 4 && x.main > 0){ x.main--; act("zusätzliche Kampfphase beginnt (danach eine zusätzliche Hauptphase)"); toast("<b>Zusätzliche Kampfphase:</b> du kannst nochmals angreifen. Danach folgt eine zusätzliche Hauptphase.", 8000); commit(); return 3; }
+  if(from === 3 && i > 3 && x.n > 0){ x.n--; act("zusätzliche Kampfphase beginnt"); commit(); remindTriggers("combat", true); toast("<b>Zusätzliche Kampfphase:</b> du kannst nochmals angreifen. Danach weiter zur Hauptphase 2.", 8000); renderTurn(); return null; }
+  return i;
+}
 function setPhase(i){
   if(TURN.active !== me.id) return;
+  if(typeof S !== "undefined" && S.xCombat){ i = extraCombatRedirect(i); if(i == null) return; }
   if(i !== TURN.phase && poolTotal(poolOf())){ emptyPool("Phasenwechsel"); commit(); }
   if(net.role === "client") return toHost({t:"phase", p:i});
   applyTurn({...TURN, phase:i});
@@ -3648,7 +3662,7 @@ function markOnCast(c){ if(c && !isLand(c)) S.gameSpells = (S.gameSpells || 0) +
   if(c && /\b(Instant|Sorcery)\b/.test(c.type || "")){ const k = turnKey(); if(S.isKey !== k){ S.isKey = k; S.isCount = 0; } S.isCount++; }
   if(c && !isLand(c)){ c.wasCast = true; noteSpellCast(); noteSpellSeen(c.u); c.stormN = ((c.kw || []).some(k => /^storm$/i.test(k)) || /^Storm\b/m.test(c.o || "")) ? Math.max(0, (S.spellsCast || 1) - 1) : 0; markEvent({kind:"cast", c}); abilEvent({kind:"cast", c}); abilEvent({kind:"castSelf", c}, [c]); } }
 function markOnAttack(attackers){ S.attacking = attackers.map(c => c.u); S.attackKey = turnKey();
-  attackers.forEach(c => { if(/If this creature hasn't been exerted this turn, you may exert it as it attacks\. When you do, untap all other creatures you control and after this phase, there is an additional combat phase/i.test(c.o || "") && c.exertTurn !== S.turn) queued(async () => { if(!(await confirmMay(c, `${c.n} anstrengen (zusätzliche Kampfphase)`))) return; c.exertTurn = S.turn; c.exertKey = S.turn; S.bf.filter(x => x !== c && isCreature(x)).forEach(x => { x.tap = false; }); act(`${c.n} wird angestrengt: andere Kreaturen enttappt, zusätzliche Kampfphase`); toast(`<b>${esc(c.n)}:</b> Nach dieser Phase folgt eine zusätzliche Kampfphase.`); commit(); }); }); attackers.forEach((c, i) => { markEvent({kind:"attack", c, first: i === 0}); abilEvent({kind:"attack", c, first: i === 0}); }); }
+  attackers.forEach(c => { if(/If this creature hasn't been exerted this turn, you may exert it as it attacks\. When you do, untap all other creatures you control and after this phase, there is an additional combat phase/i.test(c.o || "") && c.exertTurn !== S.turn) queued(async () => { if(!(await confirmMay(c, `${c.n} anstrengen (zusätzliche Kampfphase)`))) return; c.exertTurn = S.turn; c.exertKey = S.turn; S.bf.filter(x => x !== c && isCreature(x)).forEach(x => { x.tap = false; }); addExtraCombat(false); act(`${c.n} wird angestrengt: andere Kreaturen enttappt, zusätzliche Kampfphase`); toast(`<b>${esc(c.n)}:</b> Nach dieser Phase folgt eine zusätzliche Kampfphase.`); commit(); }); }); attackers.forEach((c, i) => { markEvent({kind:"attack", c, first: i === 0}); abilEvent({kind:"attack", c, first: i === 0}); }); }
 /* Spontanzauber und Hexereien: «You get {E}{E}{E}» beim Verrechnen */
 async function markOnResolve(c){
   if(!c || !markAutoOn() || !/\b(Instant|Sorcery)\b/.test(c.type || "")) return;
@@ -5158,6 +5172,7 @@ function matchStep2(p, src, full, SELF){
   if(/^after that turn, that player takes an extra turn$/i.test(p)) return [{t:"skip"}];
   // Fear of Missing Out
   if(/^after this phase, there is an additional combat phase$/i.test(p)) return [{t:"extraCombat"}];
+  if(/^after this main phase, there is an additional combat phase followed by an additional main phase$/i.test(p)) return [{t:"extraCombat", main:true}];
   // Hellkite Courser
   if(/^(?:you may )?put a commander you own from the command zone onto the battlefield$/i.test(p)) return [{t:"czToBf", may:/^you may/i.test(p)}];
   if(/^return it to the command zone at the beginning of the next end step$/i.test(p)) return [{t:"delayed", when:"end", action:"toCz"}];
@@ -7232,7 +7247,7 @@ async function runSteps(steps, src, ctx = {}){
         const list = S.bf.filter(c => !c.fd && isCreature(c));
         const p = list.length ? await pickCards(`${src.n}: an welche Kreatur anlegen?`, list, 1, {none:"Keine"}) : [];
         if(!p || !p[0]){ act(`${src.n}: keine Kreatur zum Anlegen`); break; }
-        src.eq = p[0].u; S.bf.filter(c => isCreature(c)).forEach(c => { c.tap = false; });
+        src.eq = p[0].u; S.bf.filter(c => isCreature(c)).forEach(c => { c.tap = false; }); if(TURN.active === me.id) addExtraCombat(false);
         act(`${src.n}: an ${p[0].n} angelegt, alle Kreaturen enttappt – zusätzliche Kampfphase`); toast(`<b>${esc(src.n)}:</b> Nach dieser Phase folgt eine zusätzliche Kampfphase. Du kannst nochmals angreifen.`); commit(); break;
       }
       case "phelia": {
@@ -8127,7 +8142,7 @@ async function runSteps(steps, src, ctx = {}){
         toast(`<b>${esc(src.n)}:</b> Du steuerst den nächsten Zug von ${esc(oppByPid(t.pid))}. Sprecht euch ab: du sagst an, was gespielt wird.`, 15000);
         break;
       }
-      case "extraCombat": act(`${src.n}: nach dieser Phase folgt eine zusätzliche Kampfphase`); toast(`<b>${esc(src.n)}:</b> Zusätzliche Kampfphase – du kannst danach nochmals angreifen.`, 10000); break;
+      case "extraCombat": if(TURN.active === me.id) addExtraCombat(!!st.main); act(`${src.n}: nach dieser ${st.main ? "Hauptphase" : "Phase"} folgt eine zusätzliche Kampfphase${st.main ? " und danach eine zusätzliche Hauptphase" : ""}`); toast(`<b>${esc(src.n)}:</b> Zusätzliche Kampfphase – die App führt dich nach ${st.main ? "dieser Hauptphase" : "diesem Kampf"} nochmals in den Kampf.`, 10000); commit(); break;
       case "czToBf": {
         const list = (S.cz || []).filter(c => c.cmdr || true);
         if(!list.length){ act(`${src.n}: kein Commander in der Kommandozone`); break; }
@@ -10525,7 +10540,7 @@ function historyAdd(win){
 /* ---------- Automatische Updates ---------- */
 // Liegt die App im Web, prüft sie regelmässig version.json im selben Ordner und lädt sich bei einer neuen Version neu.
 // Alles Wichtige (Spielstand, Deck, Tisch) liegt im Browser-Speicher und ist nach dem Neuladen wieder da.
-const APP_VERSION = "2026.11.13-1";
+const APP_VERSION = "2026.11.13-2";
 const ONLINE = /^https?:$/.test(location.protocol);
 let updPending = null, updTimer = null, updSnoozeUntil = 0;
 function busyForUpdate(){ return botBusy || (!$("#modal").hidden && modalState && ["block","deck"].includes(modalState.kind)); }

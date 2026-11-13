@@ -1,4 +1,4 @@
 {
-  "version": "2026.11.13-1",
-  "notes": "Nachtarbeit: 9 weitere Karten aus den Top-Decks laufen automatisch: Persist (nicht legendäre Kreatur mit -1/-1-Marke zurück), Requiting Hex (Blight als freiwillige Zusatzkosten, dann 2 Leben), Roiling Canopy (Bedingung «fünf andere Wälder» wird geprüft), Sanctifier en-Vec (schwarze und rote Karten ins Exil statt in den Friedhof), Scion of Draco (Schlüsselwörter nach Farbe), Seasoned Pyromancer (Elementare für abgeworfene Nichtland-Karten), Seasoned Cryomancer (Kreaturen tappen und betäuben), Shadowspear (Gegner verlieren Fluchsicherheit und Unzerstörbarkeit), Portent of Calamity (pro Kartentyp verbannen, ab vier gratis wirken)."
+  "version": "2026.11.13-2",
+  "notes": "Zusätzliche Kampfphasen (Fear of Missing Out, Combat Celebrant, Breath of Fury, «after this main phase …»): Wer zur nächsten Phase weitergeht, landet automatisch nochmals im Kampf; Auslöser «zu Beginn des Kampfes» feuern erneut."
 }
