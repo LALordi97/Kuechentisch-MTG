@@ -96,5 +96,22 @@ const clickCard = async name => { const el = [...d.querySelectorAll('#modalBox .
     const po = C('Portent of Calamity'); ev('runAbility')(po, spell(po), {X:3}); await wait(150);
     await clickCard('Blitz'); await wait(80); await clickCard('Wald'); await wait(80); if(open()) await click('Keine'); await wait(150); await drain();
     check(S().hand.map(c => c.n).sort().join(',') === 'Blitz,Wald' && S().gy.some(c => c.n === 'Weg'), `Portent mit zwei: kein Gratiswirken, beide auf die Hand (${S().hand.map(c => c.n)})`); }
+  // Lücke: zusätzliche Kampfphasen ausführen
+  { const R16 = Object.fromEntries(JSON.parse(fs.readFileSync('report16_cards.json', 'utf8')).map(([n, type, o, mc, cmc]) => [n, {n, type, o, mc, cmc}]));
+    const ph = () => ev('TURN.phase');
+    await reset(); ev('TURN.phase = 3'); const fo = ev('newCard')({...R16['Fear of Missing Out'], img:null, pw:2, tg:3}); put(fo);
+    ev('runSteps')(ev('parseSteps')('Untap target creature. After this phase, there is an additional combat phase.', fo), fo, {}); await wait(100); await clickCard('Fear'); await wait(100); await drain();
+    ev('setPhase(4)'); await wait(50); check(ph() === 3, `Extra-Kampf: nach dem ersten Kampf bleibt es Kampf (${ph()})`);
+    ev('setPhase(4)'); await wait(50); check(ph() === 4, `Extra-Kampf: nach dem zweiten Kampf Hauptphase 2 (${ph()})`);
+    ev('setPhase(5)'); await wait(50); check(ph() === 5, 'Extra-Kampf: danach normal weiter'); }
+  { const ph = () => ev('TURN.phase'); const ra = N('Sturm', 'Sorcery', 'After this main phase, there is an additional combat phase followed by an additional main phase.');
+    await reset(); ev('TURN.phase = 4'); ev('runAbility')(ra, spell(ra), {}); await wait(100); await drain();
+    ev('setPhase(5)'); await wait(50); check(ph() === 3, `Hauptphase 2 + Extra-Kampf: statt Ende in den Kampf (${ph()})`);
+    ev('setPhase(4)'); await wait(50); check(ph() === 4, 'Hauptphase 2 + Extra-Kampf: danach zusätzliche Hauptphase');
+    ev('setPhase(5)'); await wait(50); check(ph() === 5, 'Hauptphase 2 + Extra-Kampf: danach Ende');
+    await reset(); ev('TURN.phase = 2'); ev('runAbility')(ra, spell(ra), {}); await wait(100); await drain();
+    ev('setPhase(3)'); await wait(50); ev('setPhase(4)'); await wait(50); check(ph() === 3, `Hauptphase 1 + Extra-Kampf: zweiter Kampf (${ph()})`);
+    ev('setPhase(4)'); await wait(50); check(ph() === 4, 'Hauptphase 1 + Extra-Kampf: dann Hauptphase 2');
+    await reset(); ev('TURN.phase = 3'); ev('addExtraCombat(false)'); ev('TURN = {...TURN, n:21}'); ev('setPhase(4)'); await wait(50); check(ph() === 4, 'Extra-Kampf gilt nur im selben Zug'); }
   console.log(fails ? `${fails} FEHLER` : 'ALLES OK'); process.exit(0);
 })();

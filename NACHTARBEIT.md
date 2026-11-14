@@ -33,12 +33,12 @@ Diese Anleitung führt eine geplante Aufgabe jede Nacht ohne Rückfragen aus. Si
 
 Eine offene Lücke wählen, umsetzen, testen, hier abhaken (`[x]` mit Datum):
 
-- [ ] Mindslaver: den nächsten Zug des Gegners wirklich steuern (heute nur Hinweis).
-- [ ] Zusätzliche Kampfphasen ausführen (heute nur Hinweis).
+- [ ] Mindslaver: den nächsten Zug des Gegners wirklich steuern (heute nur Hinweis). **Entscheid Lukas 14.11.: echte Fernsteuerung** – der Steuernde klickt direkt im Zug des Gegners (Karten spielen, angreifen). Grosser Umbau (Netzwerk, Zugablauf): immer auf einen Zweig `nacht/JJJJ-MM-TT`, nie direkt auf main; in Etappen bauen.
+- [x] Zusätzliche Kampfphasen ausführen. (2026-11-13, auf Zweig nacht/2026-11-13: Phasenwechsel führt nochmals in den Kampf)
 - [x] Ainok- und Winota-Angreifer automatisch in den Angriff aufnehmen. (2026-11-10)
 - [x] Kostensenkung von March of Otherworldly Light / March-Zyklus anwenden. (2026-11-12, getestet mit March of Swirling Mist)
 - [x] Convoke für Zauber aus dem Exil prüfen. (2026-11-11: funktioniert schon, Tests ergänzt)
-- [ ] Trickbind/Tidebinder: Fähigkeiten auf dem Stapel neutralisieren.
+- [ ] Trickbind/Tidebinder: Fähigkeiten auf dem Stapel neutralisieren. **Entscheid Lukas 14.11.: Fähigkeiten kommen im Mehrspieler auf den Stapel** (alle geben «OK», danach verrechnet), damit Stifle/Trickbind/Tidebinder sie wirklich neutralisieren. Grosser Umbau (Netzwerk, Stapel): immer auf einen Zweig `nacht/JJJJ-MM-TT`, nie direkt auf main.
 
 ## 4. Abschluss
 
@@ -53,4 +53,6 @@ Eine offene Lücke wählen, umsetzen, testen, hier abhaken (`[x]` mit Datum):
 - 2026-11-11: Regression grün. 100 Karten geprüft (94 schon automatisch, 2 ohne Text), 4 eingebaut (Fallaji Archaeologist, Golos, Field of Ruin, Duskwatch Recruiter; dafür neu: Zauber aller Spieler pro Zug gemerkt). Lücke Convoke aus dem Exil geprüft (lief schon, Tests ergänzt). Version 2026.11.11-1.
 - 2026-11-12: Regression grün. 100 Karten geprüft (90 schon automatisch, 1 ohne Text), 8 eingebaut (Oliphaunt, Kraul Harpooner, Inevitable Betrayal, Living End, Oblivion Stone, Narset, Parter of Veils, Karn, Argent Defender; dazu Ziele «with flying» u. ä. gefiltert, KI-Karten zeigen ihre Schlüsselwörter). Offen: Harbinger of the Seas, Hanweir Battlements (Meld). Lücke March-Zyklus erledigt. Scryfall-WebFetch war nicht freigegeben (Text kam aus oracle_decks.json). Version 2026.11.12-1.
 - 2026-11-13: Regression grün. 100 Karten geprüft (88 schon automatisch, 3 ohne Text), 9 eingebaut (Persist, Requiting Hex, Roiling Canopy, Sanctifier en-Vec, Scion of Draco, Seasoned Pyromancer, Seasoned Cryomancer, Shadowspear, Portent of Calamity; dazu neu: abgeworfene Karten werden für «discarded this way» gemerkt, Blight als freiwillige Zusatzkosten). Text aus oracle_decks.json (Stand 11.11.). Version 2026.11.13-1.
+- 2026-11-13 (Zweig nacht/2026-11-13): Lücke zusätzliche Kampfphasen umgesetzt (Zugablauf, darum Zweig statt main), Regression grün. Version 2026.11.13-2.
 - 2026-11-14: Regression grün. 106 Karten geprüft (alle restlichen der Top-Decks; 89 schon automatisch, 5 ohne Text), 12 eingebaut (Stubborn Denial, The Endstone, The Mind Stone, The Wandering Emperor, Thrun, Twinned Vision, Violent Urge, Thraben Charm, Valakut Awakening, Vizier of Remedies, Wish, Superior Spider-Man; dazu neu: Bedingungen «with power N or greater», «wasn't cast from your hand» und Delirium vor einem Satz, Devoted Druid legt seine -1/-1-Marke als Kosten). Keine Lücke angefasst (alle offenen betreffen Stapel/Zugablauf). Text aus oracle_decks.json. Version 2026.11.14-1.
+- 2026-11-14 (Lukas am Morgen): Zweig nacht/2026-11-13 (zusätzliche Kampfphasen) auf main übernommen, Regression grün. Version 2026.11.14-2. Entscheide zu Trickbind und Mindslaver oben eingetragen.

@@ -1,4 +1,4 @@
 {
-  "version": "2026.11.14-1",
-  "notes": "Nachtarbeit: 12 weitere Karten aus den Top-Decks laufen automatisch: Stubborn Denial (mit Kraft-4-Kreatur ohne Bezahlen), The Endstone (Leben wird halbe Startlebenspunkte), The Mind Stone (Harness, dann Endphasen-Blinken), The Wandering Emperor, Thrun (regeneriert sich), Twinned Vision (mit Flashback zwei Karten), Violent Urge (Delirium: Doppelschlag), Thraben Charm (alle drei Modi), Valakut Awakening (Karten unter die Bibliothek, so viele plus eine ziehen), Vizier of Remedies (eine -1/-1-Marke weniger; Devoted Druid legt jetzt seine Marke als Kosten), Wish (Karte aus dem Sideboard diesen Zug spielbar), Superior Spider-Man (Kopie aus einem Friedhof als 4/4, Karte ins Exil). Damit haben alle Karten der Top-Decks eine Prüfung."
+  "version": "2026.11.14-2",
+  "notes": "Zusätzliche Kampfphasen werden jetzt ausgeführt (z. B. Combat Celebrant, Relentless Assault): beim Weiterschalten folgt eine weitere Kampfphase, bei Bedarf mit zusätzlicher Hauptphase. Dazu die 12 neuen Karten von heute Nacht (2026.11.14-1)."
 }
