@@ -1,4 +1,4 @@
 {
-  "version": "2026.11.15-5",
-  "notes": "Moonsilver Key: Die Suche zeigt nur noch Artefakte mit einer Mana-Fähigkeit und Standardländer (vorher alle Artefakte, keine Standardländer)."
+  "version": "2026.11.15-6",
+  "notes": "Deadpool, Trading Card: Der Textbox-Tausch gilt nur noch, solange die Karte im Spiel bleibt. Verlässt sie das Spiel, hat sie wieder ihren eigenen Text; Deadpool kann beim Zurückkommen ein neues Ziel wählen."
 }

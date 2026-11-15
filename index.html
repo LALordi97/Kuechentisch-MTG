@@ -582,6 +582,7 @@ function moveCardRaw(u, to, where){
   const from = f.z, c = f.c;
   S[from].splice(f.i, 1);
   const wasFd = c.fd;
+  if(from === "bf" && to !== "bf" && c._swapO != null){ c.o = c._swapO; c.kw = c._swapKw || []; delete c._swapO; delete c._swapKw; delete c._ab; delete c._abO; }
   if(from === "bf" && to !== "bf"){ c.lastC = c.c; c.tap=false; c.c=0; c.flip=false; delete c.x; delete c.y; c.pwO = null; c.tgO = null; c.mtap = null; delete c.kwc; delete c.mfd; if(c._stO != null){ c.o = c._stO; c.type = c._stType || c.type; if(c._stKw) c.kw = c._stKw; delete c._stKw; delete c._stO; delete c._stType; delete c._ab; delete c._abO; } if(c._classO != null){ c.o = c._classO; delete c._classO; delete c.level; delete c._ab; delete c._abO; } if(c.noAb){ c.o = c._oBak; c.kw = c._kwBak || []; delete c.noAb; delete c._oBak; delete c._kwBak; delete c._ab; delete c._abO; } }
   if(to !== "bf" && to !== "ex") c.fd = false;
   if(c.tok && to !== "bf"){ act(`entfernt Token ${c.n}`); commit(); return; }
@@ -6024,7 +6025,10 @@ async function swapTextBox(c){
   const list = S.bf.filter(x => x !== c && !x.fd && isCreature(x));
   const p = await pickCards(`${c.n}: Textbox mit einer anderen Kreatur tauschen? (freiwillig)`, list, 1, {none:"Nicht tauschen"});
   if(!p || !p.length) return;
-  const t = p[0]; const o = c.o; c.o = t.o; t.o = o; [c, t].forEach(x => { delete x._ab; delete x._abO; });
+  const t = p[0];
+  // Der Tausch gilt nur, solange die Karte im Spiel bleibt: eigene Textbox merken (moveCardRaw stellt sie beim Verlassen wieder her)
+  [c, t].forEach(x => { if(x._swapO == null){ x._swapO = x.o || ""; x._swapKw = (x.kw || []).slice(); } });
+  const o = c.o, kw = c.kw; c.o = t.o; c.kw = t.kw; t.o = o; t.kw = kw; [c, t].forEach(x => { delete x._ab; delete x._abO; });
   act(`${c.n} tauscht die Textbox mit ${t.n}`); commit();
 }
 /* Curse of Opulence: wer einen verfluchten Spieler angreift, bekommt Gold */
@@ -10861,7 +10865,7 @@ function historyAdd(win){
 /* ---------- Automatische Updates ---------- */
 // Liegt die App im Web, prüft sie regelmässig version.json im selben Ordner und lädt sich bei einer neuen Version neu.
 // Alles Wichtige (Spielstand, Deck, Tisch) liegt im Browser-Speicher und ist nach dem Neuladen wieder da.
-const APP_VERSION = "2026.11.15-5";
+const APP_VERSION = "2026.11.15-6";
 const ONLINE = /^https?:$/.test(location.protocol);
 let updPending = null, updTimer = null, updSnoozeUntil = 0;
 function busyForUpdate(){ return botBusy || (!$("#modal").hidden && modalState && ["block","deck"].includes(modalState.kind)); }

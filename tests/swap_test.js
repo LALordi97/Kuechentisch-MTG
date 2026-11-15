@@ -1,0 +1,52 @@
+const {JSDOM} = require('jsdom'); const fs = require('fs');
+let html = fs.readFileSync(require('path').join(__dirname, '..', 'index.html'), 'utf8').replace(/<script src=[^>]+><\/script>/, '').replace(/<link[^>]+>/g, '');
+const dom = new JSDOM(html, {url:'https://x.org/', runScripts:'dangerously', pretendToBeVisual:true, beforeParse(w){ w.fetch = async () => ({ok:false, json: async () => ({})}); }});
+const w = dom.window, d = w.document, $ = s => d.querySelector(s), ev = c => w.eval(c);
+w.addEventListener('error', e => console.log('ERR', e.message));
+let fails = 0; const check = (ok, msg) => { console.log((ok ? 'OK     ' : 'FEHLER ') + msg); if(!ok) fails++; };
+const wait = ms => new Promise(r => setTimeout(r, ms));
+const T = Object.fromEntries(JSON.parse(fs.readFileSync('swap_cards.json', 'utf8')).map(([n, type, o, mc, cmc]) => [n, {n, type, o, mc, cmc}]));
+const C = (n, x = {}) => ev('newCard')({...T[n], img:null, ...x});
+const N = (n, type, o = '', x = {}) => ev('newCard')({n, type, o, img:null, ...x});
+const title = () => ($('#modalBox h2') || {}).textContent || '';
+const open = () => !$('#modal').hidden;
+const click = async t => { const b = [...d.querySelectorAll('#modalBox button')].find(b => b.textContent.trim().startsWith(t)); if(b){ b.click(); await wait(40); } return !!b; };
+const clickCard = async name => { const el = [...d.querySelectorAll('#modalBox .card')].find(e => !name || e.textContent.includes(name)); if(el){ el.click(); await wait(40); } return !!el; };
+(async () => {
+  $('#lName').value = 'Lukas'; $('#lSolo').click(); await wait(30); ev('closeModal()'); ev('LOOK.autoPay = false');
+  ev('startBot("Test", "Test", Array(30).fill(0).map(() => ({n:"Island", type:"Basic Land — Island", o:""})))'); ev('injectBot(); commit()'); await wait(30);
+  const S = () => ev('S'), B = () => ev('BOT.life');
+  const drain = async () => { for(let i = 0; i < 6 && open(); i++){ if(!(await click('Abbrechen')) && !(await click('Kein')) && !(await click('Nein')) && !(await click('Erledigt'))) break; await wait(40); } };
+  const reset0 = () => ev('S.bf = []; S.hand = []; S.gy = []; S.ex = []; S.library = []; S.pool = emptyPoolObj(); S.lifeLock = null; S.protect = null; BOT.bf = []; botChanged(); TURN = {active:me.id, n:20, starter:me.id, phase:2}; commit()');
+  const reset = async () => { await wait(80); await drain(); reset0(); await wait(20); };
+  const lib = (...c) => { S().library.push(...c); ev('commit()'); };
+  const btns = () => [...d.querySelectorAll('#modalBox button')].map(b => b.textContent.trim());
+  const M = n => ev('cardMenu')(n.c, n.z);
+  const cast = async c => { S().hand.push(c); ev('commit()'); ev('castSpell')(c.u); await wait(80); };
+  const opt = {mc:''};
+  // Demonic Consultation
+  await reset();
+  await reset(); const dargo = C('Dargo, the Shipwrecker', {pw:7, tg:5, kw:['Trample', 'Partner']}), tech = C('Ruthless Technomancer', {pw:2, tg:4}), dp = C('Deadpool, Trading Card', {pw:5, tg:3});
+  const dargoO = dargo.o, dpO = dp.o;
+  S().bf.push(dargo, tech); S().hand.push(dp); ev('commit()');
+  ev('moveCard')(dp.u, 'bf'); await wait(120);
+  check(/Deadpool, Trading Card: Textbox/.test(title()), 'Deadpool kommt ins Spiel: Frage nach dem Tausch');
+  await clickCard('Dargo'); await wait(120); await drain();
+  check(dargo.o === dpO && dp.o === dargoO, 'Textboxen getauscht (Dargo hat Deadpools Text, Deadpool hat Dargos)');
+  check(ev('kwHas')(dp, 'trample') && !ev('kwHas')(dargo, 'trample'), 'Trample wandert mit der Textbox zu Deadpool');
+  // Dargo stirbt und kommt zurück: wieder der eigene Text, keine Tausch-Frage
+  ev('moveCard')(dargo.u, 'gy'); await wait(60);
+  check(dargo.o === dargoO && ev('kwHas')(dargo, 'trample'), 'Dargo im Friedhof hat wieder seine eigene Textbox');
+  check(dp.o === dargoO, 'Deadpool behält Dargos Textbox, solange er im Spiel bleibt');
+  ev('moveCard')(dargo.u, 'bf'); await wait(150);
+  check(!open() || !/Dargo, the Shipwrecker: Textbox/.test(title()), 'Dargo kommt zurück: keine Tausch-Frage mehr');
+  await drain();
+  // Deadpool verlässt das Spiel und kommt zurück: eigener Text, neue Tausch-Frage mit freier Wahl
+  ev('moveCard')(dp.u, 'gy'); await wait(60);
+  check(dp.o === dpO, 'Deadpool im Friedhof hat wieder seine eigene Textbox');
+  ev('moveCard')(dp.u, 'bf'); await wait(150);
+  check(/Deadpool, Trading Card: Textbox/.test(title()), 'Deadpool kommt zurück: neue Tausch-Frage');
+  await clickCard('Ruthless'); await wait(120); await drain();
+  check(/When this creature enters, you may sacrifice another creature/.test(dp.o) && tech.o === dpO, 'neues Ziel gewählt: Tausch mit Ruthless Technomancer');
+  console.log(fails ? `\n${fails} FEHLER` : "\nALLES OK"); process.exit(0);
+})();

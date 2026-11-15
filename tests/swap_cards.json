@@ -1,0 +1,23 @@
+[
+[
+"Dargo, the Shipwrecker",
+"Legendary Creature — Giant Pirate",
+"As an additional cost to cast this spell, you may sacrifice any number of artifacts and/or creatures. This spell costs {2} less to cast for each permanent sacrificed this way and {2} less to cast for each other artifact or creature you've sacrificed this turn.\nTrample\nPartner (You can have two commanders if both have partner.)",
+"{6}{R}",
+7.0
+],
+[
+"Deadpool, Trading Card",
+"Legendary Creature — Mutant Mercenary Hero",
+"As Deadpool enters, you may exchange his text box and another creature's.\nAt the beginning of your upkeep, you lose 3 life.\n{3}, Sacrifice this creature: Each other player draws a card.",
+"{2}{B}{R}",
+4.0
+],
+[
+"Ruthless Technomancer",
+"Creature — Human Wizard",
+"When this creature enters, you may sacrifice another creature you control. If you do, create a number of Treasure tokens equal to that creature's power.\n{2}{B}, Sacrifice X artifacts: Return target creature card with power X or less from your graveyard to the battlefield. X can't be 0.",
+"{3}{B}",
+4.0
+]
+]
