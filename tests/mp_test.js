@@ -41,6 +41,7 @@ const btnText = (w, t, scope = '#modalBox') => [...w.document.querySelectorAll(s
 async function loadDeck(w, list){ $(w, '#bDeck').click(); await wait(10); $(w, '#dText').value = list; $(w, '#dGo').click(); await wait(400); }
 function line(w){ const S = ev(w, 'S'); return `${w._name}: Leben ${S.life}, Hand ${S.hand.length}, Feld [${S.bf.map(c => c.n + (c.tap ? '*' : '')).join(', ')}], GY [${S.gy.map(c => c.n).join(', ')}]`; }
 let fails = 0; const check = (ok, msg) => { console.log((ok ? 'OK   ' : 'FEHLER ') + msg); if(!ok) fails++; };
+const pass = async w => { ev(w, 'passTurn()'); await wait(40); const b = [...w.document.querySelectorAll('#modalBox button')].find(x => x.textContent.trim() === 'Später'); if(b){ b.click(); await wait(40); } };
 (async () => {
   const A = mkWin('anna'), B = mkWin('ben'), C = mkWin('chris');
   // Lobby
@@ -101,13 +102,16 @@ let fails = 0; const check = (ok, msg) => { console.log((ok ? 'OK   ' : 'FEHLER 
   btnText(B, 'Blocker bestätigen').click(); await wait(120);
   check(!ev(A, 'S.bf.some(c => c.n === "Grizzly Bears")') && ev(B, 'S.bf.some(c => c.n === "Hill Giant")'), 'Bär stirbt am Hill Giant, Riese überlebt');
   // Zug weitergeben
-  ev(A, 'passTurn()'); await wait(80);
+  await pass(A); await wait(80);
   check(ev(B, 'TURN.active') === ev(B, 'me.id') && $(B, '#turnBar').classList.contains('mine'), 'Ben ist am Zug');
   // Trigger-Erinnerung: Ben hat Phyrexian Arena im Spiel, beim nächsten eigenen Zug
   ev(B, `(() => { const c = S.library.find(x => x.n === 'Phyrexian Arena') || S.hand.find(x => x.n === 'Phyrexian Arena'); if(!c) return; const z = S.library.includes(c) ? S.library : S.hand; z.splice(z.indexOf(c), 1); c.x = 200; c.y = 10; S.bf.push(c); commit(); })()`);
-  ev(B, 'passTurn()'); await wait(60); ev(C, 'passTurn()'); await wait(60); ev(A, 'passTurn()'); await wait(80);
+  await pass(B); await wait(60); await pass(C); await wait(60); await pass(A); await wait(80);
   await wait(200);
   { const b = [...B.document.querySelectorAll('#modalBox button')].find(x => x.textContent.trim() === 'Später'); if(b){ b.click(); await wait(200); } }
+  check(ev(A, 'STACK.length') === 1 && ev(A, 'STACK[0].abil') === true, 'Arena-Auslöser liegt auf dem Stapel');
+  { const hb = ev(B, 'S.hand.length'); for(const w of [A, C]){ const b = btnText(w, 'OK, weiter', '#stackBox'); if(b) b.click(); } await wait(150);
+    check(ev(A, 'STACK.length') === 0 && ev(B, 'S.hand.length') === hb + 1, 'nach dem OK von Anna und Chris zieht Ben seine Karte'); }
   check(/Phyrexian Arena löst aus/.test($(B, '#log').textContent), 'Phyrexian Arena löst in Bens Versorgung aus (Karte ziehen, 1 Leben)');
   console.log(' ', line(A)); console.log(' ', line(B)); console.log(' ', line(C));
   // Host-Übernahme: Anna fällt weg
@@ -119,7 +123,7 @@ let fails = 0; const check = (ok, msg) => { console.log((ok ? 'OK   ' : 'FEHLER 
   check(ev(C, 'net.role') === 'client' && ev(C, 'net.conn && net.conn.open') === true, 'Chris ist wieder verbunden');
   check(ev(C, 'TURN.active') === turnBefore && ev(C, 'TURN.n') === roundBefore, 'Zug und Runde bleiben erhalten');
   check(ev(B, 'Object.values(net.players).some(p => p.name === "Anna" && p.off)'), 'Anna als «weg» markiert');
-  ev(B, 'passTurn()'); await wait(80);
+  await pass(B); await wait(80);
   check(ev(C, 'TURN.active') === ev(C, 'me.id'), 'Zugweitergabe nach Übernahme funktioniert (Chris dran)');
   console.log(fails ? `\n${fails} FEHLER` : '\nALLES OK');
   process.exit(0);
