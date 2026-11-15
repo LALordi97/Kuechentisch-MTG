@@ -3,6 +3,8 @@
 und schreibt tests/oracle_decks.json im Format der Prüfdateien:
     ["Name", "Typzeile", "Regeltext", "{Manakosten}", Manawert]
 Der Text wird so übernommen, wie die App ihn sieht (wie tpl() in index.html: Vorderseite bei doppelseitigen Karten).
+Dazu tests/oracle_parts.json: zugehörige Teile, die selbst in keinem Deck stehen (Meld-Partner und Meld-Ergebnis),
+im selben Format mit einem sechsten Eintrag: Name der Deck-Karte, zu der der Teil gehört.
 
 Aufruf:  python3 tools/oracle.py            # lädt die aktuelle Datei von Scryfall
          python3 tools/oracle.py bulk.json  # nimmt eine schon geladene Datei (zum Testen)
@@ -59,6 +61,16 @@ def deck_names():
     return names
 
 
+PARTS = ("meld_part", "meld_result")
+
+
+def card_row(sc):
+    f0 = (sc.get("card_faces") or [{}])[0]
+    return [sc["name"], sc.get("type_line") or f0.get("type_line", ""),
+            (sc.get("oracle_text") or f0.get("oracle_text") or "")[:1500],
+            sc.get("mana_cost") or f0.get("mana_cost") or "", sc.get("cmc") or 0]
+
+
 def main():
     if len(sys.argv) > 1:
         cards = json.loads(pathlib.Path(sys.argv[1]).read_text(encoding="utf8"))
@@ -79,19 +91,34 @@ def main():
         for k in keys:
             if k:
                 idx.setdefault(norm(k), sc)
-    out, missing = [], []
+    out, missing, found = [], [], []
     for n in deck_names():
         sc = idx.get(norm(n)) or idx.get(norm(n).split(" // ")[0])
         if not sc:
             missing.append(n)
             continue
-        f0 = (sc.get("card_faces") or [{}])[0]
-        out.append([sc["name"], sc.get("type_line") or f0.get("type_line", ""),
-                    (sc.get("oracle_text") or f0.get("oracle_text") or "")[:1500],
-                    sc.get("mana_cost") or f0.get("mana_cost") or "", sc.get("cmc") or 0])
+        found.append(sc)
+        out.append(card_row(sc))
     out.sort(key=lambda c: c[0])
     (ROOT / "tests" / "oracle_decks.json").write_text(json.dumps(out, ensure_ascii=False, indent=0) + "\n", encoding="utf8")
     print(f"{len(out)} Karten geschrieben, {len(missing)} nicht gefunden" + (": " + ", ".join(missing) if missing else ""))
+    # Zugehörige Teile (Meld): nur solche, die nicht schon als Deck-Karte dabei sind
+    have = {norm(c[0]) for c in out}
+    parts, seen = [], set()
+    for sc in found:
+        for p in sc.get("all_parts") or []:
+            pn = p.get("name", "")
+            if p.get("component") not in PARTS or not pn or norm(pn) in have or norm(pn) in seen:
+                continue
+            ps = idx.get(norm(pn))
+            if not ps:
+                missing.append(pn)
+                continue
+            seen.add(norm(pn))
+            parts.append(card_row(ps) + [sc["name"]])
+    parts.sort(key=lambda c: c[0])
+    (ROOT / "tests" / "oracle_parts.json").write_text(json.dumps(parts, ensure_ascii=False, indent=0) + "\n", encoding="utf8")
+    print(f"{len(parts)} zugehörige Teile (Meld) geschrieben" + (": " + ", ".join(c[0] for c in parts) if parts else ""))
 
 
 if __name__ == "__main__":
