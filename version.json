@@ -1,4 +1,4 @@
 {
-  "version": "2026.11.15-4",
-  "notes": "Neu am Tisch mit Mitspielern: Fähigkeiten liegen auf dem Stapel, bis alle «OK» gegeben haben; Stifle, Trickbind, Disallow und Tishana's Tidebinder kontern sie wirklich (Häkchen «Fähigkeiten automatisch durchwinken» im Stapel). Neu überall: Endlosschleifen werden erkannt («∞ Schleife erkannt») und lassen sich mit einem Klick beliebig oft wiederholen."
+  "version": "2026.11.15-5",
+  "notes": "Moonsilver Key: Die Suche zeigt nur noch Artefakte mit einer Mana-Fähigkeit und Standardländer (vorher alle Artefakte, keine Standardländer)."
 }

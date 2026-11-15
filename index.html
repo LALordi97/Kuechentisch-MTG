@@ -6520,10 +6520,14 @@ function mobilize(attackers, chosen){
   attackers.push(...add);
 }
 /* ---------- Kartenfilter für Suchen und Ziele ---------- */
+/* Hat die Karte eine aktivierte Fähigkeit, die Mana erzeugt? («{T}: Add …», auch «Sacrifice …: Add three mana …») */
+function hasManaAbility(c){ return String((c && c.o) || "").split("\n").some(l => /^[^:"]*:[^"]*\badd\b[^"]*(\{[WUBRGCS]\}|\bmana\b)/i.test(l)); }
 function cardFilter(desc, ctx){
   let d = String(desc || "").toLowerCase().replace(/\bcards?\b/g, "").replace(/\b(an?|up to (one|two|three)|target|other|another)\b/g, " ").replace(/\s+/g, " ").trim();
   const conds = [];
   let m;
+  // «artifact card with a mana ability or a basic land card» (Moonsilver Key): die Bedingung gilt nur für den ersten Teil
+  if((m = d.match(/^(.*?) with mana abilit(?:y|ies)(?: or (.+))?$/))){ const f1 = cardFilter(m[1], ctx), f2 = m[2] ? cardFilter(m[2], ctx) : null; return c => (f1(c) && hasManaAbility(c)) || !!(f2 && f2(c)); }
   if((m = d.match(/with mana cost \{(\d+)\} or \{(\d+)\}/))){ const a = +m[1], b = +m[2]; conds.push(c => { const mc = String(c.mc || ""); return !isLand(c) && /^\{\d+\}$|^$/.test(mc) && [a, b].includes(c.cmc || 0); }); d = d.replace(m[0], ""); }
   if((m = d.match(/with (mana value|power|toughness) (\d+|x) or (less|greater)/))){ const stat = m[1], n = m[2] === "x" ? (ctx && ctx.X || 0) : +m[2], dir = m[3]; conds.push(c => numCond(c, stat === "mana value" ? "mv" : stat, n, dir)); d = d.replace(m[0], ""); }
   if((m = d.match(/with mana value (\d+|x)\b/))){ const n = m[1] === "x" ? (ctx && ctx.X || 0) : +m[1]; conds.push(c => (c.cmc || 0) === n); d = d.replace(m[0], ""); }
@@ -10857,7 +10861,7 @@ function historyAdd(win){
 /* ---------- Automatische Updates ---------- */
 // Liegt die App im Web, prüft sie regelmässig version.json im selben Ordner und lädt sich bei einer neuen Version neu.
 // Alles Wichtige (Spielstand, Deck, Tisch) liegt im Browser-Speicher und ist nach dem Neuladen wieder da.
-const APP_VERSION = "2026.11.15-4";
+const APP_VERSION = "2026.11.15-5";
 const ONLINE = /^https?:$/.test(location.protocol);
 let updPending = null, updTimer = null, updSnoozeUntil = 0;
 function busyForUpdate(){ return botBusy || (!$("#modal").hidden && modalState && ["block","deck"].includes(modalState.kind)); }
