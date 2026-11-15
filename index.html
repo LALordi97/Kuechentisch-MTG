@@ -1539,7 +1539,7 @@ function applyAll(msg){
 }
 /* Nachrichten an einen Spieler: über den Host weitergeleitet */
 const ROUTED = ["give", "hit", "attack", "blocks", "cres", "st_resolve", "req", "resp"];
-const HOSTED = ["pass", "roll", "phase", "st_push", "st_pass", "st_cancel", "st_redirect", "st_tuck"];
+const HOSTED = ["pass", "roll", "phase", "st_push", "st_pass", "st_cancel", "st_redirect", "st_tuck", "st_counter"];
 function sendTo(pid, m){
   m.to = pid; m.from = me.id; m.by = me.name || "Gegner";
   if(pid === me.id) return deliver(m);
@@ -1768,7 +1768,7 @@ async function stackTargets(card){
   if(/exile any number of target spells/i.test(o)){
     const ids = await abilModal(`${card.n}: welche Zauber verbannen?`, (box, done) => {
       const chosen = new Set();
-      [...STACK].reverse().forEach(it => { const b = btn(`${it.n} von ${it.by}`, () => { if(chosen.has(it.id)) chosen.delete(it.id); else chosen.add(it.id); b.classList.toggle("primary", chosen.has(it.id)); }, "small"); box.append(b); });
+      [...STACK].reverse().filter(it => !it.abil).forEach(it => { const b = btn(`${it.n} von ${it.by}`, () => { if(chosen.has(it.id)) chosen.delete(it.id); else chosen.add(it.id); b.classList.toggle("primary", chosen.has(it.id)); }, "small"); box.append(b); });
       box.append(btn("Weiter", () => done([...chosen]), "primary"));
     });
     if(ids === null) return null;
@@ -1803,10 +1803,11 @@ function stackPush(raw, from, by){
     targets: Array.isArray(raw.targets) ? raw.targets.filter(x => typeof x === "string").slice(0, 10).map(x => x.slice(0, 20)) : [],
     newTarget: typeof raw.newTarget === "string" ? raw.newTarget.slice(0, 20) : null, redirect: typeof raw.redirect === "string" ? raw.redirect.slice(0, 80) : null,
     owner: from, by: String(by || "Jemand").slice(0, 24), passes: [from], countered: false, free: !!raw.free};
+  if(raw.abil){ it.abil = true; it.u = ""; it.type = "Ability"; it.dest = "gy"; it.srcU = String(raw.srcU || "").slice(0, 20); it.srcType = String(raw.srcType || "").slice(0, 200); }
   STACK.push(it);
-  if(!/\bLand\b/.test(it.type)) noteSpellSeen(it.u || it.id);
+  if(!it.abil && !/\bLand\b/.test(it.type)) noteSpellSeen(it.u || it.id);
   const tgt = it.target && STACK.find(x => x.id === it.target);
-  relayLog({from:it.by, text:`wirkt ${it.n}${tgt ? " gegen " + tgt.n : ""} (liegt auf dem Stapel)`, sys:true});
+  if(!it.abil) relayLog({from:it.by, text:`wirkt ${it.n}${tgt ? " gegen " + tgt.n : ""} (liegt auf dem Stapel)`, sys:true});
   broadcastAll();
   if(BOT.active && from !== "bot") botStackReact(it);
   stackCheck();
@@ -1820,7 +1821,7 @@ function stackPass(id, from){
 }
 function stackCancel(id, from){
   const top = STACK[STACK.length - 1];
-  if(!top || top.id !== id || top.owner !== from) return;
+  if(!top || top.id !== id || top.owner !== from || top.abil) return;
   STACK.pop();
   relayLog({from:top.by, text:`nimmt ${top.n} zurück`, sys:true});
   if(top.owner !== "bot") route({t:"st_resolve", to:top.owner, from:me.id, item:top, cancelled:true});
@@ -1833,7 +1834,8 @@ function stackCheck(){
 }
 function stackResolveTop(){
   const it = STACK.pop(); if(!it) return;
-  if(it.countered){ relayLog({from:"", text: it.stolen ? `${it.n} von ${it.by} gehört jetzt ${it.stolen.by}` : `${it.n} von ${it.by} wurde ${it.cExile ? "verbannt" : "gekontert"}`, sys:true}); }
+  if(it.abil){ if(it.countered) relayLog({from:"", text:`Fähigkeit von ${it.n} (${it.by}) wurde gekontert`, sys:true}); }
+  else if(it.countered){ relayLog({from:"", text: it.stolen ? `${it.n} von ${it.by} gehört jetzt ${it.stolen.by}` : `${it.n} von ${it.by} wurde ${it.cExile ? "verbannt" : "gekontert"}`, sys:true}); }
   else {
     stackApply(it);
     relayLog({from:"", text:`${it.n} von ${it.by} wird verrechnet`, sys:true});
@@ -1851,6 +1853,7 @@ function stackApply(it){
   const o = String(it.o || "");
   [it.target, ...(it.targets || [])].filter(Boolean).forEach(tid => {
     const t = STACK.find(x => x.id === tid); if(!t) return;
+    if(t.abil && !/activated ability|triggered ability/i.test(o)) return; // Zauber-Konter treffen keine Fähigkeiten
     if(/counter target/i.test(o)){
       t.countered = true;
       if(/exile it instead/i.test(o)) t.cExile = true;
@@ -1886,6 +1889,7 @@ function botTokens(desc, n, tapped, extra){
 }
 function stackResolveMine(m){
   const it = m.item || {};
+  if(it.abil) return abilResolved(it);
   if(it.ghost){
     // Commandeer: der übernommene Spontanzauber wird für dich verrechnet
     if(/\b(Instant|Sorcery)\b/.test(it.type || "")){ const sh = newCard({n:it.n, type:it.type, o:it.o, mc:it.mc, cmc:it.cmc, img:it.img}); act(`${it.ghostCopy ? "kopiert" : "übernimmt"} ${it.n} von ${it.by}`); queued(() => abilSpellResolve(sh)); }
@@ -1915,13 +1919,14 @@ function stackResolveMine(m){
   }
   if(it.redirect){ REDIRECT = it.redirect; toast(`<b>${esc(it.n)}</b> wurde umgelenkt. Neues Ziel: <b>${esc(it.redirect)}</b>`, 15000); setTimeout(() => { REDIRECT = null; }, 60000); }
   c._tgtOwner = ((STACK || []).find(x => x.id === it.target) || {}).owner || null;
+  c._tgtItem = (STACK || []).find(x => x.id === it.target) || null;
   moveCard(c.u, it.dest === "bf" ? "bf" : "gy");
   if(it.dest !== "bf") queued(async () => { await markOnResolve(c); await ritualResolve(c); await abilSpellResolve(c); });
 }
 async function botStackReact(it){
   // Die KI darf auf Zauber anderer Spieler reagieren, danach gibt sie «OK»
   let pick = null;
-  try{ if(!it.countered) pick = await botChooseCounter(it); }catch(e){}
+  try{ if(!it.countered && !it.abil) pick = await botChooseCounter(it); }catch(e){}
   const top = STACK[STACK.length - 1];
   if(!top || top.id !== it.id) return;
   if(pick){
@@ -1935,17 +1940,29 @@ async function botStackReact(it){
   }
   stackPass(it.id, "bot");
 }
+/* Was ein Zauber auf dem Stapel anzielen kann: Zauber, Fähigkeiten (Stifle, Trickbind) oder beides (Disallow) */
+function stackTargetList(card){
+  const o = String((card && card.o) || "");
+  const ab = /target (?:spell, )?(?:activated ability, or triggered ability|activated or triggered ability|activated ability|triggered ability)/i.test(o);
+  const sp = !ab || /target spell/i.test(o);
+  return STACK.filter(x => x.abil ? ab : sp);
+}
+const stackLabel = it => it.abil ? `Fähigkeit von ${it.n} (${it.by}): ${String(it.o || "").slice(0, 70)}` : `${it.n} von ${it.by}`;
 function stackTargetDialog(card){
+  const list = stackTargetList(card);
+  if(!list.length) return Promise.resolve(null);
   return new Promise(resolve => {
     modalState = {kind:"ask"}; $("#modal").hidden = false;
     const box = $("#modalBox"); box.innerHTML = "";
     box.append(head(`${card.n} wirken`));
-    box.append(Object.assign(document.createElement("p"), {className:"muted", textContent:"Auf dem Stapel liegt schon etwas. Zielt dein Zauber auf einen dieser Zauber (zum Beispiel ein Gegenzauber)?"}));
-    [...STACK].reverse().forEach(it => box.append(btn(`Ziel: ${it.n} von ${it.by}`, () => { closeModal(); resolve(it.id); })));
+    box.append(Object.assign(document.createElement("p"), {className:"muted", textContent:"Auf dem Stapel liegt schon etwas. Zielt dein Zauber auf einen dieser Einträge (zum Beispiel ein Gegenzauber)?"}));
+    [...list].reverse().forEach(it => box.append(btn(`Ziel: ${stackLabel(it)}`, () => { closeModal(); resolve(it.id); })));
     box.append(btn("Kein Ziel auf dem Stapel", () => { closeModal(); resolve(null); }, "primary"));
   });
 }
+const AUTO_PASS = {t:null};
 function renderStack(){
+  abilStackWatch();
   const box = $("#stackBox"); if(!box) return;
   if(!STACK.length){ box.hidden = true; box.innerHTML = ""; return; }
   box.hidden = false; box.innerHTML = "";
@@ -1965,14 +1982,21 @@ function renderStack(){
     bindCard(el, () => bigView(it), () => bigView(it));
     const t = document.createElement("div"); t.style.minWidth = "0";
     const tgt = it.target && STACK.find(x => x.id === it.target);
-    t.innerHTML = `<b>${esc(it.n)}</b> ${manaHtml(it.mc)}<div class="stat">${esc(it.by)}${tgt ? " · gegen " + esc(tgt.n) : ""}${it.countered ? " · <span class=\"err\">gekontert</span>" : ""}</div>`;
+    t.innerHTML = it.abil ? `<b>Fähigkeit: ${esc(it.n)}</b><div class="stat">${esc(it.by)}${it.countered ? " · <span class=\"err\">gekontert</span>" : ""} · ${esc(String(it.o || "").slice(0, 160))}</div>`
+      : `<b>${esc(it.n)}</b> ${manaHtml(it.mc)}<div class="stat">${esc(it.by)}${tgt ? " · gegen " + esc(tgt.n) : ""}${it.countered ? " · <span class=\"err\">gekontert</span>" : ""}</div>`;
     r.append(el, t); box.append(r);
   });
   const row = document.createElement("div"); row.className = "row";
   if(mustAct) row.append(btn("OK, weiter", () => toHost({t:"st_pass", id:top.id}), "primary"));
-  if(top.owner === me.id && top.passes.length <= 1) row.append(btn("Zurücknehmen", () => toHost({t:"st_cancel", id:top.id}), "small"));
+  if(top.owner === me.id && top.passes.length <= 1 && !top.abil) row.append(btn("Zurücknehmen", () => toHost({t:"st_cancel", id:top.id}), "small"));
   if(mustAct) row.append(Object.assign(document.createElement("span"), {className:"stat", textContent:"Antworten: Spontanzauber über das Handmenü wirken."}));
   box.append(row);
+  // Fähigkeiten automatisch durchwinken (wer nichts gegen Fähigkeiten auf der Hand hat)
+  const auto = !!LS.get("kt-autoabil", false);
+  const lab = document.createElement("label"); lab.className = "stat"; lab.style.display = "flex"; lab.style.gap = "6px"; lab.style.alignItems = "center";
+  const cb = Object.assign(document.createElement("input"), {type:"checkbox", checked:auto}); cb.onchange = () => { LS.set("kt-autoabil", cb.checked); renderStack(); };
+  lab.append(cb, "Fähigkeiten automatisch mit «OK» durchwinken"); box.append(lab);
+  if(mustAct && top.abil && auto && !AUTO_PASS.t) AUTO_PASS.t = setTimeout(() => { AUTO_PASS.t = null; const t2 = STACK[STACK.length - 1]; if(t2 && t2.abil && !t2.passes.includes(me.id) && LS.get("kt-autoabil", false)) toHost({t:"st_pass", id:t2.id}); }, 500);
 }
 
 /* ---------- KI-Gegner ---------- */
@@ -2670,6 +2694,7 @@ function openAttackDialog(preTarget){
     mobilize(attackers, chosen);
     if(abilAuto() && S.bf.some(x => !x.fd && ATK_JOIN_RE.some(r => r.test(x.o || "")))){ S.atkJoin = []; await queued(() => {}); joinAttack(attackers, chosen, def); }
     curseOnAttack(new Set([...chosen.values()]));
+    if(usesStack()) await queued(() => {}); // Angriffs-Auslöser liegen auf dem Stapel: erst verrechnen, dann blocken
     if(TURN.active === me.id && TURN.phase !== 3) setPhase(3);
     const groups = {};
     attackers.forEach(c => { const t = chosen.get(c.u); (groups[t] = groups[t] || []).push(c); });
@@ -2699,6 +2724,7 @@ async function receiveAttack(m){
   if(list.length) act(`blockt: ${list.map(x => `${x.b.n} gegen ${(attackers.find(a => a.u === x.a) || {}).n}`).join(", ")}`);
   else act("blockt nicht");
   [...blocks.values()].forEach(b => { if(b && S.bf.includes(b)) abilEvent({kind:"block", c:b}); });
+  if(usesStack()) await queued(() => {}); // Block-Auslöser zuerst verrechnen
   sendTo(m.from, {t:"blocks", cid:m.cid, blocks:list});
 }
 function receiveBlocks(m){
@@ -3090,7 +3116,7 @@ function setTurn(t){
   } else if(TURN.phase !== prevPhase && TURN.active){
     if((TURN.phase === 2 && prevPhase < 2) || (TURN.phase === 4 && prevPhase < 4)) abilEvent({kind:"phase", phase: TURN.phase === 4 ? "main2" : "main", mine: TURN.active === me.id});
     if(TURN.phase === 3) remindTriggers("combat", TURN.active === me.id);
-    if(TURN.phase === 5) remindTriggers("end", TURN.active === me.id);
+    if(TURN.phase === 5 && !(TURN.active === me.id && S.endFiredKey === turnKey())){ if(TURN.active === me.id) S.endFiredKey = turnKey(); remindTriggers("end", TURN.active === me.id); }
   }
   renderTurn();
 }
@@ -3145,7 +3171,13 @@ function passTurn(){
   if(STACK.length){ toast("Auf dem Stapel liegt noch etwas. Erst wenn alle «OK» gegeben haben, kannst du den Zug beenden."); return; }
   const off = TURN.active !== me.id && TURN.active !== "bot" && (!others[TURN.active] || others[TURN.active].off);
   if(TURN.active !== me.id && !off) return;
-  if(TURN.active === me.id){ if(TURN.phase < 5) remindTriggers("end", true); emptyPool("Zugende"); act("beendet den Zug"); commit(); }
+  // Am Tisch mit Mitspielern: Endschritt-Auslöser liegen zuerst auf dem Stapel, der Zug endet danach von selbst
+  if(TURN.active === me.id && usesStack() && TURN.phase < 5 && S.endFiredKey !== turnKey()){
+    S.endFiredKey = turnKey(); remindTriggers("end", true);
+    queued(() => {}).then(() => { if(TURN.active === me.id && !STACK.length) passTurn(); });
+    return;
+  }
+  if(TURN.active === me.id){ if(TURN.phase < 5 && S.endFiredKey !== turnKey()) remindTriggers("end", true); emptyPool("Zugende"); act("beendet den Zug"); commit(); }
   if(TURN.active === me.id && (S.extraTurns || 0) > 0){
     S.extraTurns--; act("nimmt einen zusätzlichen Zug"); commit();
     if(net.role === "client") return toHost({t:"pass", extra:true});
@@ -5443,6 +5475,7 @@ function matchStep2(p, src, full, SELF){
   // schon anderswo erledigt
   if((/^add\b/i.test(p) && /\b(Instant|Sorcery)\b/.test(src.type || "")) || /you get (\{E\}|an? (experience|energy|rad)|\w+ (experience|rad) counters)/i.test(p) || /pay (any amount of|an amount of) \{E\}/i.test(p)) return [{t:"skip"}];
   if(/^counter that spell$/i.test(p)) return [{t:"counterThat"}];
+  if(/^counter (?:up to one )?target (?:spell, )?(?:activated ability, or triggered ability|activated or triggered ability|activated ability|triggered ability)/i.test(p)) return [{t:"counterAbil", spell:/target spell/i.test(p), notMine:/you don't control/i.test(p)}];
   if(/^counter (target|that|it)\b/i.test(p) || /^(its|that spell's) controller (may )?(pays?|sacrifices?|creates?)\b/i.test(p)) return [{t:"skip"}]; // Kontern läuft über den Stapel
   // Stapel-Effekte: verbannen statt Friedhof, mehrere Ziele, Kontrolle übernehmen, Ziel ändern
   if(/^if that spell is countered this way\b/i.test(p) || /^exile any number of target spells$/i.test(p) || /^gain control of target (noncreature |instant or sorcery )?spell$/i.test(p) || /^choose new targets for (it|target spell or ability|target spell|the copy)$/i.test(p) || /^change the target of target spell/i.test(p)) return [{t:"skip"}];
@@ -7130,8 +7163,8 @@ async function runSteps(steps, src, ctx = {}){
       }
       case "consult": await demonicConsult(src); break;
       case "stackExile": {
-        const list = (STACK || []).filter(x => !x.countered && x.owner !== me.id);
-        const all = (STACK || []).filter(x => !x.countered);
+        const list = (STACK || []).filter(x => !x.countered && !x.abil && x.owner !== me.id);
+        const all = (STACK || []).filter(x => !x.countered && !x.abil);
         if(!usesStack() || !all.length){ act(`${src.n}: kein Zauber auf dem Stapel`); break; }
         const it = await abilModal(`${src.n}: welchen Zauber verbannen${st.plot ? " (er wird geplant)" : ""}?`, (box, done) => { [...(list.length ? list : all)].reverse().forEach(x => box.append(btn(`${x.n} von ${x.by}`, () => done(x), "small"))); box.append(btn("Keinen", () => done(null), "small")); });
         if(it){ toHost({t:"st_counter", id:it.id, src:src.n, by:me.name, exile:true, plot:!!st.plot}); act(`${src.n}: verbannt ${it.n}${st.plot ? " – geplant, sein Besitzer darf ihn in einem späteren Zug gratis wirken" : ""}`); }
@@ -7479,7 +7512,7 @@ async function runSteps(steps, src, ctx = {}){
       }
       case "burningInquiry": { src.o = "Each player draws three cards, then discards three cards at random."; await runSteps([{t:"wheelLite"}], src, ctx); break; }
       case "manaDrain": case "arcaneDenial": {
-        const list = (STACK || []).filter(x => !x.countered && x.owner !== me.id);
+        const list = (STACK || []).filter(x => !x.countered && !x.abil && x.owner !== me.id);
         if(!usesStack() || !list.length){ act(`${src.n}: kein gegnerischer Zauber auf dem Stapel`); break; }
         const it = list.length === 1 ? list[0] : await abilModal(`${src.n}: welchen Zauber kontern?`, (box, done) => { [...list].reverse().forEach(x => box.append(btn(`${x.n} von ${x.by}`, () => done(x), "small"))); });
         if(!it) break;
@@ -7552,6 +7585,15 @@ async function runSteps(steps, src, ctx = {}){
         act(`${src.n}: verbannt ${c.n} – diesen Zug darfst du es spielen`); break;
       }
       case "tidebinder": {
+        if(usesStack()){
+          const it = await pickStackAbil(src, {}); if(!it) break;
+          toHost({t:"st_counter", id:it.id, src:src.n, by:me.name}); act(`${src.n}: kontert die Fähigkeit von ${it.n}`);
+          if(it.srcU && /\b(Artifact|Creature|Planeswalker)\b/.test(it.srcType || "")){
+            if(it.owner === me.id){ const c = S.bf.find(x => x.u === it.srcU); if(c){ loseAllAbilities(c); c.tideBy = src.u; act(`${src.n}: ${c.n} verliert alle Fähigkeiten`); } }
+            else { hitOpponent(it.owner, {kind:"loseAll", card:it.srcU, src:src.n}); src.tideT = {pid:it.owner, u:it.srcU}; }
+          }
+          break;
+        }
         const t = await pickTarget(`${src.n}: von welcher Karte war die Fähigkeit? (freiwillig)`, "target artifact, creature, or planeswalker", true); if(!t || !t.card) break;
         if(t.mine){ loseAllAbilities(t.card); t.card.tideBy = src.u; act(`${src.n}: ${t.card.n} verliert alle Fähigkeiten`); }
         else { hitOpponent(t.pid, {kind:"loseAll", card:t.card.u, src:src.n}); src.tideT = {pid:t.pid, u:t.card.u}; }
@@ -7682,7 +7724,17 @@ async function runSteps(steps, src, ctx = {}){
         break;
       }
       case "ptCtrFix": { const c = ctx.ev && ctx.ev.c && S.bf.includes(ctx.ev.c) ? ctx.ev.c : src; c.ptc = {p:((c.ptc && c.ptc.p) || 0) + st.p, t:((c.ptc && c.ptc.t) || 0) + st.tg}; act(`${c.n}: ${st.p}/${st.tg}-Marke (jetzt ${power(c)}/${tough(c)})`); break; }
+      case "counterAbil": {
+        // Zauber (Stifle, Trickbind, Disallow): das Ziel wurde beim Wirken gewählt und vom Stapel schon gekontert
+        if(src._tgtItem){ ctx.cAbil = src._tgtItem; break; }
+        const it = await pickStackAbil(src, st); if(!it) break;
+        toHost({t:"st_counter", id:it.id, src:src.n, by:me.name}); act(`${src.n}: kontert ${it.abil ? "die Fähigkeit von " : ""}${it.n}`); ctx.cAbil = it;
+        break;
+      }
       case "abilLock": {
+        { const it = ctx.cAbil || src._tgtItem;
+          if(it && it.abil){ if(it.srcU){ if(it.owner === me.id){ const c = S.bf.find(x => x.u === it.srcU); if(c){ c.abilLockKey = turnKey(); act(`${src.n}: Fähigkeiten von ${c.n} sind diesen Zug gesperrt`); } } else hitOpponent(it.owner, {kind:"abilLock", card:it.srcU, src:src.n}); } break; }
+          if(it) break; }
         const t = await pickTarget(`${src.n}: von welcher bleibenden Karte war die Fähigkeit? (freiwillig)`, "target permanent", true); if(!t || !t.card) break;
         if(t.mine){ t.card.abilLockKey = turnKey(); act(`${src.n}: Fähigkeiten von ${t.card.n} sind diesen Zug gesperrt`); }
         else hitOpponent(t.pid, {kind:"abilLock", card:t.card.u, src:src.n});
@@ -8650,7 +8702,7 @@ async function runSteps(steps, src, ctx = {}){
       }
       case "stackTuck": {
         const types = st.what.toLowerCase().includes("planeswalker") ? /\b(Creature|Planeswalker)\b/ : /creature spell/i.test(st.what) ? /\bCreature\b/ : /./;
-        const list = (STACK || []).filter(x => !x.countered && types.test(x.type || ""));
+        const list = (STACK || []).filter(x => !x.countered && !x.abil && types.test(x.type || ""));
         if(!usesStack() || !list.length){ act(`${src.n}: kein passender Zauber auf dem Stapel`); break; }
         const it = await abilModal(`${src.n}: welchen Zauber auf die Bibliothek?`, (box, done) => { [...list].reverse().forEach(x => box.append(btn(`${x.n} von ${x.by}`, () => done(x), "small"))); box.append(btn("Keinen", () => done(null), "small")); });
         if(it){ toHost({t:"st_tuck", id:it.id, src:src.n}); act(`${src.n}: ${it.n} kommt auf die Bibliothek seines Besitzers`); }
@@ -8688,7 +8740,7 @@ async function runSteps(steps, src, ctx = {}){
       }
       case "othersDraw": { const n = nWord(st.n) || 1; for(const o of liveOpps()){ const r = await requestOpp(o.id, {kind:"draw", n, src:src.n}); act(`${src.n}: ${o.name} zieht ${r && r.n != null ? r.n : n}`); } break; }
       case "spellskite": {
-        const list = (STACK || []).filter(x => x.owner !== me.id && (!st.only || new RegExp(`\\b(${st.only})\\b`).test(x.type || "")));
+        const list = (STACK || []).filter(x => x.owner !== me.id && !x.abil && (!st.only || new RegExp(`\\b(${st.only})\\b`).test(x.type || "")));
         if(!usesStack() || !list.length){ if(st.only){ act(`${src.n}: kein passender Zauber auf dem Stapel`); break; } manual.push("Auf dem Stapel liegt kein Zauber eines Gegners. Ziele von Fähigkeiten lenkst du selbst um."); break; }
         const it = await abilModal(`${src.n}: welchen Zauber umlenken?`, (box, done) => { [...list].reverse().forEach(x => box.append(btn(`${x.n} von ${x.by}`, () => done(x), "small"))); box.append(btn("Abbrechen", () => done(null), "small")); });
         if(it){ toHost({t:"st_redirect", id:it.id, text:`${src.n} von ${me.name || "dir"}`}); act(`${src.n}: lenkt ${it.n} auf sich um`); }
@@ -9379,6 +9431,12 @@ function abilEvent(ev, extraSrc){
   }));
   if(ev.kind === "enter" && ev.c && ev.c.evoked && !ev.opp){ queued(async () => { if(S.bf.includes(ev.c)){ moveCard(ev.c.u, "gy"); act(`opfert ${ev.c.n} (Evoke)`); commit(); } }); }
 }
+/* Auswahl einer Fähigkeit (oder eines Zaubers) auf dem Stapel zum Kontern */
+async function pickStackAbil(src, st){
+  const list = (STACK || []).filter(x => !x.countered && (x.abil || st.spell) && !(st.notMine && x.owner === me.id));
+  if(!usesStack() || !list.length){ act(`${src.n}: keine passende Fähigkeit auf dem Stapel`); return null; }
+  return abilModal(`${src.n}: was kontern?`, (box, done) => { [...list].reverse().forEach(x => box.append(btn(stackLabel(x), () => done(x), "small"))); box.append(btn("Nichts", () => done(null), "small")); });
+}
 async function chooseModes(src, modal){
   if(modal.line && /You may choose the same mode more than once/i.test(modal.line)){
     const n = nWord(modal.n) || 3;
@@ -9404,6 +9462,42 @@ async function chooseModes(src, modal){
     paint();
     box.append(ok, btn("Abbrechen", () => done(null), "small"));
   });
+}
+/* Fähigkeiten auf dem Stapel (nur am Tisch mit Mitspielern): die Fähigkeit liegt auf dem Stapel, bis alle «OK» gegeben haben.
+   Währenddessen gibt die Warteschlange frei, damit man selbst antworten kann; nach dem Verrechnen läuft es an derselben Stelle weiter. */
+const ABWAIT = {};
+function abilUsesStack(ab){
+  if(!usesStack()) return false;
+  const t = String((ab && ab.text) || "").trim();
+  if(/^add (?:\{|one |two |three |x |an amount|that much|an additional)/i.test(t) && !/\btarget\b/i.test(t)) return false; // Mana-Fähigkeiten nutzen den Stapel nicht
+  return true;
+}
+async function abilOnStack(src, ab, label){
+  if(!abilUsesStack(ab)) return true;
+  const id = uid(); const inQ = QDEPTH > 0;
+  const w = ABWAIT[id] = {res:null, old:null, inQ, seen:false, n:src.n};
+  const p = new Promise(res => { w.res = res; });
+  if(inQ){ w.old = MODALQ.p; MODALQ.p = Promise.resolve(); QDEPTH--; }
+  toHost({t:"st_push", item:{id, abil:true, n:src._alias || src.n, img:src.img, srcU:src.u, srcType:src.type, o:String(label || ab.line || ab.text || "").slice(0, 400)}});
+  const ok = await p;
+  if(inQ) QDEPTH++;
+  if(!ok) act(`${src.n}: die Fähigkeit wurde gekontert`);
+  return ok;
+}
+function abilResolved(it){
+  const w = ABWAIT[it.id];
+  if(!w){ if(!it.countered && it.o) toast(`<b>${esc(it.n)}:</b> Die Fähigkeit wurde verrechnet, aber die App wurde inzwischen neu geladen. Bitte von Hand ausführen: ${esc(String(it.o).slice(0, 200))}`, 15000); return; }
+  delete ABWAIT[it.id];
+  const ok = !it.countered;
+  if(w.inQ) MODALQ.p = MODALQ.p.then(() => { w.res(ok); return w.old; }).catch(e => console.error(e));
+  else w.res(ok);
+}
+/* Verschwindet ein Eintrag ohne Verrechnung (Tisch neu gestartet), gilt die Fähigkeit als nicht ausgeführt */
+function abilStackWatch(){
+  for(const id of Object.keys(ABWAIT)){
+    const w = ABWAIT[id]; const on = (STACK || []).some(x => x.id === id);
+    if(on) w.seen = true; else if(w.seen){ clearTimeout(w.gone); w.gone = setTimeout(() => { if(ABWAIT[id] && !(STACK || []).some(x => x.id === id)) abilResolved({id, countered:true}); }, 1500); }
+  }
 }
 let LAST_ABIL = null;
 async function runAbility(src, ab, ctx, text){
@@ -9439,6 +9533,7 @@ async function runTrigger(src, ab, ev){
   act(`${src.n} löst aus: ${ab.line.slice(0, 140)}`);
   // «This ability triggers only once each turn» (Kwia)
   if(/this ability triggers only once each turn/i.test(ab.text)){ const k = `${ab.line}|${turnKey()}`; src._once = src._once || {}; if(src._once[k]) return; src._once[k] = true; }
+  if(!/\btapped? for mana\b|\btaps? [^.]*? for mana\b/i.test(ab.cond || "") && !(await abilOnStack(src, ab, ab.line))) return;
   await runAbility(src, ab, {X: ev.kind === "enter" && ev.c === src && src.lastX != null ? src.lastX : undefined, much: ev.much, pid: ev.pid, last: ev.kind === "die" || ev.kind === "youDiscard" || ev.kind === "youSac" || ev.kind === "tapped" ? ev.c : undefined, ev}, iff.text);
 }
 /* ---------- Aktivierte Fähigkeiten, Loyalität, Kartenmenü ---------- */
@@ -9529,6 +9624,7 @@ async function activateAbility(c, ab){
   if(/sacrifice x /i.test(ab.cost) && c.lastAbilX != null) c._sacX = c.lastAbilX;
   act(`aktiviert ${c.n}: ${ab.text.slice(0, 120)}`);
   const ctx = {}; if(c.lastAbilX != null) ctx.X = c.lastAbilX; if(paid.victims && paid.victims[0]) ctx.much = power(paid.victims[0]);
+  if(!(await abilOnStack(c, ab, `${ab.cost}: ${ab.text}`))) return;
   await runAbility(c, ab, ctx);
 }
 function turnKey(){ return `${TURN.n}|${TURN.active}${TURN.ex ? "|x" + TURN.ex : ""}`; }
@@ -9542,7 +9638,7 @@ async function activateLoyalty(c, ab){
   c.c = (c.c || 0) + n; c.loyUsed = turnKey();
   act(`${c.n}: ${n >= 0 ? "+" : ""}${n} (Loyalität ${c.c}): ${ab.text.slice(0, 120)}`);
   commit();
-  await runAbility(c, ab, {X: /X/.test(v) ? Math.abs(n) : null});
+  if(await abilOnStack(c, ab, `${ab.cost}: ${ab.text}`)) await runAbility(c, ab, {X: /X/.test(v) ? Math.abs(n) : null});
   if(S.bf.includes(c) && (c.c || 0) <= 0){ moveCard(c.u, "gy"); act(`${c.n} hat keine Loyalität mehr und kommt in den Friedhof`); commit(); }
 }
 function abilMenuItems(c, zone){
@@ -9748,7 +9844,7 @@ function oppStackScan(){
   (STACK || []).forEach(it => {
     if(!it || seenOppStack.has(it.id)) return;
     seenOppStack.add(it.id);
-    if(it.owner && it.owner !== me.id) abilEvent({kind:"oppCast", c:{n:it.n, type:it.type, mc:it.mc, cmc:it.cmc, free:it.free, stackId:it.id}, opp:true, pid:it.owner});
+    if(it.owner && it.owner !== me.id && !it.abil) abilEvent({kind:"oppCast", c:{n:it.n, type:it.type, mc:it.mc, cmc:it.cmc, free:it.free, stackId:it.id}, opp:true, pid:it.owner});
   });
 }
 const OPP_HAND = {};
@@ -10466,7 +10562,7 @@ function spotlightStack(){
   STACK.forEach(it => {
     if(seenStack.has(it.id)) return;
     seenStack.add(it.id);
-    if(!fxReady) return;
+    if(!fxReady || it.abil) return;
     const box = $("#spotlight"); if(!box) return;
     const tgt = it.target && STACK.find(x => x.id === it.target);
     box.innerHTML = "";
@@ -10761,7 +10857,7 @@ function historyAdd(win){
 /* ---------- Automatische Updates ---------- */
 // Liegt die App im Web, prüft sie regelmässig version.json im selben Ordner und lädt sich bei einer neuen Version neu.
 // Alles Wichtige (Spielstand, Deck, Tisch) liegt im Browser-Speicher und ist nach dem Neuladen wieder da.
-const APP_VERSION = "2026.11.15-3";
+const APP_VERSION = "2026.11.15-4";
 const ONLINE = /^https?:$/.test(location.protocol);
 let updPending = null, updTimer = null, updSnoozeUntil = 0;
 function busyForUpdate(){ return botBusy || (!$("#modal").hidden && modalState && ["block","deck"].includes(modalState.kind)); }

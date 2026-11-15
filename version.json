@@ -1,4 +1,4 @@
 {
-  "version": "2026.11.15-3",
-  "notes": "Neu: Endlosschleifen (Infinite Kombos) werden erkannt. Kommst du nach einer Folge von Aktionen wieder in dieselbe Spiellage und hast dabei gewonnen (Mana, Leben, Spielsteine, Schaden am Gegner), erscheint «∞ Schleife erkannt» und du kannst sie mit einem Klick 10-, 100- oder beliebig oft wiederholen. Bei Karten wie Grim Monolith mit Zirda kommt der Hinweis schon vorher."
+  "version": "2026.11.15-4",
+  "notes": "Neu am Tisch mit Mitspielern: Fähigkeiten liegen auf dem Stapel, bis alle «OK» gegeben haben; Stifle, Trickbind, Disallow und Tishana's Tidebinder kontern sie wirklich (Häkchen «Fähigkeiten automatisch durchwinken» im Stapel). Neu überall: Endlosschleifen werden erkannt («∞ Schleife erkannt») und lassen sich mit einem Klick beliebig oft wiederholen."
 }

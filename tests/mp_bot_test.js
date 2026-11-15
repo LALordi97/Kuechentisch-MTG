@@ -41,6 +41,7 @@ const btnText = (w, t, scope = '#modalBox') => [...w.document.querySelectorAll(s
 async function loadDeck(w, list){ $(w, '#bDeck').click(); await wait(10); $(w, '#dText').value = list; $(w, '#dGo').click(); await wait(400); }
 function line(w){ const S = ev(w, 'S'); return `${w._name}: Leben ${S.life}, Hand ${S.hand.length}, Feld [${S.bf.map(c => c.n + (c.tap ? '*' : '')).join(', ')}], GY [${S.gy.map(c => c.n).join(', ')}]`; }
 let fails = 0; const check = (ok, msg) => { console.log((ok ? 'OK   ' : 'FEHLER ') + msg); if(!ok) fails++; };
+const pass = async w => { ev(w, 'passTurn()'); await wait(40); const b = [...w.document.querySelectorAll('#modalBox button')].find(x => x.textContent.trim() === 'Später'); if(b){ b.click(); await wait(40); } };
 (async () => {
   const A = mkWin('anna'), B = mkWin('ben');
   $(A, '#lName').value = 'Anna'; $(A, '#lHost').click(); await wait(80);
@@ -78,7 +79,7 @@ let fails = 0; const check = (ok, msg) => { console.log((ok ? 'OK   ' : 'FEHLER 
   btnText(B, 'Angreifen').click(); await wait(400);
   check(ev(A, 'BOT.life') === botLife - 2, `KI verliert 2 Leben durch Bens Angriff (jetzt ${ev(A, 'BOT.life')})`);
   // Zugfolge Ben → KI → Anna
-  ev(B, 'passTurn()'); await wait(150);
+  await pass(B); await wait(150);
   check(ev(B, 'TURN.active') === 'bot' || ev(B, 'TURN.active') === ev(A, 'me.id'), 'Nach Ben ist die KI oder Anna dran');
   for(let i = 0; i < 4; i++){ for(const w of [A, B]){ const b = btnText(w, 'Blocker bestätigen'); if(b) b.click(); } await wait(700); }
   console.log('  Jetzt am Zug:', ev(B, 'displayName(TURN.active)'));
