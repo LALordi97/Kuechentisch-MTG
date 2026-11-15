@@ -1,4 +1,4 @@
 {
-  "version": "2026.11.15-1",
-  "notes": "Harbinger of the Seas wirkt jetzt: nichtstandard Länder sind Inseln und geben nur {U} (wie Blood Moon mit Gebirgen; sind beide im Spiel, gilt die später gekommene Karte). Länder zählen unter Blood Moon/Harbinger auch beim Typ als Gebirge bzw. Inseln."
+  "version": "2026.11.15-2",
+  "notes": "Im Mehrspieler kommen aktivierte und ausgelöste Fähigkeiten jetzt auf den Stapel: sie werden erst verrechnet, wenn alle «OK» gegeben haben. Stifle, Trickbind und Tishana's Tidebinder können sie dort neutralisieren (Mana-Fähigkeiten gehen nicht auf den Stapel). Dazu Harbinger of the Seas (2026.11.15-1)."
 }

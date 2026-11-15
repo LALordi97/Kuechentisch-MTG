@@ -1529,14 +1529,14 @@ function applyAll(msg){
   order.forEach(id => { if(id !== me.id && msg.players[id] && typeof msg.players[id] === "object") others[id] = msg.players[id]; });
   if(typeof msg.host === "string") net.hostId = msg.host;
   STACK = Array.isArray(msg.stack) ? msg.stack.filter(x => x && typeof x === "object") : [];
-  STACK.forEach(x => { if(typeof x.u === "string" && !/\bLand\b/.test(String(x.type || ""))) noteSpellSeen(x.u); });
+  STACK.forEach(x => { if(typeof x.u === "string" && x.u && x.kind !== "ab" && !/\bLand\b/.test(String(x.type || ""))) noteSpellSeen(x.u); });
   injectBot();
   if(msg.turn && typeof msg.turn === "object") setTurn(msg.turn);
   renderAll();
 }
 /* Nachrichten an einen Spieler: über den Host weitergeleitet */
 const ROUTED = ["give", "hit", "attack", "blocks", "cres", "st_resolve", "req", "resp"];
-const HOSTED = ["pass", "roll", "phase", "st_push", "st_pass", "st_cancel", "st_redirect", "st_tuck"];
+const HOSTED = ["pass", "roll", "phase", "st_push", "st_pass", "st_cancel", "st_redirect", "st_tuck", "st_counter"];
 function sendTo(pid, m){
   m.to = pid; m.from = me.id; m.by = me.name || "Gegner";
   if(pid === me.id) return deliver(m);
@@ -1759,13 +1759,33 @@ function putOnStack(card, dest, target, extra){
   const x = extra || {};
   toHost({t:"st_push", item:{id:uid(), ...cardPublic(card), dest, target: target || null, targets: x.targets || [], newTarget: x.newTarget || null, redirect: x.redirect || null}});
 }
+/* Fähigkeiten auf dem Stapel (Mehrspieler): aktivierte und ausgelöste Fähigkeiten warten, bis alle «OK» gegeben haben.
+   Stifle, Trickbind und Tishana's Tidebinder können sie dort neutralisieren. Mana-Fähigkeiten gehen nie auf den Stapel. */
+const ABIL_PEND = {};
+const isManaAbil = ab => !!ab && /\badd (?:\{|one|two|three|x |an amount|that much|mana)/i.test(ab.text || "") && !/\btarget\b/i.test(ab.text || "");
+const abilUsesStack = (src, ab) => usesStack() && !!src && !!ab && ["act", "trig", "loy"].includes(ab.kind) && !isManaAbil(ab);
+function pushAbility(src, ab, run){
+  const id = uid();
+  ABIL_PEND[id] = {src, run};
+  toHost({t:"st_push", item:{id, kind:"ab", u:null, n:`${src.n}: Fähigkeit`, img:src.img, back:src.back, type:ab.kind === "trig" ? "Ausgelöste Fähigkeit" : "Aktivierte Fähigkeit", mc:"", cmc:0,
+    o:String(ab.line || ab.text || "").slice(0, 400), srcU:src.u, srcType:String(src.type || "").slice(0, 200), dest:"ab", target:null}});
+}
+const stackIsAbil = it => !!it && it.kind === "ab";
+/* Welche Stapel-Einträge darf eine Karte als Ziel nehmen? «spell» → Zauber, «activated/triggered ability» → Fähigkeiten */
+function stackFilterFor(card){
+  const o = String(card && card.o || "");
+  const ab = /\b(?:activated|triggered) abilit/i.test(o), sp = /\bspells?\b/i.test(o.replace(/\b(?:activated|triggered) abilit\w*/gi, ""));
+  if(ab && !sp) return it => stackIsAbil(it);
+  if(sp && !ab) return it => !stackIsAbil(it);
+  return () => true;
+}
 /* Ziele auf dem Stapel: Gegenzauber, Mindbreak Trap (mehrere), Misdirection/Deflecting Swat (umlenken) */
 async function stackTargets(card){
   const o = String(card.o || "");
   if(/exile any number of target spells/i.test(o)){
     const ids = await abilModal(`${card.n}: welche Zauber verbannen?`, (box, done) => {
       const chosen = new Set();
-      [...STACK].reverse().forEach(it => { const b = btn(`${it.n} von ${it.by}`, () => { if(chosen.has(it.id)) chosen.delete(it.id); else chosen.add(it.id); b.classList.toggle("primary", chosen.has(it.id)); }, "small"); box.append(b); });
+      [...STACK].reverse().filter(it => !stackIsAbil(it)).forEach(it => { const b = btn(`${it.n} von ${it.by}`, () => { if(chosen.has(it.id)) chosen.delete(it.id); else chosen.add(it.id); b.classList.toggle("primary", chosen.has(it.id)); }, "small"); box.append(b); });
       box.append(btn("Weiter", () => done([...chosen]), "primary"));
     });
     if(ids === null) return null;
@@ -1800,10 +1820,11 @@ function stackPush(raw, from, by){
     targets: Array.isArray(raw.targets) ? raw.targets.filter(x => typeof x === "string").slice(0, 10).map(x => x.slice(0, 20)) : [],
     newTarget: typeof raw.newTarget === "string" ? raw.newTarget.slice(0, 20) : null, redirect: typeof raw.redirect === "string" ? raw.redirect.slice(0, 80) : null,
     owner: from, by: String(by || "Jemand").slice(0, 24), passes: [from], countered: false, free: !!raw.free};
+  if(raw.kind === "ab"){ it.kind = "ab"; it.u = null; it.dest = "ab"; it.srcU = String(raw.srcU || "").slice(0, 20); it.srcType = String(raw.srcType || "").slice(0, 200); }
   STACK.push(it);
-  if(!/\bLand\b/.test(it.type)) noteSpellSeen(it.u || it.id);
+  if(!stackIsAbil(it) && !/\bLand\b/.test(it.type)) noteSpellSeen(it.u || it.id);
   const tgt = it.target && STACK.find(x => x.id === it.target);
-  relayLog({from:it.by, text:`wirkt ${it.n}${tgt ? " gegen " + tgt.n : ""} (liegt auf dem Stapel)`, sys:true});
+  relayLog({from:it.by, text: stackIsAbil(it) ? `${it.n} liegt auf dem Stapel` : `wirkt ${it.n}${tgt ? " gegen " + tgt.n : ""} (liegt auf dem Stapel)`, sys:true});
   broadcastAll();
   if(BOT.active && from !== "bot") botStackReact(it);
   stackCheck();
@@ -1817,7 +1838,7 @@ function stackPass(id, from){
 }
 function stackCancel(id, from){
   const top = STACK[STACK.length - 1];
-  if(!top || top.id !== id || top.owner !== from) return;
+  if(!top || top.id !== id || top.owner !== from || stackIsAbil(top)) return;
   STACK.pop();
   relayLog({from:top.by, text:`nimmt ${top.n} zurück`, sys:true});
   if(top.owner !== "bot") route({t:"st_resolve", to:top.owner, from:me.id, item:top, cancelled:true});
@@ -1848,8 +1869,10 @@ function stackApply(it){
   const o = String(it.o || "");
   [it.target, ...(it.targets || [])].filter(Boolean).forEach(tid => {
     const t = STACK.find(x => x.id === tid); if(!t) return;
-    if(/counter target/i.test(o)){
+    if(/counter (?:up to one )?target/i.test(o)){
+      if(!stackFilterFor(it)(t)) return;
       t.countered = true;
+      if(stackIsAbil(t) && /activated abilities of that permanent can't be activated this turn/i.test(o)) t.lockAbil = true;
       if(/exile it instead/i.test(o)) t.cExile = true;
       if(/Choose 1, 2, or 3 at random\. Its controller mills that many cards/i.test(o)) t.tibalt = true;
       const tk = o.match(/Its controller creates (a|an|one|two|three) (.+?) tokens?(?: with ([^.]+))?\./i);
@@ -1883,6 +1906,15 @@ function botTokens(desc, n, tapped, extra){
 }
 function stackResolveMine(m){
   const it = m.item || {};
+  if(it.kind === "ab"){
+    const p = ABIL_PEND[it.id]; if(!p) return; delete ABIL_PEND[it.id];
+    if(it.countered){
+      act(`${p.src.n}: die Fähigkeit wurde neutralisiert`);
+      if(it.lockAbil && S.bf.includes(p.src)){ p.src.abilLockKey = turnKey(); act(`${p.src.n}: aktivierte Fähigkeiten sind diesen Zug gesperrt`); }
+      commit(); return;
+    }
+    queued(p.run); return;
+  }
   if(it.ghost){
     // Commandeer: der übernommene Spontanzauber wird für dich verrechnet
     if(/\b(Instant|Sorcery)\b/.test(it.type || "")){ const sh = newCard({n:it.n, type:it.type, o:it.o, mc:it.mc, cmc:it.cmc, img:it.img}); act(`${it.ghostCopy ? "kopiert" : "übernimmt"} ${it.n} von ${it.by}`); queued(() => abilSpellResolve(sh)); }
@@ -1918,7 +1950,7 @@ function stackResolveMine(m){
 async function botStackReact(it){
   // Die KI darf auf Zauber anderer Spieler reagieren, danach gibt sie «OK»
   let pick = null;
-  try{ if(!it.countered) pick = await botChooseCounter(it); }catch(e){}
+  try{ if(!it.countered && !stackIsAbil(it)) pick = await botChooseCounter(it); }catch(e){} // Fähigkeiten kontert die KI (noch) nicht
   const top = STACK[STACK.length - 1];
   if(!top || top.id !== it.id) return;
   if(pick){
@@ -1938,7 +1970,7 @@ function stackTargetDialog(card){
     const box = $("#modalBox"); box.innerHTML = "";
     box.append(head(`${card.n} wirken`));
     box.append(Object.assign(document.createElement("p"), {className:"muted", textContent:"Auf dem Stapel liegt schon etwas. Zielt dein Zauber auf einen dieser Zauber (zum Beispiel ein Gegenzauber)?"}));
-    [...STACK].reverse().forEach(it => box.append(btn(`Ziel: ${it.n} von ${it.by}`, () => { closeModal(); resolve(it.id); })));
+    [...STACK].reverse().filter(stackFilterFor(card)).forEach(it => box.append(btn(`Ziel: ${it.n} von ${it.by}`, () => { closeModal(); resolve(it.id); })));
     box.append(btn("Kein Ziel auf dem Stapel", () => { closeModal(); resolve(null); }, "primary"));
   });
 }
@@ -1962,12 +1994,12 @@ function renderStack(){
     bindCard(el, () => bigView(it), () => bigView(it));
     const t = document.createElement("div"); t.style.minWidth = "0";
     const tgt = it.target && STACK.find(x => x.id === it.target);
-    t.innerHTML = `<b>${esc(it.n)}</b> ${manaHtml(it.mc)}<div class="stat">${esc(it.by)}${tgt ? " · gegen " + esc(tgt.n) : ""}${it.countered ? " · <span class=\"err\">gekontert</span>" : ""}</div>`;
+    t.innerHTML = `<b>${esc(it.n)}</b> ${manaHtml(it.mc)}${stackIsAbil(it) ? `<div class="stat">${esc(String(it.o || "").slice(0, 120))}</div>` : ""}<div class="stat">${esc(it.by)}${tgt ? " · gegen " + esc(tgt.n) : ""}${it.countered ? " · <span class=\"err\">gekontert</span>" : ""}</div>`;
     r.append(el, t); box.append(r);
   });
   const row = document.createElement("div"); row.className = "row";
   if(mustAct) row.append(btn("OK, weiter", () => toHost({t:"st_pass", id:top.id}), "primary"));
-  if(top.owner === me.id && top.passes.length <= 1) row.append(btn("Zurücknehmen", () => toHost({t:"st_cancel", id:top.id}), "small"));
+  if(top.owner === me.id && top.passes.length <= 1 && !stackIsAbil(top)) row.append(btn("Zurücknehmen", () => toHost({t:"st_cancel", id:top.id}), "small"));
   if(mustAct) row.append(Object.assign(document.createElement("span"), {className:"stat", textContent:"Antworten: Spontanzauber über das Handmenü wirken."}));
   box.append(row);
 }
@@ -6998,8 +7030,8 @@ async function runSteps(steps, src, ctx = {}){
       }
       case "consult": await demonicConsult(src); break;
       case "stackExile": {
-        const list = (STACK || []).filter(x => !x.countered && x.owner !== me.id);
-        const all = (STACK || []).filter(x => !x.countered);
+        const list = (STACK || []).filter(x => !x.countered && !stackIsAbil(x) && x.owner !== me.id);
+        const all = (STACK || []).filter(x => !x.countered && !stackIsAbil(x));
         if(!usesStack() || !all.length){ act(`${src.n}: kein Zauber auf dem Stapel`); break; }
         const it = await abilModal(`${src.n}: welchen Zauber verbannen${st.plot ? " (er wird geplant)" : ""}?`, (box, done) => { [...(list.length ? list : all)].reverse().forEach(x => box.append(btn(`${x.n} von ${x.by}`, () => done(x), "small"))); box.append(btn("Keinen", () => done(null), "small")); });
         if(it){ toHost({t:"st_counter", id:it.id, src:src.n, by:me.name, exile:true, plot:!!st.plot}); act(`${src.n}: verbannt ${it.n}${st.plot ? " – geplant, sein Besitzer darf ihn in einem späteren Zug gratis wirken" : ""}`); }
@@ -7347,7 +7379,7 @@ async function runSteps(steps, src, ctx = {}){
       }
       case "burningInquiry": { src.o = "Each player draws three cards, then discards three cards at random."; await runSteps([{t:"wheelLite"}], src, ctx); break; }
       case "manaDrain": case "arcaneDenial": {
-        const list = (STACK || []).filter(x => !x.countered && x.owner !== me.id);
+        const list = (STACK || []).filter(x => !x.countered && !stackIsAbil(x) && x.owner !== me.id);
         if(!usesStack() || !list.length){ act(`${src.n}: kein gegnerischer Zauber auf dem Stapel`); break; }
         const it = list.length === 1 ? list[0] : await abilModal(`${src.n}: welchen Zauber kontern?`, (box, done) => { [...list].reverse().forEach(x => box.append(btn(`${x.n} von ${x.by}`, () => done(x), "small"))); });
         if(!it) break;
@@ -7420,10 +7452,25 @@ async function runSteps(steps, src, ctx = {}){
         act(`${src.n}: verbannt ${c.n} – diesen Zug darfst du es spielen`); break;
       }
       case "tidebinder": {
+        const abs = usesStack() ? STACK.filter(x => stackIsAbil(x) && !x.countered) : [];
+        if(abs.length){
+          const id = await abilModal(`${src.n}: welche Fähigkeit neutralisieren? (bis zu eine)`, (box, done) => {
+            [...abs].reverse().forEach(x => box.append(btn(`${x.n} von ${x.by}: ${String(x.o || "").slice(0, 60)}`, () => done(x.id), "small")));
+            box.append(btn("Keine", () => done(null), "small"));
+          });
+          const it = id && STACK.find(x => x.id === id); if(!it) break;
+          toHost({t:"st_counter", id:it.id, src:src.n, by:me.name}); act(`${src.n}: neutralisiert ${it.n}`);
+          if(/\b(Artifact|Creature|Planeswalker)\b/.test(it.srcType || "") && it.srcU){
+            if(it.owner === me.id){ const f = findCard(it.srcU); if(f && f.z === "bf"){ loseAllAbilities(f.c); f.c.tideBy = src.u; act(`${src.n}: ${f.c.n} verliert alle Fähigkeiten`); } }
+            else if(it.owner !== "bot"){ hitOpponent(it.owner, {kind:"loseAll", card:it.srcU, src:src.n}); src.tideT = {pid:it.owner, u:it.srcU}; }
+          }
+          break;
+        }
+        if(usesStack()){ toast(`<b>${esc(src.n)}:</b> auf dem Stapel liegt keine Fähigkeit – es gibt nichts zu neutralisieren.`); act(`${src.n}: keine Fähigkeit auf dem Stapel`); break; }
         const t = await pickTarget(`${src.n}: von welcher Karte war die Fähigkeit? (freiwillig)`, "target artifact, creature, or planeswalker", true); if(!t || !t.card) break;
         if(t.mine){ loseAllAbilities(t.card); t.card.tideBy = src.u; act(`${src.n}: ${t.card.n} verliert alle Fähigkeiten`); }
         else { hitOpponent(t.pid, {kind:"loseAll", card:t.card.u, src:src.n}); src.tideT = {pid:t.pid, u:t.card.u}; }
-        toast(`<b>${esc(src.n)}:</b> Fähigkeiten auf dem Stapel kann die App nicht kontern – bitte die gekonterte Fähigkeit selbst ignorieren.`);
+        toast(`<b>${esc(src.n)}:</b> ohne Mitspieler gibt es keinen Stapel – bitte die neutralisierte Fähigkeit selbst ignorieren.`);
         break;
       }
       case "connive": {
@@ -9307,7 +9354,9 @@ async function runTrigger(src, ab, ev){
   act(`${src.n} löst aus: ${ab.line.slice(0, 140)}`);
   // «This ability triggers only once each turn» (Kwia)
   if(/this ability triggers only once each turn/i.test(ab.text)){ const k = `${ab.line}|${turnKey()}`; src._once = src._once || {}; if(src._once[k]) return; src._once[k] = true; }
-  await runAbility(src, ab, {X: ev.kind === "enter" && ev.c === src && src.lastX != null ? src.lastX : undefined, much: ev.much, pid: ev.pid, last: ev.kind === "die" || ev.kind === "youDiscard" || ev.kind === "youSac" || ev.kind === "tapped" ? ev.c : undefined, ev}, iff.text);
+  const tctx = {X: ev.kind === "enter" && ev.c === src && src.lastX != null ? src.lastX : undefined, much: ev.much, pid: ev.pid, last: ev.kind === "die" || ev.kind === "youDiscard" || ev.kind === "youSac" || ev.kind === "tapped" ? ev.c : undefined, ev};
+  if(abilUsesStack(src, ab)){ pushAbility(src, ab, () => runAbility(src, ab, tctx, iff.text)); return; }
+  await runAbility(src, ab, tctx, iff.text);
 }
 /* ---------- Aktivierte Fähigkeiten, Loyalität, Kartenmenü ---------- */
 async function payAbilityCost(c, cost0, opts = {}){
@@ -9397,6 +9446,7 @@ async function activateAbility(c, ab){
   if(/sacrifice x /i.test(ab.cost) && c.lastAbilX != null) c._sacX = c.lastAbilX;
   act(`aktiviert ${c.n}: ${ab.text.slice(0, 120)}`);
   const ctx = {}; if(c.lastAbilX != null) ctx.X = c.lastAbilX; if(paid.victims && paid.victims[0]) ctx.much = power(paid.victims[0]);
+  if(abilUsesStack(c, ab)){ pushAbility(c, ab, () => runAbility(c, ab, ctx)); return; }
   await runAbility(c, ab, ctx);
 }
 function turnKey(){ return `${TURN.n}|${TURN.active}${TURN.ex ? "|x" + TURN.ex : ""}`; }
@@ -9410,7 +9460,8 @@ async function activateLoyalty(c, ab){
   c.c = (c.c || 0) + n; c.loyUsed = turnKey();
   act(`${c.n}: ${n >= 0 ? "+" : ""}${n} (Loyalität ${c.c}): ${ab.text.slice(0, 120)}`);
   commit();
-  await runAbility(c, ab, {X: /X/.test(v) ? Math.abs(n) : null});
+  if(abilUsesStack(c, ab)) pushAbility(c, ab, () => runAbility(c, ab, {X: /X/.test(v) ? Math.abs(n) : null}));
+  else await runAbility(c, ab, {X: /X/.test(v) ? Math.abs(n) : null});
   if(S.bf.includes(c) && (c.c || 0) <= 0){ moveCard(c.u, "gy"); act(`${c.n} hat keine Loyalität mehr und kommt in den Friedhof`); commit(); }
 }
 function abilMenuItems(c, zone){
@@ -9614,7 +9665,7 @@ async function pwEnter(c){
 const seenOppStack = new Set();
 function oppStackScan(){
   (STACK || []).forEach(it => {
-    if(!it || seenOppStack.has(it.id)) return;
+    if(!it || seenOppStack.has(it.id) || stackIsAbil(it)) return;
     seenOppStack.add(it.id);
     if(it.owner && it.owner !== me.id) abilEvent({kind:"oppCast", c:{n:it.n, type:it.type, mc:it.mc, cmc:it.cmc, free:it.free, stackId:it.id}, opp:true, pid:it.owner});
   });
@@ -10629,7 +10680,7 @@ function historyAdd(win){
 /* ---------- Automatische Updates ---------- */
 // Liegt die App im Web, prüft sie regelmässig version.json im selben Ordner und lädt sich bei einer neuen Version neu.
 // Alles Wichtige (Spielstand, Deck, Tisch) liegt im Browser-Speicher und ist nach dem Neuladen wieder da.
-const APP_VERSION = "2026.11.15-1";
+const APP_VERSION = "2026.11.15-2";
 const ONLINE = /^https?:$/.test(location.protocol);
 let updPending = null, updTimer = null, updSnoozeUntil = 0;
 function busyForUpdate(){ return botBusy || (!$("#modal").hidden && modalState && ["block","deck"].includes(modalState.kind)); }

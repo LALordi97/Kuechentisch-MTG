@@ -108,7 +108,12 @@ let fails = 0; const check = (ok, msg) => { console.log((ok ? 'OK   ' : 'FEHLER 
   ev(B, 'passTurn()'); await wait(60); ev(C, 'passTurn()'); await wait(60); ev(A, 'passTurn()'); await wait(80);
   await wait(200);
   { const b = [...B.document.querySelectorAll('#modalBox button')].find(x => x.textContent.trim() === 'Später'); if(b){ b.click(); await wait(200); } }
-  check(/Phyrexian Arena löst aus/.test($(B, '#log').textContent), 'Phyrexian Arena löst in Bens Versorgung aus (Karte ziehen, 1 Leben)');
+  check(/Phyrexian Arena löst aus/.test($(B, '#log').textContent), 'Phyrexian Arena löst in Bens Versorgung aus');
+  // Fähigkeiten liegen im Mehrspieler auf dem Stapel, bis alle «OK» gegeben haben
+  check(ev(C, 'STACK.length') === 1 && ev(C, 'STACK[0].kind') === 'ab' && !$(C, '#stackBox').hidden, 'Arena-Auslöser liegt bei Chris sichtbar auf dem Stapel');
+  { const hb = ev(B, 'S.hand.length'), lb = ev(B, 'S.life');
+    for(const w of [A, C]){ const b = btnText(w, 'OK, weiter', '#stackBox'); if(b) b.click(); } await wait(300);
+    check(ev(B, 'STACK.length') === 0 && ev(B, 'S.hand.length') === hb + 1 && ev(B, 'S.life') === lb - 1, `nach allen OK: Ben zieht und verliert 1 Leben (Hand ${hb}→${ev(B, 'S.hand.length')}, Leben ${lb}→${ev(B, 'S.life')})`); }
   console.log(' ', line(A)); console.log(' ', line(B)); console.log(' ', line(C));
   // Host-Übernahme: Anna fällt weg
   const turnBefore = ev(B, 'TURN.active'), roundBefore = ev(B, 'TURN.n');
