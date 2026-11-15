@@ -1,0 +1,34 @@
+[
+[
+"Hanweir Garrison",
+"Creature — Human Soldier",
+"Whenever this creature attacks, create two 1/1 red Human creature tokens that are tapped and attacking.\n(Melds with Hanweir Battlements.)",
+"{2}{R}",
+3.0,
+"Hanweir Battlements"
+],
+[
+"Hanweir, the Writhing Township",
+"Legendary Creature — Eldrazi Ooze",
+"Trample, haste\nWhenever Hanweir attacks, create two 3/2 colorless Eldrazi Horror creature tokens that are tapped and attacking.",
+"",
+3.0,
+"Hanweir Battlements"
+],
+[
+"Mishra, Claimed by Gix",
+"Legendary Creature — Phyrexian Human Artificer",
+"Whenever you attack, each opponent loses X life and you gain X life, where X is the number of attacking creatures. If Mishra, Claimed by Gix and a creature named Phyrexian Dragon Engine are attacking, and you both own and control them, exile them, then meld them into Mishra, Lost to Phyrexia. It enters tapped and attacking.",
+"{2}{B}{R}",
+4.0,
+"Phyrexian Dragon Engine"
+],
+[
+"Mishra, Lost to Phyrexia",
+"Legendary Artifact Creature — Phyrexian Artificer",
+"Whenever Mishra enters or attacks, choose three —\n• Target opponent discards two cards.\n• Mishra deals 3 damage to any target.\n• Destroy target artifact or planeswalker.\n• Creatures you control gain menace and trample until end of turn.\n• Creatures you don't control get -1/-1 until end of turn.\n• Create two tapped Powerstone tokens.",
+"",
+7.0,
+"Phyrexian Dragon Engine"
+]
+]
