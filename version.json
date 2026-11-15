@@ -1,4 +1,4 @@
 {
-  "version": "2026.11.14-2",
-  "notes": "Zusätzliche Kampfphasen werden jetzt ausgeführt (z. B. Combat Celebrant, Relentless Assault): beim Weiterschalten folgt eine weitere Kampfphase, bei Bedarf mit zusätzlicher Hauptphase. Dazu die 12 neuen Karten von heute Nacht (2026.11.14-1)."
+  "version": "2026.11.15-1",
+  "notes": "Harbinger of the Seas wirkt jetzt: nichtstandard Länder sind Inseln und geben nur {U} (wie Blood Moon mit Gebirgen; sind beide im Spiel, gilt die später gekommene Karte). Länder zählen unter Blood Moon/Harbinger auch beim Typ als Gebirge bzw. Inseln."
 }

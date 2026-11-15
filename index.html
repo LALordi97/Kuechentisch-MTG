@@ -4139,7 +4139,13 @@ function allBfNames(){
   return out;
 }
 const onAnyBf = names => allBfNames().some(c => names.includes(c.n));
-const moonActive = () => onAnyBf(["Blood Moon", "Magus of the Moon"]);
+// Blood Moon / Magus of the Moon: Gebirge; Harbinger of the Seas: Inseln. Sind beide im Spiel, gilt die zuletzt gekommene Karte.
+function moonType(){
+  let t = null;
+  allBfNames().forEach(c => { if(c.n === "Blood Moon" || c.n === "Magus of the Moon") t = "Mountain"; else if(c.n === "Harbinger of the Seas") t = "Island"; });
+  return t;
+}
+const moonActive = () => !!moonType();
 function landTypeExtras(){
   const ex = [];
   if(onAnyBf(["Urborg, Tomb of Yawgmoth"])) ex.push("B");
@@ -4183,8 +4189,8 @@ function manaChoices0(c){
   if(!c || c.fd) return null;
   if(typeof S !== "undefined" && S.bf && S.bf.includes(c) && (actLockBy(c) || c.detainBy || karnLock(c) || (isCreature(c) && oppHasName("Linvala, Keeper of Silence")))) return [];
   const opts = [];
-  // Blood Moon: nichtstandard Länder sind Gebirge und haben nur noch «{T}: Add {R}»
-  if(isLand(c) && !/\bBasic\b/.test(c.type || "") && moonActive()) return [{add:["R"], ...ZERO_OPT}];
+  // Blood Moon / Harbinger: nichtstandard Länder sind Gebirge bzw. Inseln und haben nur noch «{T}: Add {R}» bzw. «{T}: Add {U}»
+  if(isLand(c) && !/\bBasic\b/.test(c.type || "") && moonActive()) return [{add:[moonType() === "Island" ? "U" : "R"], ...ZERO_OPT}];
   const SELF = selfPat(c);
   const txt = String(c.o || "");
   const tapPain = txt.match(new RegExp(`Whenever ${SELF} becomes tapped, it deals (\\d+) damage to you`, "i"));
@@ -5916,6 +5922,7 @@ async function putSticker(src, st){
 function typeMatch(c, t){
   if(!c || !t) return false;
   const ty = String(c.type || "");
+  if(/\bLand\b/.test(ty) && !/\bBasic\b/.test(ty) && typeof S !== "undefined" && S && Array.isArray(S.bf) && moonActive() && /^(Plains|Island|Swamp|Mountain|Forest)$/i.test(t)) return String(t).toLowerCase() === moonType().toLowerCase();
   if(new RegExp(`\\b${t}\\b`, "i").test(ty)) return true;
   if(/^This land is every nonbasic land type/im.test(c.o || "") && /^(Cave|Desert|Gate|Lair|Locus|Mine|Power-Plant|Sphere|Tower|Urza's|Town|Planet)$/i.test(t)) return true;
   { const am = String(c.o || "").match(/is also an? ([A-Z][a-z]+(?:,? (?:and )?(?:an? )?[A-Z][a-z]+)*)\.?$/m); if(am && am[1].split(/,\s*(?:and\s+)?(?:an?\s+)?|\s+and\s+(?:an?\s+)?/).some(z => z.toLowerCase() === String(t).toLowerCase())) return true; }
@@ -9684,7 +9691,7 @@ const HANDLED_STATIC = [
   /^Nonbasic lands your opponents control enter tapped/i, /^Artifacts your opponents control enter tapped/i, /^Spells your opponents cast from graveyards or from exile cost \{\d+\} more/i,
   /^Each creature you control with a counter on it has "\{T\}: Add/i, /gets \+\d+\/\+\d+ for each .+ cards? in your graveyard\.?$/i, /^Other legendary creatures you control have exploit/i,
   /^Each other creature you control enters with an additional \S+(?: strike)? counter on it/i,
-  /spells you cast cost \{\d+\} less/i, /^Nonbasic lands are Mountains/i, /^Each land is an? (Swamp|Forest)/i, /^Creatures you control have "\{T\}: Add/i,
+  /spells you cast cost \{\d+\} less/i, /^Nonbasic lands are (Mountains|Islands)/i, /^Each land is an? (Swamp|Forest)/i, /^Creatures you control have "\{T\}: Add/i,
   /^Skip your draw step/i, /enters(?: the battlefield)?(?: tapped)? with (an?|one|two|three|four|five|six|seven|eight|nine|ten|\d+|X) \S+ counters? on it/i,
   /^If you would gain life/i, /^If you gaining life causes/i, /would enter, you may discard a land card instead/i, /becomes tapped, it deals \d+ damage to you/i,
   /^Imprint — When/i, /^\(?As this Saga enters/i, /in your opening hand/i, /^Companion/i, /^You may reveal this card from your opening hand/i,
@@ -10622,7 +10629,7 @@ function historyAdd(win){
 /* ---------- Automatische Updates ---------- */
 // Liegt die App im Web, prüft sie regelmässig version.json im selben Ordner und lädt sich bei einer neuen Version neu.
 // Alles Wichtige (Spielstand, Deck, Tisch) liegt im Browser-Speicher und ist nach dem Neuladen wieder da.
-const APP_VERSION = "2026.11.14-2";
+const APP_VERSION = "2026.11.15-1";
 const ONLINE = /^https?:$/.test(location.protocol);
 let updPending = null, updTimer = null, updSnoozeUntil = 0;
 function busyForUpdate(){ return botBusy || (!$("#modal").hidden && modalState && ["block","deck"].includes(modalState.kind)); }
