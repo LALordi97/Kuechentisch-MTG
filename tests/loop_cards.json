@@ -1,0 +1,35 @@
+[
+[
+"Zirda, the Dawnwaker",
+"Legendary Creature — Elemental Fox",
+"Companion — Each permanent card in your starting deck has an activated ability. (If this card is your chosen companion, you may put it into your hand from outside the game for {3} any time you could cast a sorcery.)\nAbilities you activate that aren't mana abilities cost {2} less to activate. This effect can't reduce the mana in that cost to less than one mana.\n{1}, {T}: Target creature can't block this turn.",
+"{1}{R/W}{R/W}",
+3
+],
+[
+"Grim Monolith",
+"Artifact",
+"Grim Monolith doesn't untap during your untap step.\n{T}: Add {C}{C}{C}.\n{4}: Untap Grim Monolith."
+],
+[
+"Lion's Eye Diamond",
+"Artifact",
+"Discard your hand, Sacrifice this artifact: Add three mana of any one color. Activate only as an instant.",
+"{0}",
+0
+],
+[
+"Basalt Monolith",
+"Artifact",
+"This artifact doesn't untap during your untap step.\n{T}: Add {C}{C}{C}.\n{3}: Untap this artifact.",
+"{3}",
+3
+],
+[
+"Ashnod's Altar",
+"Artifact",
+"Sacrifice a creature: Add {C}{C}.",
+"{3}",
+3
+]
+]
