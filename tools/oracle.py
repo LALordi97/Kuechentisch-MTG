@@ -6,6 +6,8 @@ Der Text wird so übernommen, wie die App ihn sieht (wie tpl() in index.html: Vo
 Dazu tests/oracle_parts.json: zugehörige Teile, die selbst in keinem Deck stehen (Meld-Partner und Meld-Ergebnis),
 im selben Format mit einem sechsten Eintrag: Name der Deck-Karte, zu der der Teil gehört.
 
+Schreibt ausserdem tests/oracle_schemes.json (alle Komplotte für Archenemy).
+
 Aufruf:  python3 tools/oracle.py            # lädt die aktuelle Datei von Scryfall
          python3 tools/oracle.py bulk.json  # nimmt eine schon geladene Datei (zum Testen)
 """
