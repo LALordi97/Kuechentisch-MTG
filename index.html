@@ -1521,6 +1521,7 @@ function pub(){
 let pushTimer = null;
 function schedulePush(){ clearTimeout(pushTimer); pushTimer = setTimeout(pushState, 120); }
 function pushState(){
+  try{ slavePush(); }catch(e){ console.error(e); }
   if(net.role === "host"){ net.players[me.id] = pub(); if(!net.order.includes(me.id)) net.order.push(me.id); broadcastAll(); }
   else if(net.role === "client" && net.conn && net.conn.open){ net.conn.send({t:"state", id:me.id, pub:pub()}); }
 }
@@ -1551,7 +1552,7 @@ function applyAll(msg){
   renderAll();
 }
 /* Nachrichten an einen Spieler: über den Host weitergeleitet */
-const ROUTED = ["give", "hit", "attack", "blocks", "cres", "st_resolve", "req", "resp"];
+const ROUTED = ["give", "hit", "attack", "blocks", "cres", "st_resolve", "req", "resp", "slaveView", "slaveAct"];
 const HOSTED = ["pass", "roll", "phase", "st_push", "st_pass", "st_cancel", "st_redirect", "st_tuck", "st_counter"];
 function sendTo(pid, m){
   m.to = pid; m.from = me.id; m.by = me.name || "Gegner";
@@ -1588,6 +1589,8 @@ function deliver(m){
     case "st_resolve": return stackResolveMine(m);
     case "req": return receiveReq(m);
     case "resp": return receiveResp(m);
+    case "slaveView": return receiveSlaveView(m);
+    case "slaveAct": return receiveSlaveAct(m);
   }
 }
 function deliverBot(m){
@@ -2670,15 +2673,17 @@ function nextBlock(){
 /* Angriff: Ziel pro Kreatur wählbar (Mitspieler oder KI) */
 const PENDING_ATK = {};
 function attackTargets(){ return order.filter(id => id !== me.id && others[id] && !others[id].off); }
+function attackBridge(){ const my = S.bf.some(x => !x.fd && /^Creatures with power greater than the number of cards in your hand can't attack/im.test(x.o || "")) ? S.hand.length : Infinity;
+  const op = Object.entries(others).filter(([id, o]) => id !== me.id && Array.isArray(o && o.bf) && o.bf.some(x => x && x.n === "Ensnaring Bridge")).map(([, o]) => Number(o.handN) || 0); return Math.min(my, ...op, Infinity); }
+function attackEligible(){ const b = attackBridge(); return myCreatures().filter(c => !c.tap && power(c) <= b); }
 function openAttackDialog(preTarget){
   if(botBusy) return;
   modalState = {kind:"ask"}; $("#modal").hidden = false;
   const box = $("#modalBox"); box.innerHTML = "";
   box.append(head("Angreifen"));
   const targets = attackTargets();
-  const bridge = (() => { const my = S.bf.some(x => !x.fd && /^Creatures with power greater than the number of cards in your hand can't attack/im.test(x.o || "")) ? S.hand.length : Infinity;
-    const op = Object.entries(others).filter(([id, o]) => id !== me.id && Array.isArray(o && o.bf) && o.bf.some(x => x && x.n === "Ensnaring Bridge")).map(([, o]) => Number(o.handN) || 0); return Math.min(my, ...op, Infinity); })();
-  const mine = myCreatures().filter(c => !c.tap && power(c) <= bridge);
+  const bridge = attackBridge();
+  const mine = attackEligible();
   if(bridge !== Infinity) toast(`<b>Ensnaring Bridge:</b> nur Kreaturen mit Stärke ${bridge} oder weniger können angreifen.`);
   if(!targets.length){ box.append(Object.assign(document.createElement("p"), {className:"muted", textContent:"Am Tisch sitzt noch kein Gegner. Lade Freunde ein oder starte einen KI-Gegner."})); return; }
   if(!mine.length){ box.append(Object.assign(document.createElement("p"), {className:"muted", textContent:"Du hast keine ungetappten Kreaturen zum Angreifen."})); return; }
@@ -2707,33 +2712,35 @@ function openAttackDialog(preTarget){
   if(noAtk) box.append(Object.assign(document.createElement("p"), {className:"err", textContent:`${noAtk.src}: Kreaturen können diesen Zug nicht angreifen.`}));
   box.append(targets.length === 1 ? Object.assign(document.createElement("p"), {className:"muted", textContent:`Ziel: ${def === "bot" ? "die KI" : displayName(def)}`}) : "", g);
   box.append(Object.assign(document.createElement("p"), {className:"stat", textContent:"Kreaturen, die erst diesen Zug ins Spiel kamen, dürfen nicht angreifen (ausser mit Eile). Angreifer werden getappt, ausser mit Wachsamkeit."}));
-  box.append(btn("Angreifen", async () => {
-    const attackers = S.bf.filter(c => chosen.has(c.u)); if(!attackers.length) return;
-    attackers.forEach(c => { if(!kwHas(c, "vigilance")){ c.tap = true; tapEvent(c); } });
-    closeModal();
-    markOnAttack(attackers);
-    mobilize(attackers, chosen);
-    if(abilAuto() && S.bf.some(x => !x.fd && ATK_JOIN_RE.some(r => r.test(x.o || "")))){ S.atkJoin = []; await queued(() => {}); joinAttack(attackers, chosen, def); }
-    curseOnAttack(new Set([...chosen.values()]));
-    if(usesStack()) await queued(() => {}); // Angriffs-Auslöser liegen auf dem Stapel: erst verrechnen, dann blocken
-    if(TURN.active === me.id && TURN.phase !== 3) setPhase(3);
-    const groups = {};
-    attackers.forEach(c => { const t = chosen.get(c.u); (groups[t] = groups[t] || []).push(c); });
-    commit();
-    for(const [tid, group] of Object.entries(groups)){
-      act(`greift ${tid === "bot" ? "die KI" : displayName(tid)} an mit ${group.map(c => c.n).join(", ")}`);
-      group.forEach(c => fxSend({kind:"arrow", style:"attack", from:{u:c.u}, to:{pid:tid}}));
-      if(tid === "bot" && net.role !== "client"){
-        const blocks = await botDefend(group, false);
-        blocks.forEach((b, aU) => fxSend({kind:"arrow", style:"block", from:{u:b.u}, to:{u:aU}}));
-        resolveCombat(group.filter(a => S.bf.includes(a)), blocks, false);
-      } else {
-        const cid = uid();
-        PENDING_ATK[cid] = {target: tid, attackers: group.map(c => c.u)};
-        sendTo(tid, {t:"attack", cid, attackers: group.map(combatInfo)});
-      }
+  box.append(btn("Angreifen", () => declareAttack(chosen, def), "primary"));
+}
+/* Angriff ausführen (aus dem Dialog oder per Mindslaver-Befehl) */
+async function declareAttack(chosen, def){
+  const attackers = S.bf.filter(c => chosen.has(c.u)); if(!attackers.length) return;
+  attackers.forEach(c => { if(!kwHas(c, "vigilance")){ c.tap = true; tapEvent(c); } });
+  closeModal();
+  markOnAttack(attackers);
+  mobilize(attackers, chosen);
+  if(abilAuto() && S.bf.some(x => !x.fd && ATK_JOIN_RE.some(r => r.test(x.o || "")))){ S.atkJoin = []; await queued(() => {}); joinAttack(attackers, chosen, def); }
+  curseOnAttack(new Set([...chosen.values()]));
+  if(usesStack()) await queued(() => {}); // Angriffs-Auslöser liegen auf dem Stapel: erst verrechnen, dann blocken
+  if(TURN.active === me.id && TURN.phase !== 3) setPhase(3);
+  const groups = {};
+  attackers.forEach(c => { const t = chosen.get(c.u); (groups[t] = groups[t] || []).push(c); });
+  commit();
+  for(const [tid, group] of Object.entries(groups)){
+    act(`greift ${tid === "bot" ? "die KI" : displayName(tid)} an mit ${group.map(c => c.n).join(", ")}`);
+    group.forEach(c => fxSend({kind:"arrow", style:"attack", from:{u:c.u}, to:{pid:tid}}));
+    if(tid === "bot" && net.role !== "client"){
+      const blocks = await botDefend(group, false);
+      blocks.forEach((b, aU) => fxSend({kind:"arrow", style:"block", from:{u:b.u}, to:{u:aU}}));
+      resolveCombat(group.filter(a => S.bf.includes(a)), blocks, false);
+    } else {
+      const cid = uid();
+      PENDING_ATK[cid] = {target: tid, attackers: group.map(c => c.u)};
+      sendTo(tid, {t:"attack", cid, attackers: group.map(combatInfo)});
     }
-  }, "primary"));
+  }
 }
 async function receiveAttack(m){
   const attackers = (Array.isArray(m.attackers) ? m.attackers : []).slice(0, 40).map(cleanInfo).filter(Boolean);
@@ -3121,6 +3128,7 @@ function turnIds(){
   return [me.id, ...(BOT.active ? ["bot"] : [])];
 }
 function setTurn(t){
+  setTimeout(() => { try{ renderSlaveBar(); if(S.slaved && !slavedNow()) slavePush(); }catch(e){} }, 0);
   const prev = TURN.active, prevKey = TURN.active + "|" + TURN.n, prevPhase = TURN.phase;
   const prevEx = TURN.ex || 0, oldTK = turnKey();
   TURN = {active: typeof t.active === "string" ? t.active : null, n: Number(t.n) || 0, starter: typeof t.starter === "string" ? t.starter : null,
@@ -3269,7 +3277,7 @@ function remindTriggers(kind, myTurn){
   if(kind === "upkeep" && Array.isArray(S.denial) && S.denial.length){ const due = S.denial.splice(0); queued(async () => { for(const d of due){ if(d.may){ const n = await askNumber(`${d.src}: wie viele Karten ziehen (0–${d.n})?`, ""); const k = Math.max(0, Math.min(d.n, n || 0)); if(k) draw(k); } else draw(d.n); } commit(); }); }
   if(kind === "main" && myTurn && S.drainMana){ const n = S.drainMana; S.drainMana = 0; poolAdd(Array(n).fill("C")); act(`Mana Drain: ${n}× {C} in den Pool`); commit(); }
   if(kind === "upkeep" && !myTurn && S.bf.some(x => !x.fd && /Untap all artifacts you control during each other player's untap step/i.test(x.o || ""))){ const l = S.bf.filter(x => x.tap && /\bArtifact\b/.test(x.type || "")); l.forEach(x => { x.tap = false; }); if(l.length) act(`Unwinding Clock: enttappt ${l.length} Artefakt(e)`); }
-  if(kind === "upkeep" && myTurn && S.slaveBy){ const sb = S.slaveBy; delete S.slaveBy; toast(`<b>Mindslaver:</b> ${esc(sb)} kontrolliert diesen Zug. Spiele nur, was ${esc(sb)} ansagt.`, 15000); act(`wird diesen Zug von ${sb} kontrolliert (Mindslaver)`); }
+  if(kind === "upkeep" && myTurn && S.slaveBy){ const sb = S.slaveBy, sp = S.slavePid; delete S.slaveBy; delete S.slavePid; if(sp && sp !== me.id) S.slaved = {pid:sp, name:sb, key:turnKey()}; toast(`<b>Mindslaver:</b> ${esc(sb)} kontrolliert diesen Zug.${sp ? ` Was ${esc(sb)} bei sich anklickt, führt deine App aus; Fragen und Ziele beantwortest du nach Ansage von ${esc(sb)}.` : ` Spiele nur, was ${esc(sb)} ansagt.`}`, 15000); act(`wird diesen Zug von ${sb} kontrolliert (Mindslaver)`); commit(); }
   if(kind === "upkeep" && myTurn) S.bf.forEach(c => { delete c.ntkw; });
   if(kind === "upkeep" && myTurn && S.initiative && abilAuto()) queued(async () => { act("Initiative: du dringst in die Undercity vor"); await ventureUndercity(); });
   if(kind === "end" && myTurn && abilAuto()) queued(handSizeCleanup);
@@ -6099,6 +6107,99 @@ async function meldInto(cards, into, src){
   if(!t) toast(`<b>${esc(m.n)}:</b> Kartendaten nicht geladen (offline) – Stärke/Widerstand und Text bitte von Hand setzen.`);
   commit(); return m;
 }
+/* Mindslaver (Etappe 1): der Steuernde sieht die Hand des Gesteuerten und löst dessen Aktionen aus.
+   Die App des Gesteuerten führt sie aus; Dialoge (Ziele, Bezahlen) erscheinen noch beim Gesteuerten. */
+const slavedNow = () => !!(S.slaved && S.slaved.key === turnKey() && TURN.active === me.id);
+let SLAVE_SENT = "";
+function slavePush(){
+  if(!S.slaved) return;
+  if(!slavedNow()){ const pid = S.slaved.pid; delete S.slaved; SLAVE_SENT = ""; sendTo(pid, {t:"slaveView", done:true}); return; }
+  const view = {t:"slaveView", key:S.slaved.key, phase:TURN.phase, hand:S.hand.slice(0, 40).map(pubCard), pool:poolStr(poolOf()), lands:S.bf.filter(c => !c.fd && !c.tap && isLand(c)).length,
+    atk:attackEligible().slice(0, 30).map(c => ({u:c.u, n:c.n, pw:power(c), tg:tough(c)})), targets:attackTargets().slice(0, 8).map(id => ({id, n:id === "bot" ? "KI" : displayName(id)})),
+    abil:S.bf.filter(c => !c.fd).slice(0, 40).map(c => ({u:c.u, n:c.n, list:parseAbilities(c).map((a, i) => ({i, k:a.kind, l:String((a.cost || "") + ": " + (a.text || "")).slice(0, 90)})).filter(a => a.k === "act" || a.k === "loy")})).filter(x => x.list.length)};
+  const sig = JSON.stringify(view); if(sig === SLAVE_SENT) return; SLAVE_SENT = sig;
+  sendTo(S.slaved.pid, view);
+}
+let SLAVE_VIEW = null;
+function receiveSlaveView(m){
+  if(m.done){ if(SLAVE_VIEW && SLAVE_VIEW.pid === m.from){ SLAVE_VIEW = null; toast(`<b>Mindslaver:</b> der gesteuerte Zug von ${esc(String(m.by || "Gegner"))} ist vorbei.`); } renderSlaveBar(); return; }
+  if(TURN.active !== m.from) return;
+  SLAVE_VIEW = {pid:String(m.from), name:String(m.by || "Gegner").slice(0, 24), phase:+m.phase || 0, hand:(Array.isArray(m.hand) ? m.hand : []).slice(0, 40).map(x => { const c = cleanInfo(x); if(c) c.mc = String((x && x.mc) || "").slice(0, 40); return c; }).filter(Boolean), pool:String(m.pool || "").slice(0, 60), lands:+m.lands || 0,
+    atk:(Array.isArray(m.atk) ? m.atk : []).slice(0, 30).map(x => ({u:String((x && x.u) || "").slice(0, 20), n:String((x && x.n) || "Kreatur").slice(0, 150), pw:+(x && x.pw) || 0, tg:+(x && x.tg) || 0})),
+    targets:(Array.isArray(m.targets) ? m.targets : []).slice(0, 8).map(x => ({id:String((x && x.id) || "").slice(0, 40), n:String((x && x.n) || "").slice(0, 24)})).filter(x => x.id),
+    abil:(Array.isArray(m.abil) ? m.abil : []).slice(0, 40).map(x => ({u:String((x && x.u) || "").slice(0, 20), n:String((x && x.n) || "").slice(0, 150), list:(Array.isArray(x && x.list) ? x.list : []).slice(0, 8).map(a => ({i:+a.i || 0, l:String(a.l || "").slice(0, 90)}))})).filter(x => x.u && x.list.length)};
+  renderSlaveBar();
+}
+function slaveSend(a, extra = {}){ if(!SLAVE_VIEW) return; sendTo(SLAVE_VIEW.pid, {t:"slaveAct", a, ...extra}); }
+function renderSlaveBar(){
+  let bar = document.getElementById("slaveBar");
+  if(!SLAVE_VIEW || TURN.active !== SLAVE_VIEW.pid){ if(bar) bar.remove(); if(SLAVE_VIEW && TURN.active !== SLAVE_VIEW.pid) SLAVE_VIEW = null; return; }
+  if(!bar){ bar = document.createElement("div"); bar.id = "slaveBar"; bar.style.cssText = "position:fixed;left:8px;right:8px;bottom:8px;z-index:50;max-height:45vh;overflow:auto;padding:8px;border-radius:10px;background:var(--panel, #222);border:2px solid #c0392b;box-shadow:0 4px 16px rgba(0,0,0,.4)"; document.body.append(bar); }
+  bar.innerHTML = "";
+  const v = SLAVE_VIEW;
+  const h = document.createElement("div"); h.className = "stat"; h.innerHTML = `<b>Mindslaver:</b> du steuerst den Zug von ${esc(v.name)} – ${esc(PHASES[v.phase] || "")}${v.pool ? ` · Pool ${esc(v.pool)}` : ""} · ${v.lands} ungetappte(s) Land/Länder`;
+  bar.append(h);
+  const row = document.createElement("div"); row.className = "row"; row.style.flexWrap = "wrap";
+  row.append(btn("Nächste Phase", () => slaveSend("phase"), "small"), btn("Angreifen …", () => slaveAttackDialog(), "small"), btn("Zug beenden", () => slaveSend("pass"), "small"));
+  bar.append(row);
+  const hand = document.createElement("div"); hand.className = "row"; hand.style.flexWrap = "wrap";
+  if(!v.hand.length) hand.append(Object.assign(document.createElement("span"), {className:"muted", textContent:"Hand leer"}));
+  v.hand.forEach(c => { const b = btn(`${c.n}${c.mc ? " " + c.mc : ""}`, () => slaveSend("play", {u:c.u}), "small"); b.title = `${c.type || ""}\n${c.o || ""}`; b.dataset.u = c.u; b.className = "small slaveCard"; hand.append(b); });
+  bar.append(hand);
+  if(v.abil.length){
+    const ab = document.createElement("div"); ab.className = "row"; ab.style.flexWrap = "wrap";
+    v.abil.forEach(c => c.list.forEach(a => { const b = btn(`${c.n} – ${a.l}`, () => slaveSend("activate", {u:c.u, i:a.i}), "small slaveAbil"); ab.append(b); }));
+    bar.append(Object.assign(document.createElement("div"), {className:"stat", textContent:"Fähigkeiten im Spiel:"}), ab);
+  }
+}
+/* Steuernder wählt die Angreifer des Gesteuerten bei sich aus */
+function slaveAttackDialog(){
+  const v = SLAVE_VIEW; if(!v) return;
+  if(!v.atk.length){ toast(`<b>Mindslaver:</b> ${esc(v.name)} hat keine Kreatur, die angreifen kann.`); return; }
+  if(!v.targets.length){ toast("<b>Mindslaver:</b> kein Angriffsziel."); return; }
+  modalState = {kind:"ask"}; $("#modal").hidden = false;
+  const box = $("#modalBox"); box.innerHTML = ""; box.append(head(`Angreifen mit den Kreaturen von ${v.name}`));
+  const chosen = new Map(), def = (v.targets.find(t => t.id === me.id) || v.targets[0]).id;
+  v.atk.forEach(c => {
+    const lab = document.createElement("label"); lab.className = "stat"; lab.style.display = "flex"; lab.style.gap = "6px"; lab.style.alignItems = "center";
+    const cb = document.createElement("input"); cb.type = "checkbox"; cb.dataset.u = c.u;
+    let sel = null;
+    if(v.targets.length > 1){ sel = document.createElement("select"); v.targets.forEach(t => sel.append(new Option(t.id === me.id ? "dich" : t.n, t.id))); sel.value = def; sel.onchange = () => { if(cb.checked) chosen.set(c.u, sel.value); }; }
+    cb.onchange = () => cb.checked ? chosen.set(c.u, sel ? sel.value : def) : chosen.delete(c.u);
+    lab.append(cb, document.createTextNode(` ${c.n} (${c.pw}/${c.tg})`)); if(sel) lab.append(sel);
+    box.append(lab);
+  });
+  const row = document.createElement("div"); row.className = "row";
+  row.append(btn("Angreifen", () => { if(!chosen.size) return; slaveSend("attackWith", {list:[...chosen.entries()]}); closeModal(); }, "primary"), btn("Abbrechen", () => closeModal(), "small"));
+  box.append(row);
+}
+async function receiveSlaveAct(m){
+  if(!slavedNow() || m.from !== S.slaved.pid) return;
+  const by = S.slaved.name || String(m.by || "Gegner").slice(0, 24);
+  if(m.a === "play"){
+    const c = S.hand.find(x => x.u === m.u); if(!c) return;
+    act(`${by} spielt ${c.n} aus deiner Hand (Mindslaver)`);
+    if(isLand(c)) return play(c.u);
+    return playAuto(c.u);
+  }
+  if(m.a === "phase"){ if(TURN.phase < 5){ act(`${by} geht zur nächsten Phase (Mindslaver)`); setPhase(TURN.phase + 1); } return; }
+  if(m.a === "attack"){ act(`${by} greift mit deinen Kreaturen an (Mindslaver)`); toast(`<b>Mindslaver:</b> ${esc(by)} wählt die Angreifer – klicke, was ${esc(by)} ansagt.`, 10000); if(TURN.phase !== 3) setPhase(3); return openAttackDialog(); }
+  if(m.a === "activate"){
+    const c = S.bf.find(x => x.u === m.u && !x.fd); if(!c) return;
+    const a = parseAbilities(c)[+m.i]; if(!a || (a.kind !== "act" && a.kind !== "loy")) return;
+    act(`${by} aktiviert ${c.n} (Mindslaver)`);
+    return queued(() => a.kind === "loy" ? activateLoyalty(c, a) : activateAbility(c, a));
+  }
+  if(m.a === "attackWith"){
+    const ok = new Set(attackEligible().map(c => c.u)), targets = attackTargets();
+    const chosen = new Map((Array.isArray(m.list) ? m.list : []).slice(0, 30).filter(x => Array.isArray(x) && ok.has(x[0]) && targets.includes(x[1])).map(x => [String(x[0]), String(x[1])]));
+    if(!chosen.size) return;
+    if(TURN.phase !== 3) setPhase(3);
+    act(`${by} greift mit deinen Kreaturen an (Mindslaver)`);
+    return declareAttack(chosen, [...chosen.values()][0]);
+  }
+  if(m.a === "pass"){ act(`${by} beendet deinen Zug (Mindslaver)`); return passTurn(); }
+}
 /* Attraktionen (Unfinity): öffnen und besuchen */
 async function openAttraction(src){
   S.attrDeck = Array.isArray(S.attrDeck) ? S.attrDeck : [];
@@ -8505,6 +8606,7 @@ async function runSteps(steps, src, ctx = {}){
       case "mindslaver": {
         const t = await pickTarget(`${src.n}: welchen Gegner?`, "target opponent", false); if(!t) break;
         await requestOpp(t.pid, {kind:"extraTurnAfter", src:src.n});
+        await requestOpp(t.pid, {kind:"slave", src:src.n});
         act(`${src.n}: du steuerst den nächsten Zug von ${oppByPid(t.pid)}. Danach nimmt ${oppByPid(t.pid)} einen Zusatzzug.`);
         toast(`<b>${esc(src.n)}:</b> Du steuerst den nächsten Zug von ${esc(oppByPid(t.pid))}. Sprecht euch ab: du sagst an, was gespielt wird.`, 15000);
         break;
@@ -10247,7 +10349,7 @@ function receiveReq(m){
   if(q.kind === "discardRandom"){ const n = Math.max(0, Math.min(10, parseInt(q.n, 10) || 1)); const out = []; for(let i = 0; i < n && S.hand.length; i++){ const d = S.hand[Math.floor(Math.random() * S.hand.length)]; moveCard(d.u, "gy"); out.push(d.n); } act(`wirft zufällig ab: ${out.join(", ") || "nichts"} (${by}: ${src})`); commit(); reply({cards:out}); return; }
   if(q.kind === "delayDraw"){ S.denial = [...(S.denial || []), {n:Math.max(1, Math.min(5, parseInt(q.n, 10) || 1)), may:!!q.may, src:String(src)}]; act(`${src}: du darfst im nächsten Upkeep ziehen`); commit(); reply({ok:true}); return; }
   if(q.kind === "vote"){ const opts = (Array.isArray(q.options) ? q.options : []).slice(0, 4).map(String); const DE = {evidence:"Beweise (Clue)", bribery:"Bestechung (Treasure)"}; queued(async () => { const v = await abilModal(`${by} (${src}): deine Stimme`, (box, done) => opts.forEach(o => box.append(btn(DE[o] || o, () => done(o), "primary")))); reply({vote:v || opts[0]}); }); return; }
-  if(q.kind === "slave"){ S.slaveBy = by; act(`${by} wird deinen nächsten Zug kontrollieren (${src})`); toast(`<b>${esc(src)}:</b> ${esc(by)} kontrolliert deinen nächsten Zug.`, 10000); commit(); reply({ok:true}); return; }
+  if(q.kind === "slave"){ S.slaveBy = by; S.slavePid = String(m.from || ""); act(`${by} wird deinen nächsten Zug kontrollieren (${src})`); toast(`<b>${esc(src)}:</b> ${esc(by)} kontrolliert deinen nächsten Zug.`, 10000); commit(); reply({ok:true}); return; }
   if(q.kind === "arcum"){ const c = S.bf.find(x => x.u === q.u); if(!c){ reply({ok:false}); return; } moveCard(c.u, "gy"); act(`opfert ${c.n} (${by}: ${src})`); commit();
     queued(async () => { let found = null; if(await confirmMay({n:`${by}: ${src}`}, "ein Artefakt (keine Kreatur) suchen und ins Spiel bringen")){ const r = await searchStep({what:"a noncreature artifact card", rest:"put it onto the battlefield"}, {n:src}, {}); found = r && r[0] ? r[0].n : null; } reply({ok:true, found}); }); return; }
   if(q.kind === "mill"){ const n = Math.max(0, Math.min(20, parseInt(q.n, 10) || 0)); const m2 = S.library.splice(0, n); S.gy.push(...m2); act(`mahlt ${m2.length} Karte(n) (${by}: ${src})`); commit(); reply({cards:m2.map(pubCard)}); return; }
@@ -10959,7 +11061,7 @@ function historyAdd(win){
 /* ---------- Automatische Updates ---------- */
 // Liegt die App im Web, prüft sie regelmässig version.json im selben Ordner und lädt sich bei einer neuen Version neu.
 // Alles Wichtige (Spielstand, Deck, Tisch) liegt im Browser-Speicher und ist nach dem Neuladen wieder da.
-const APP_VERSION = "2026.11.16-1";
+const APP_VERSION = "2026.11.16-2";
 const ONLINE = /^https?:$/.test(location.protocol);
 let updPending = null, updTimer = null, updSnoozeUntil = 0;
 function busyForUpdate(){ return botBusy || (!$("#modal").hidden && modalState && ["block","deck"].includes(modalState.kind)); }
