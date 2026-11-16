@@ -105,7 +105,7 @@ const clickCard = async name => { const el = [...d.querySelectorAll('#modalBox .
   await reset(); ev('BOT.life = 20'); const el = C('Electro, Assaulting Battery', {pw:2, tg:3}); S().bf.push(el); ev('commit()'); ev('S.pool.R = 2; S.pool.G = 1');
   ev('setPhase(3)'); await wait(30);
   check(S().pool.R === 2 && !S().pool.G, 'Electro: rotes Mana bleibt');
-  ev('moveCard')(el.u, 'gy'); await wait(80); console.log('   Electro-Dialog:', title(), d.querySelector('#modalBox').textContent.slice(0,120)); await click('Ja'); await wait(60); console.log('   Electro-Dialog2:', title());
+  ev('S.pool.R = 4; commit()'); ev('moveCard')(el.u, 'gy'); await wait(80); console.log('   Electro-Dialog:', title(), d.querySelector('#modalBox').textContent.slice(0,120)); await click('Ja'); await wait(60); console.log('   Electro-Dialog2:', title());
   if(/Wert für X/.test(title())){ d.querySelector('#askN').value = '4'; await click('Weiter'); await wait(40); }
   await click('Ohne Mana'); await wait(60);
   await kiBtn(); await wait(60);

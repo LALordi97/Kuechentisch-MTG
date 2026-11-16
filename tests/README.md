@@ -20,3 +20,4 @@ node parse_dump.js report27_cards.json   # zeigt, wie die App Kartentexte zerleg
 - `node loop_test.js`: Erkennung von Endlosschleifen (Zirda + Grim Monolith, Lion's Eye Diamond, Schaden, Spielsteine).
 - `node multibot_test.js`: mehrere KI-Gegner (Zugfolge, eigene Decks, Kampf, Schaden, Ausscheiden, Speichern; läuft in reg.sh seriell).
 - `node archenemy_test.js`: Archenemy (Komplott-Deck aus `oracle_schemes.json`, Komplotte in Gang setzen, Team, Neues Spiel; seriell in reg.sh).
+- `node legal_test.js`: Regeltreue aus einer echten Partie (Gegenzauber der KI, Silence, Flusterstorm zahlen, Ohne-Mana-Wirken, Mulligan, Commander, Fetchländer, 0 Leben, Handbewegungen).

@@ -1,4 +1,4 @@
 {
-  "version": "2026.11.16-5",
-  "notes": "Neu: Archenemy – im KI-Dialog «Ich bin der Erzfeind» anhaken: 40 Leben, du beginnst, zu Beginn jedes deiner Züge setzt die App ein Komplott aus deinem Komplott-Deck (20 echte Komplotte von Scryfall) in Gang; die KI spielen als Team gegen dich. Ohne Archenemy greifen sich die KI jetzt auch gegenseitig an. «Neues Spiel» startet die KI-Gegner mit neu."
+  "version": "2026.11.16-6",
+  "notes": "Regeln nach Lukas' Partie: Mental Misstep, Pyroblast und Co. kontern nur noch, was sie dürfen; nach Silence kontert die KI nicht mehr; bei Flusterstorm & Co. darfst du zahlen; «Ohne Mana wirken» nur bei alternativen Kosten; Mulligan nur vor dem ersten Zug; gekonterter Commander geht in die Kommandozone; KI knackt Fetchländer richtig; bei 0 Leben ist das Spiel sofort verloren; von Hand verschobene Karten zählen nicht als Endlosschleife."
 }

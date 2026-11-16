@@ -487,7 +487,7 @@ function kaitoSync(){
     if(on && !c._kaitoO){ c._kaitoO = {type:c.type, pw:c.pw, tg:c.tg, kw:c.kw, o:c.o}; c.type = `${c.type.split("—")[0].trim()} Creature — ${g[2]}`; c.pw = +g[0]; c.tg = +g[1]; c.kw = [...(c.kw || []), g[3][0].toUpperCase() + g[3].slice(1)]; delete c._ab; }
     else if(!on && c._kaitoO){ Object.assign(c, c._kaitoO); delete c._kaitoO; delete c._ab; } });
 }
-function commit(){ try{ kaitoSync(); if(!S.blessing && S.bf && S.bf.filter(x => !x.fd).length >= 10 && S.bf.some(x => !x.fd && /^Ascend\b/m.test(x.o || ""))){ S.blessing = true; act("erhält den Segen der Stadt (Ascend)"); } mycoSync(); (S.bf || []).forEach(c => { if(c._stO != null || /^\d+\+ \| /m.test(c.o || "")) stationApply(c); }); }catch(e){} try{ loopCheck(); }catch(e){ console.error(e); } try{ const ba = $("#bArch"); if(ba){ ba.hidden = !archOn(); if(archOn()) ba.textContent = `Komplotte (${S.arch.deck.length})`; } }catch(e){} save(); undoNote(); renderAll(); schedulePush(); }
+function commit(){ try{ kaitoSync(); if(!S.blessing && S.bf && S.bf.filter(x => !x.fd).length >= 10 && S.bf.some(x => !x.fd && /^Ascend\b/m.test(x.o || ""))){ S.blessing = true; act("erhält den Segen der Stadt (Ascend)"); } mycoSync(); (S.bf || []).forEach(c => { if(c._stO != null || /^\d+\+ \| /m.test(c.o || "")) stationApply(c); }); }catch(e){} try{ loopCheck(); }catch(e){ console.error(e); } try{ lostCheck(); }catch(e){} try{ const ba = $("#bArch"); if(ba){ ba.hidden = !archOn(); if(archOn()) ba.textContent = `Komplotte (${S.arch.deck.length})`; } }catch(e){} save(); undoNote(); renderAll(); schedulePush(); }
 /* ---------- Rückgängig ---------- */
 // Vor jeder Aktion wird der eigene Spielstand gemerkt. Änderungen, die kurz hintereinander passieren, zählen als eine Aktion.
 const UNDO = {stack:[], last:null, lastT:0, restoring:false};
@@ -578,6 +578,14 @@ function moveCard(u, to, where){
   if(to === "bf" && from !== "bf" && !c.fd && /you may exchange (?:his|her|its|their) text box and another creature's/i.test(c.o || "") && typeof abilAuto === "function" && abilAuto()) queued(() => swapTextBox(c));
   else if(to === "bf" && from !== "bf" && !c.fd && !c.bestowed && /\bAura\b/.test(c.type || "") && typeof abilAuto === "function" && abilAuto()) queued(() => auraAttach(c));
 }
+/* Von Hand verschoben (Ziehen oder Kartenmenü): zählt nicht für Endlosschleifen; Hinweis bei Zügen, die nur ein Effekt erlaubt */
+function manualMove(u, to, where){
+  const f = findCard(u); if(!f) return;
+  if(typeof LOOP !== "undefined"){ LOOP.seen = new Map(); LOOP.last = null; LOOP.found = null; }
+  if(f.z === "cz" && to === "hand" && f.c.cmdr) toast(`<b>${esc(f.c.n)}</b>: Den Commander wirkst du direkt aus der Kommandozone (aufs Spielfeld ziehen) – so zählt auch die Commander-Steuer.`, 9000);
+  else if((f.z === "gy" || f.z === "ex") && to === "hand" && typeof botIds === "function" && botIds().length) toast(`Hinweis: Eine Karte aus ${f.z === "gy" ? "dem Friedhof" : "dem Exil"} auf die Hand zu nehmen, ist nur mit einem Karteneffekt erlaubt.`, 7000);
+  moveCard(u, to, where);
+}
 function moveCardRaw(u, to, where){
   const f = findCard(u); if(!f) return;
   const from = f.z, c = f.c;
@@ -626,7 +634,7 @@ async function play(u, faceDown){
     if(!paid) return;
     markOnCast(f.c);
     if(usesStack()) return putOnStack(f.c, "bf");
-    if(typeof botsRespond === "function" && await botsRespond(f.c)){ const g = findCard(u); if(g){ act(`${g.c.n} wurde gekontert`); moveCard(u, "gy"); } return; }
+    if(typeof botsRespond === "function" && await botsRespond(f.c)){ const g = findCard(u); if(g){ act(`${g.c.n} wurde gekontert`); moveCard(u, g.c.cmdr ? "cz" : "gy"); if(g.c.cmdr) act(`${g.c.n} kehrt in die Kommandozone zurück`); } return; }
   }
   moveCard(u, "bf");
 }
@@ -675,7 +683,7 @@ function startGame(){
   const lib = [], cz = [], attr = [];
   const comps = companionCandidates();
   S.deck.forEach(t => { if(t.sb || comps.includes(t)) return; if(t.attr || /\bAttraction\b/.test(t.type || "")){ const a = newCard(t); a.lights = t.lights; attr.push(a); return; } (t.cmdr ? cz : lib).push(newCard(t)); });
-  S.wished = []; S.gameSpells = 0; S.blessing = false;
+  S.wished = []; S.gameSpells = 0; S.blessing = false; S.lostAnnounced = false;
   Object.assign(S, {library:shuffle(lib), hand:[], bf:[], gy:[], ex:[], cz, st:[], poison:0, cmd:{}, turn:0, life: cz.length ? 40 : 20, startLife: cz.length ? 40 : 20, pool:emptyPoolObj(), marks:{E:0, XP:0, RAD:0}, pregameDone:false, pregameRev:[], emblems:[], attrDeck:shuffle(attr), compUsed:false, lifeLock:null, protect:null, delayed:[], locks:[]});
   lifeLogReset();
   pickCompanion(comps[0] || null, false);
@@ -685,6 +693,7 @@ function startGame(){
   draw(7);
 }
 function mulligan(){
+  if((S.turn || 0) >= 1 || S.bf.length){ toast("Einen Mulligan gibt es nur vor dem ersten Zug. Für ein neues Spiel «Neues Spiel» wählen."); return; }
   S.library.push(...S.hand); S.hand = []; shuffle(S.library);
   act("nimmt einen Mulligan"); S.pregameDone = false;
   draw(7);
@@ -846,7 +855,7 @@ function makeDraggable(el, c, zone){
         if(zone === "bf") giveControl(c.u, t.dataset.pid);
       }
       else if(z && z !== zone && ZN[z]){
-        moveCard(c.u, z, "top");
+        manualMove(c.u, z, "top");
       }
     };
     window.addEventListener("pointermove", move);
@@ -1026,7 +1035,7 @@ function renderAll(){
 /* ---------- Kontextmenü ---------- */
 function cardMenu(c, zone){
   const items = [];
-  const mv = (to, where) => () => moveCard(c.u, to, where);
+  const mv = (to, where) => () => manualMove(c.u, to, where);
   items.push({t: c.n});
   items.push({l:"Gross ansehen", f:() => bigView(c, true)});
   if(zone === "bf"){
@@ -2162,7 +2171,7 @@ function srcColors(c){
   if(!cols.length){
     Object.keys(BASIC).forEach(b => { if(new RegExp("\\b" + b + "\\b").test(c.type || "")) cols.push(BASIC[b]); });
     const f = (c.o || "").match(/search your library for an? ([^.]*?) card/i);
-    if(f && !cols.length) Object.keys(BASIC).forEach(b => { if(new RegExp(b, "i").test(f[1])) cols.push(BASIC[b]); });
+    if(f && !cols.length && !/Pay 1 life, Sacrifice/i.test(c.o || "")) Object.keys(BASIC).forEach(b => { if(new RegExp(b, "i").test(f[1])) cols.push(BASIC[b]); });
     if(!cols.length && /any color|basic land/i.test(c.o || "")) cols.push(...COLORS);
     if(!cols.length && !isLand(c) && manaOf(c)) cols.push(...COLORS);
     if(!cols.length) cols.push("C");
@@ -2243,6 +2252,13 @@ function counterMatch(counter, spell){
   const m = (counter.o || "").match(/counter target ([^.]*?)spell/i);
   if(!m) return false;
   const q = m[1].toLowerCase();
+  const rest = String(counter.o || "").slice(m.index + m[0].length).split(/[.\n]/)[0];
+  // Bedingungen nach «spell»: Manawert (Mental Misstep), Farbe (Pyroblast, Red Elemental Blast), «that targets …»
+  let k;
+  if((k = rest.match(/^ with mana value (\d+)( or less| or greater)?/i))){ const v = spell.cmc || 0, n = +k[1]; if(k[2] ? (/less/.test(k[2]) ? v > n : v < n) : v !== n) return false; }
+  if((k = rest.match(/^ if it'?s (white|blue|black|red|green)/i))){ const col = {white:"W", blue:"U", black:"B", red:"R", green:"G"}[k[1].toLowerCase()]; if(!colorsOfMc(spell.mc).includes(col)) return false; }
+  if(/^ that targets\b/i.test(rest)) return false;
+  if((k = q.match(/^(white|blue|black|red|green) /))){ const col = {white:"W", blue:"U", black:"B", red:"R", green:"G"}[k[1]]; if(!colorsOfMc(spell.mc).includes(col)) return false; }
   if(/noncreature/.test(q)) return !isCreature(spell);
   if(/creature/.test(q)) return isCreature(spell);
   if(/instant or sorcery/.test(q)) return /\b(Instant|Sorcery)\b/.test(spell.type || "");
@@ -2327,6 +2343,20 @@ function botPlayLand(){
   const score = l => srcColors(l).filter(x => need.has(x) && !have.has(x)).length * 3 + srcColors(l).length + manaOf(l);
   const l = lands.sort((a, b) => score(b) - score(a))[0];
   BOT.hand.splice(BOT.hand.indexOf(l), 1); BOT.bf.push(l); BOT.landPlayed = true; botLog(`spielt Land ${l.n}`);
+  botCrackFetch(l);
+}
+/* Fetchland (Misty Rainforest, Polluted Delta …): 1 Leben zahlen, opfern, passendes Land aus der Bibliothek ins Spiel */
+function botCrackFetch(l){
+  const m = String(l.o || "").match(/^\{T\}, Pay 1 life, Sacrifice (?:this land|[^:]+): Search your library for an? ([A-Z][a-z]+) or ([A-Z][a-z]+) card, put it onto the battlefield/m);
+  if(!m || !BOT.bf.includes(l)) return;
+  const want = [m[1], m[2]];
+  const cand = BOT.library.filter(c => isLand(c) && want.some(t => new RegExp(`\\b${t}\\b`).test(c.type || "")));
+  if(!cand.length) return;
+  const have = new Set(BOT.bf.filter(isLand).flatMap(srcColors));
+  const pick = cand.sort((a, b) => srcColors(b).filter(x => !have.has(x)).length - srcColors(a).filter(x => !have.has(x)).length || srcColors(b).length - srcColors(a).length)[0];
+  BOT.bf.splice(BOT.bf.indexOf(l), 1); BOT.gy.push(l); BOT.life -= 1;
+  BOT.library.splice(BOT.library.indexOf(pick), 1); pick.tap = false; BOT.bf.push(pick); shuffle(BOT.library);
+  botLog(`knackt ${l.n} (1 Leben) und holt ${pick.n}`);
 }
 function heurPrecombat(){
   // tödlicher Schaden direkt ins Gesicht?
@@ -2910,8 +2940,11 @@ function botChooseBlocks(attackers){
   return blocks;
 }
 /* --- Reaktion auf Zauber (Gegenzauber) --- */
+function botCastLocked(spell){
+  return (Array.isArray(S.locks) ? S.locks : []).some(l => l && l.key === turnKey() && !l.noAttack && !l.noBlockNoFly && (!l.pid || l.pid === BOT_ID) && (!l.noncreature || !isCreature(spell)));
+}
 async function botChooseCounter(card){
-  const counters = BOT.hand.filter(c => counterMatch(c, card) && castPlan(c));
+  const counters = BOT.hand.filter(c => counterMatch(c, card) && castPlan(c) && !botCastLocked(c));
   if(!counters.length) return null;
   if(claudeOn()){
     try{
@@ -2923,8 +2956,20 @@ async function botChooseCounter(card){
   }
   return heurCounter(card, counters);
 }
+const BOT_UNLESS = {cost:null, n:""};
 async function botsRespond(card){
-  for(const id of botAlive()){ if(botBusy || BOTQ_N) return false; if(await botRun(id, () => botRespond(card))) return true; }
+  for(const id of botAlive()){
+    if(botBusy || BOTQ_N) return false;
+    BOT_UNLESS.cost = null;
+    if(await botRun(id, () => botRespond(card))){
+      if(BOT_UNLESS.cost){
+        const cost = BOT_UNLESS.cost, src = BOT_UNLESS.n; BOT_UNLESS.cost = null;
+        const pay = await abilModal(`${src}: ${cost} zahlen?`, (box, done) => { box.append(Object.assign(document.createElement("p"), {textContent:`${displayName(id)} wirkt ${src}. Zahlst du ${cost}, wird ${card.n} nicht gekontert.`})); box.append(btn(`${cost} zahlen`, () => done(true), "primary"), btn("Nicht zahlen", () => done(false), "small")); });
+        if(pay && await payFor({n:`${src} (${card.n})`, mc:cost, cmc:0, type:"Ability", o:""})){ act(`zahlt ${cost} – ${card.n} wird nicht gekontert`); continue; }
+      }
+      return true;
+    }
+  }
   return false;
 }
 async function botRespond(card){
@@ -2935,6 +2980,8 @@ async function botRespond(card){
   if(!pick){ botChanged(); return false; }
   const plan = castPlan(pick); if(!plan){ botChanged(); return false; }
   payPlan(plan); BOT.hand.splice(BOT.hand.indexOf(pick), 1); BOT.gy.push(pick);
+  { const un = String(pick.o || "").match(/counter target [^.]*?spell[^.]*? unless its controller pays ((?:\{[^}]+\})+)/i);
+    if(un){ botLog(`wirkt ${pick.n} gegen ${card.n} – kontert, wenn du nicht ${un[1]} zahlst`); botChanged(); BOT_UNLESS.cost = un[1]; BOT_UNLESS.n = pick.n; return true; } }
   botLog(`kontert ${card.n} mit ${pick.n}`);
   botChanged();
   return true;
@@ -3469,6 +3516,17 @@ function openArchDialog(){
   row.append(btn("Nächstes Komplott jetzt", () => { closeModal(); queued(() => schemeMotion(true)); }, "small"), btn("Archenemy beenden", () => { S.arch.on = false; act("beendet Archenemy"); commit(); closeModal(); }, "small"));
   box.append(row);
 }
+/* Wer auf 0 oder weniger Leben fällt (oder 10 Gift hat), verliert – sofort, nicht erst beim nächsten KI-Zug */
+function lostCheck(){
+  if(!S || S.lostAnnounced || typeof botIds !== "function" || !botIds().length) return;
+  const cantLose = S.bf.some(c => !c.fd && /You can't lose the game/i.test(c.o || "")) || S.graceKey === turnKey();
+  if(cantLose) return;
+  if(S.life <= 0 || (S.poison || 0) >= 10){
+    S.lostAnnounced = true;
+    act(S.life <= 0 ? `hat ${S.life} Leben und verliert das Spiel` : "hat 10 Giftmarken und verliert das Spiel");
+    toast(`<b>Spiel verloren</b> (${S.life <= 0 ? `${S.life} Leben` : "10 Giftmarken"}). Mit «Neues Spiel» startest du mit den KI-Gegnern neu.`, 12000);
+  }
+}
 /* ---------- Endlosschleifen (Infinite Kombos) ---------- */
 // Die App merkt sich nach jedem Schritt die Spiellage. Kommst du nach einer Folge von Aktionen wieder in genau dieselbe Lage
 // und hast dabei nur gewonnen (mehr Mana, Leben, Spielsteine, Schaden am Gegner …), ist das eine Schleife, die sich beliebig
@@ -3715,6 +3773,14 @@ function askNumber(title, text){
     box.append(row); $("#askN").focus(); $("#askN").select();
   });
 }
+/* Darf diese Karte ohne Mana gewirkt werden? Eigene alternative Kosten (Force of Will, Daze, Pact …) oder ein Effekt, der Gratis-Wirken erlaubt */
+function hasAltCost(c){
+  const o = String((c && c.o) || "");
+  if(c && (c.freeCast || c.playFree)) return true;
+  if(/rather than pay (?:this spell's|its) mana cost|without paying (?:its|this spell's) mana cost|^(?:Evoke|Dash|Surge|Emerge|Prowl|Spectacle|Madness|Miracle|Bestow|Blitz|Overload|Mutate|Ninjutsu|Sneak|Freerunning|Impending|Warp|Plot)\b/im.test(o)) return true;
+  if(/^Pact\b|^.*Pact of /i.test(c.n || "") || (c.mc === "" && !isLand(c))) return true;
+  return allBfCards().some(x => /\bcast [^.]*without paying (?:its|their) mana costs?\b/i.test(x.o || "") || /^Any player may cast creature spells with mana value \d+ or less without paying/im.test(x.o || "")) || (S.st || []).length > 0;
+}
 function shortDialog(c, plan){
   return new Promise(resolve => {
     modalState = {kind:"ask"}; $("#modal").hidden = false;
@@ -3723,7 +3789,9 @@ function shortDialog(c, plan){
     box.insertAdjacentHTML("beforeend", `<p style="margin:0">Kosten ${manaHtml(costOf(c))}${plan.fromCz && c.casts ? ` + Commander-Steuer ${manaHtml(symStr([String(2 * c.casts)]))}` : ""}. Es fehlt: ${manaHtml(plan.missing.join(""))}</p>
       <p class="muted" style="margin:0">Tappe die passenden Quellen selbst an oder lege Mana über «+ Mana» in den Pool (zum Beispiel für Rituale). Bei alternativen Kosten wie Force of Will oder Daze wählst du «Ohne Mana wirken».</p>`);
     const row = document.createElement("div"); row.className = "row";
-    row.append(btn("Ohne Mana wirken", () => { closeModal(); resolve("free"); }, "primary"), btn("Abbrechen", () => { closeModal(); resolve(null); }));
+    if(hasAltCost(c)) row.append(btn("Ohne Mana wirken", () => { closeModal(); resolve("free"); }, "primary"));
+    else box.append(Object.assign(document.createElement("p"), {className:"stat", textContent:`${c.n} hat keine alternativen Kosten. Ohne Mana geht es nur, wenn ein Effekt das erlaubt.`}));
+    row.append(btn("Abbrechen", () => { closeModal(); resolve(null); }));
     box.append(row);
   });
 }
@@ -11125,7 +11193,7 @@ function historyAdd(win){
 /* ---------- Automatische Updates ---------- */
 // Liegt die App im Web, prüft sie regelmässig version.json im selben Ordner und lädt sich bei einer neuen Version neu.
 // Alles Wichtige (Spielstand, Deck, Tisch) liegt im Browser-Speicher und ist nach dem Neuladen wieder da.
-const APP_VERSION = "2026.11.16-5";
+const APP_VERSION = "2026.11.16-6";
 const ONLINE = /^https?:$/.test(location.protocol);
 let updPending = null, updTimer = null, updSnoozeUntil = 0;
 function busyForUpdate(){ return botBusy || (!$("#modal").hidden && modalState && ["block","deck"].includes(modalState.kind)); }

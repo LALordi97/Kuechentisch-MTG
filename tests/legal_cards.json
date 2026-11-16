@@ -1,0 +1,72 @@
+[
+[
+"Mental Misstep",
+"Instant",
+"({U/P} can be paid with either {U} or 2 life.)\nCounter target spell with mana value 1.",
+"{U/P}",
+1.0
+],
+[
+"Pyroblast",
+"Instant",
+"Choose one —\n• Counter target spell if it's blue.\n• Destroy target permanent if it's blue.",
+"{R}",
+1.0
+],
+[
+"Flusterstorm",
+"Instant",
+"Counter target instant or sorcery spell unless its controller pays {1}.\nStorm (When you cast this spell, copy it for each spell cast before it this turn. You may choose new targets for the copies.)",
+"{U}",
+1.0
+],
+[
+"Force of Will",
+"Instant",
+"You may pay 1 life and exile a blue card from your hand rather than pay this spell's mana cost.\nCounter target spell.",
+"{3}{U}{U}",
+5.0
+],
+[
+"Misty Rainforest",
+"Land",
+"{T}, Pay 1 life, Sacrifice this land: Search your library for a Forest or Island card, put it onto the battlefield, then shuffle.",
+"",
+0
+],
+[
+"Etali, Primal Conqueror // Etali, Primal Sickness",
+"Legendary Creature — Elder Dinosaur // Legendary Creature — Phyrexian Elder Dinosaur",
+"Trample\nWhen Etali enters, each player exiles cards from the top of their library until they exile a nonland card. You may cast any number of spells from among the nonland cards exiled this way without paying their mana costs.\n{9}{G/P}: Transform Etali. Activate only as a sorcery.",
+"{5}{R}{R}",
+7.0
+],
+[
+"Silence",
+"Instant",
+"Your opponents can't cast spells this turn.",
+"{W}",
+1.0
+],
+[
+"Pact of Negation",
+"Instant",
+"Counter target spell.\nAt the beginning of your next upkeep, pay {3}{U}{U}. If you don't, you lose the game.",
+"{0}",
+0
+],
+[
+"Red Elemental Blast",
+"Instant",
+"Choose one —\n• Counter target blue spell.\n• Destroy target blue permanent.",
+"{R}",
+1.0
+],
+[
+"Ad Nauseam",
+"Instant",
+"Reveal the top card of your library and put that card into your hand. You lose life equal to its mana value. You may repeat this process any number of times.",
+"{3}{B}{B}",
+5.0
+]
+]
