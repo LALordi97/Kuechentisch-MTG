@@ -50,6 +50,22 @@ const confirmBlocks = async () => { for(let i = 0; i < 12; i++){ const h = d.que
   for(let i = 0; i < 120; i++){ await wait(100); await confirmBlocks(); if(ev('TURN.active === me.id') && i > 5) break; }
   check(titles.some(t => /^Die KI greift an/.test(t)) && titles.some(t => /^KI 2 greift an/.test(t)) && titles.some(t => /^KI 3 greift an/.test(t)), `Blockfenster: ${titles.join(' | ')}`);
   check(ev('S.life') < lifeMe, `ich nehme Kampfschaden von den KI (${lifeMe} → ${ev('S.life')})`);
+  // KI greifen sich gegenseitig an: KI 2 sieht die angeschlagene KI (3 Leben, keine Blocker) und greift sie statt mich an
+  ev('BOTS.bot.life = 3; BOTS.bot.bf = BOTS.bot.bf.filter(c => !isCreature(c)); BOTS.bot3.bf.forEach(c => { if(isCreature(c)) c.tap = true; })');
+  ev('BOTS.bot2.bf = BOTS.bot2.bf.filter(c => !isCreature(c)); BOTS.bot2.bf.push(Object.assign(newCard({n:"Oger", type:"Creature — Ogre", o:"", pw:4, tg:4}), {sick:false})); botChanged()');
+  ev('S.bf.push(Object.assign(newCard({n:"Mauer", type:"Creature — Wall", o:"Defender", pw:0, tg:8, kw:["Defender"]}), {sick:false})); commit()');
+  { const lifeMe2 = ev('S.life'); ev('TURN.active = null; applyTurn({active:"bot2", n:TURN.n + 1, starter:TURN.starter})');
+    for(let i = 0; i < 40 && !ev('BOTS.bot.life <= 0'); i++){ await confirmBlocks(); await wait(100); }
+    check(ev('BOTS.bot.life') <= 0 && ev('S.life') === lifeMe2, `KI 2 greift die KI an, nicht mich (KI: ${ev('BOTS.bot.life')} Leben, ich: ${ev('S.life')})`);
+    check(/greift Die KI an mit Oger/.test(d.querySelector('#log').textContent) && /Kampf gegen Die KI/.test(d.querySelector('#log').textContent), 'Protokoll: «KI 2 greift Die KI an mit Oger»');
+    check(/verliert das Spiel/.test(d.querySelector('#log').textContent) && ev('!turnIds().includes("bot")'), 'die KI ist ausgeschieden und fällt aus der Zugfolge');
+    for(let i = 0; i < 60 && !ev('TURN.active === me.id'); i++){ await confirmBlocks(); await wait(100); }
+    ev('BOTS.bot.life = 20; botChanged()'); }
+  // KI blockt den Angriff einer anderen KI
+  ev('BOTS.bot3.bf.push(Object.assign(newCard({n:"Wächter", type:"Creature — Golem", o:"", pw:1, tg:9}), {sick:false})); BOTS.bot3.life = 2; botChanged()');
+  ev('BOTS.bot.life = 30; BOTS.bot2.bf.forEach(c => { c.tap = false; c.sick = false; })');
+  { ev('withBot("bot2", () => { const atk = BOT.bf.filter(c => c.n === "Oger"); const bl = withBot("bot3", () => botChooseBlocks(atk)); botVsBot(atk, bl, "bot3"); })');
+    check(ev('BOTS.bot3.life') === 2 && /Oger wird von Wächter geblockt/.test(d.querySelector('#log').textContent), `KI 3 blockt den Oger mit dem Wächter (Leben ${ev('BOTS.bot3.life')})`); ev('BOTS.bot3.life = 20; BOTS.bot3.bf = BOTS.bot3.bf.filter(c => c.n !== "Wächter"); botChanged()'); }
   // Schaden an KI 2 trifft nur KI 2
   const l1 = ev('BOTS.bot.life'), l2 = ev('BOTS.bot2.life');
   ev('hitOpponent("bot2", {kind:"damage", amount:5, src:"Test"})'); await wait(60);

@@ -2389,14 +2389,28 @@ function winsFight(a, b){ // a überlebt und tötet b
   const kill = (x, y) => power(x) > 0 && (power(x) >= tough(y) || kwHas(x, "deathtouch")) && !kwHas(y, "indestructible");
   return kill(a, b) && !kill(b, a);
 }
-function botChooseAttackers(){
-  const myBlk = myCreatures().filter(c => !c.tap);
+/* Wen greift die KI an? Dich oder eine andere KI – wer am meisten Schaden im Verhältnis zum Leben einsteckt, zuerst wer tödlich getroffen wird */
+function botDefenders(){
+  const out = [];
+  if(S.life > 0) out.push({id:me.id, blk:myCreatures(), life:S.life});
+  botAlive().filter(id => id !== BOT_ID).forEach(id => out.push({id, blk:BOTS[id].bf.filter(c => isCreature(c) && !c.fd), life:BOTS[id].life}));
+  return out;
+}
+function botPickTarget(fixed){
+  const opts = botDefenders().map(d => { const atk = fixed ? fixed.slice() : botChooseAttackers(d); const dmg = atk.reduce((s, a) => s + power(a), 0);
+    return {d, atk, score: !atk.length ? -1 : (dmg >= d.life ? 100 : 0) + dmg / Math.max(1, d.life) + Math.random() * .15}; });
+  opts.sort((a, b) => b.score - a.score);
+  return opts[0] && opts[0].score >= 0 ? opts[0] : {d:{id:me.id}, atk:[]};
+}
+function botChooseAttackers(def){
+  def = def || {blk:myCreatures(), life:S.life};
+  const myBlk = def.blk.filter(c => !c.tap);
   const cands = BOT.bf.filter(c => isCreature(c) && !c.tap && !c.sick && power(c) > 0 && !kwHas(c, "defender"));
   if(!cands.length) return [];
   // Alpha-Schlag tödlich, selbst wenn du optimal blockst?
   const powers = cands.map(power).sort((a, b) => b - a);
   const blocked = powers.slice(0, myBlk.length).reduce((s, p) => s + p, 0);
-  if(powers.reduce((s, p) => s + p, 0) - blocked >= S.life) return cands;
+  if(powers.reduce((s, p) => s + p, 0) - blocked >= def.life) return cands;
   let atk = cands.filter(a => {
     const bl = myBlk.filter(b => canBlock(b, a));
     if(!bl.length) return true;
@@ -2405,7 +2419,7 @@ function botChooseAttackers(){
     return bl.every(b => tough(a) > power(b) || winsFight(a, b));
   });
   // Rückschlag-Rechnung: genug Blocker zu Hause lassen
-  const myPower = myCreatures().map(power).sort((a, b) => b - a);
+  const myPower = botDefenders().flatMap(d => d.blk).map(power).sort((a, b) => b - a); // Rückschlag: von allen Gegnern
   const stayHome = () => BOT.bf.filter(c => isCreature(c) && (!atk.includes(c) || kwHas(c, "vigilance")));
   const danger = () => { const n = stayHome().length; return myPower.slice(n).reduce((s, p) => s + p, 0) >= BOT.life; };
   while(atk.length && danger()) atk.sort((a, b) => tough(b) - tough(a)).shift();
@@ -2571,21 +2585,29 @@ async function botTurn(){
       try { botLog("denkt nach …"); plan = await callClaude(`Es ist dein Zug ${BOT.turn}; du hast bereits gezogen. Plane den ganzen Zug.`, TURN_TOOL); }
       catch(e){ botLog(`Claude-Fehler (${e.message}). Dieser Zug läuft mit den eingebauten Regeln.`); }
     }
-    let attackers;
+    let attackers, atkTarget = me.id;
     if(plan){
       botSay(plan.say);
       (plan.precombat || []).forEach(runAction);
       attackers = (plan.attackers || []).map(id => BOT.bf.find(c => c.u === id)).filter(c => c && isCreature(c) && !c.tap && !c.sick && !kwHas(c, "defender"));
+      atkTarget = attackers.length ? botPickTarget(attackers).d.id : me.id;
     } else {
-      botPlayLand(); heurPrecombat(); attackers = botChooseAttackers();
+      botPlayLand(); heurPrecombat(); const pk = botPickTarget(); attackers = pk.atk; atkTarget = pk.d.id;
     }
     botChanged();
     if(attackers.length){
       attackers.forEach(c => { if(!kwHas(c, "vigilance")) c.tap = true; });
       botChanged();
-      attackers.forEach(c => fxSend({kind:"arrow", style:"attack", from:{u:c.u}, to:{pid:me.id}}));
-      const blocks = await openBlockDialog(attackers);
-      resolveCombat(attackers, blocks, true);
+      attackers.forEach(c => fxSend({kind:"arrow", style:"attack", from:{u:c.u}, to:{pid:atkTarget}}));
+      if(isBotId(atkTarget)){
+        botLog(`greift ${displayName(atkTarget)} an mit ${attackers.map(c => c.n).join(", ")}`);
+        const blocks = withBot(atkTarget, () => botChooseBlocks(attackers));
+        blocks.forEach((b, aU) => fxSend({kind:"arrow", style:"block", from:{u:b.u}, to:{u:aU}}));
+        botVsBot(attackers, blocks, atkTarget);
+      } else {
+        const blocks = await openBlockDialog(attackers);
+        resolveCombat(attackers, blocks, true);
+      }
     }
     if(plan) (plan.postcombat || []).forEach(runAction); else heurMain2();
     while(BOT.hand.length > 7){
@@ -2644,6 +2666,17 @@ function resolveCombat(attackers, blocks, attackerIsBot){
   botLog(`Kampf: ${r.lines.join("; ")}. ${attackerIsBot ? (me.name || "Du") : botName()} verliert ${r.dmg} Leben.`);
   if(S.life <= 0) botLog(`gewinnt das Spiel, ${me.name ? me.name + " ist" : "du bist"} auf ${S.life} Leben`);
   if(BOT.life <= 0) botLog(`verliert das Spiel (Leben ${BOT.life})`);
+  commit(); botChanged();
+}
+/* Kampf zwischen zwei KI: die handelnde KI greift defId an */
+function botVsBot(attackers, blocks, defId){
+  const r = computeCombat(attackers, blocks);
+  BOT.life += r.gain;
+  r.deadA.forEach(c => botToZone(c, "gy"));
+  withBot(defId, () => { BOT.life -= r.dmg; r.deadB.forEach(c => botToZone(c, "gy")); });
+  botLog(`Kampf gegen ${displayName(defId)}: ${r.lines.join("; ") || "keine Angreifer"}. ${botName(defId)} verliert ${r.dmg} Leben (Leben ${botOf(defId).life}).`);
+  if(botOf(defId).life <= 0) withBot(defId, () => botLog(`verliert das Spiel (Leben ${BOT.life})`));
+  if(!botAlive().filter(id => id !== BOT_ID).length && S.life <= 0) botLog("gewinnt das Spiel");
   commit(); botChanged();
 }
 function combatInfo(c){ return {u:c.u, n:c.n, img:c.img, type:c.type, pw:c.pwO ?? c.pw ?? null, tg:c.tgO ?? c.tg ?? null, c:c.c || 0, kw:[...(c.kw || []), ...(c.tkw || []), ...(c.kwc || [])].filter(k => !(c.tkwOff || []).includes(String(k).toLowerCase())).slice(0, 10), o:((c.o || "").split("\n")[0] || "").slice(0, 200), cmdr:!!c.cmdr}; }
@@ -11019,7 +11052,7 @@ function historyAdd(win){
 /* ---------- Automatische Updates ---------- */
 // Liegt die App im Web, prüft sie regelmässig version.json im selben Ordner und lädt sich bei einer neuen Version neu.
 // Alles Wichtige (Spielstand, Deck, Tisch) liegt im Browser-Speicher und ist nach dem Neuladen wieder da.
-const APP_VERSION = "2026.11.16-2";
+const APP_VERSION = "2026.11.16-3";
 const ONLINE = /^https?:$/.test(location.protocol);
 let updPending = null, updTimer = null, updSnoozeUntil = 0;
 function busyForUpdate(){ return botBusy || (!$("#modal").hidden && modalState && ["block","deck"].includes(modalState.kind)); }
