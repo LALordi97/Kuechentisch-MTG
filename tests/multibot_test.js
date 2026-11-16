@@ -84,6 +84,14 @@ const confirmBlocks = async () => { for(let i = 0; i < 12; i++){ const h = d.que
   ev('BOTS.bot2.life = 0; botChanged()');
   check(ev('turnIds().join()') === ev('[me.id, "bot", "bot3"].join()'), 'ausgeschiedene KI 2 wird in der Zugfolge übersprungen');
   check(/ausgeschieden/.test(d.querySelector('#opps').textContent), 'Anzeige: KI 2 «ausgeschieden»');
+  // «Neues Spiel» startet auch die KI neu
+  ev('BOTS.bot.life = 3; BOTS.bot3.life = 7; BOTS.bot.bf.push(newCard({n:"Altlast", type:"Artifact", o:""})); botChanged()');
+  $('#bNew').click(); await wait(200);
+  check(ev('BOTS.bot.life') === 20 && ev('BOTS.bot2.life') === 20 && ev('BOTS.bot3.life') === 20, `Neues Spiel: alle KI wieder mit 20 Leben (${ev('[BOTS.bot.life, BOTS.bot2.life, BOTS.bot3.life].join("/")')})`);
+  check(ev('["bot","bot2","bot3"].every(id => !BOTS[id].bf.some(c => c.n === "Altlast") && BOTS[id].hand.length + BOTS[id].library.length + BOTS[id].bf.length === 40 && BOTS[id].hand.length >= 5)'), 'Neues Spiel: jede KI hat ihr Deck neu gemischt (40 Karten, neue Hand, altes Spielfeld weg)');
+  check(ev('BOTS.bot2.deckName') === 'Rot' && ev('BOTS.bot2.library.some(c => c.n === "Mountain")'), 'Neues Spiel: KI 2 spielt weiter ihr eigenes Deck');
+  check(ev('TURN.n') === 1 && ev('S.bf.length') === 0, 'Neues Spiel: Runde 1, mein Spielfeld leer');
+  for(let i = 0; i < 60 && !ev('TURN.active === me.id'); i++){ await confirmBlocks(); await wait(100); }
   // KI 3 entfernen
   ev('removeBot("bot3")'); await wait(30);
   check(ev('botIds().join()') === 'bot,bot2' && !ev('order.includes("bot3")') && !ev('others.bot3'), 'KI 3 entfernt');

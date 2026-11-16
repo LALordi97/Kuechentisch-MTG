@@ -319,6 +319,7 @@ textarea{width:100%;min-height:240px;resize:vertical;font-size:14px}
     <button id="bCoin">Münze</button>
     <button id="bToken">Token</button>
     <button id="bBot">KI-Gegner</button>
+    <button id="bArch" hidden>Komplotte</button>
     <button id="bLook">Aussehen</button>
     <button id="bStats">Statistik</button>
     <button id="bLobby">Tisch</button>
@@ -486,7 +487,7 @@ function kaitoSync(){
     if(on && !c._kaitoO){ c._kaitoO = {type:c.type, pw:c.pw, tg:c.tg, kw:c.kw, o:c.o}; c.type = `${c.type.split("—")[0].trim()} Creature — ${g[2]}`; c.pw = +g[0]; c.tg = +g[1]; c.kw = [...(c.kw || []), g[3][0].toUpperCase() + g[3].slice(1)]; delete c._ab; }
     else if(!on && c._kaitoO){ Object.assign(c, c._kaitoO); delete c._kaitoO; delete c._ab; } });
 }
-function commit(){ try{ kaitoSync(); if(!S.blessing && S.bf && S.bf.filter(x => !x.fd).length >= 10 && S.bf.some(x => !x.fd && /^Ascend\b/m.test(x.o || ""))){ S.blessing = true; act("erhält den Segen der Stadt (Ascend)"); } mycoSync(); (S.bf || []).forEach(c => { if(c._stO != null || /^\d+\+ \| /m.test(c.o || "")) stationApply(c); }); }catch(e){} try{ loopCheck(); }catch(e){ console.error(e); } save(); undoNote(); renderAll(); schedulePush(); }
+function commit(){ try{ kaitoSync(); if(!S.blessing && S.bf && S.bf.filter(x => !x.fd).length >= 10 && S.bf.some(x => !x.fd && /^Ascend\b/m.test(x.o || ""))){ S.blessing = true; act("erhält den Segen der Stadt (Ascend)"); } mycoSync(); (S.bf || []).forEach(c => { if(c._stO != null || /^\d+\+ \| /m.test(c.o || "")) stationApply(c); }); }catch(e){} try{ loopCheck(); }catch(e){ console.error(e); } try{ const ba = $("#bArch"); if(ba){ ba.hidden = !archOn(); if(archOn()) ba.textContent = `Komplotte (${S.arch.deck.length})`; } }catch(e){} save(); undoNote(); renderAll(); schedulePush(); }
 /* ---------- Rückgängig ---------- */
 // Vor jeder Aktion wird der eigene Spielstand gemerkt. Änderungen, die kurz hintereinander passieren, zählen als eine Aktion.
 const UNDO = {stack:[], last:null, lastT:0, restoring:false};
@@ -2393,7 +2394,7 @@ function winsFight(a, b){ // a überlebt und tötet b
 function botDefenders(){
   const out = [];
   if(S.life > 0) out.push({id:me.id, blk:myCreatures(), life:S.life});
-  botAlive().filter(id => id !== BOT_ID).forEach(id => out.push({id, blk:BOTS[id].bf.filter(c => isCreature(c) && !c.fd), life:BOTS[id].life}));
+  if(!(typeof archOn === "function" && archOn())) botAlive().filter(id => id !== BOT_ID).forEach(id => out.push({id, blk:BOTS[id].bf.filter(c => isCreature(c) && !c.fd), life:BOTS[id].life}));
   return out;
 }
 function botPickTarget(fixed){
@@ -2995,6 +2996,7 @@ function openBotDialog(){
     <div id="bDecks" style="display:flex;flex-direction:column;gap:6px"></div>
     ${claudeSettingsHtml()}
     <label class="row stat"><input type="checkbox" id="bRestart" checked> Mein eigenes Spiel auch neu starten</label>
+    <label class="row stat"><input type="checkbox" id="bArchOn"> Archenemy: Ich bin der Erzfeind (40 Leben, ich beginne, Komplott-Deck mit 20 Komplotten). Die KI-Gegner spielen als Team gegen mich.</label>
     <p class="stat" style="margin:0">Mehrere KI-Gegner spielen jeder für sich gegen dich (Jeder gegen jeden). Untereinander greifen sie sich nicht an.</p>
     <div class="row"><button class="primary" id="bGo">Spiel gegen die KI starten</button><span class="stat" id="bProg"></span></div>
     <div class="err" id="bErr"></div>`);
@@ -3025,15 +3027,22 @@ function openBotDialog(){
       if(!deck.length){ $("#bGo").disabled = false; $("#bProg").textContent = ""; $("#bErr").textContent = netErr ? "Scryfall ist nicht erreichbar. Öffne die Datei direkt im Browser, nicht in einer Vorschau." : `Keine Karten gefunden (${d.n}).`; return; }
       decks.push({d, deck, missing});
     }
+    let schemes = null;
+    if($("#bArchOn").checked){
+      try{ schemes = await schemeDeckBuild(t => { $("#bProg").textContent = t; }); }
+      catch(e){ $("#bGo").disabled = false; $("#bProg").textContent = ""; $("#bErr").textContent = e.message || "Die Komplotte konnten nicht geladen werden."; return; }
+    }
     $("#bGo").disabled = false; $("#bProg").textContent = "";
     LS.set("kt-botn", picks.length);
     clearBots();
     decks.forEach(({d, deck, missing}, i) => { const id = i ? "bot" + (i + 1) : "bot"; startBot(d.n, fs.value, deck, id); if(missing.length) withBot(id, () => botLog(`konnte ${missing.length} Karte(n) nicht laden: ${missing.join(", ")}`)); });
     useBot("bot");
-    if($("#bRestart").checked && S.deck.length) startGame();
+    if(($("#bRestart").checked || schemes) && S.deck.length) startGame();
     closeModal();
+    S.arch = schemes ? {on:true, deck:schemes, n:0, last:null} : null;
+    if(schemes){ S.life = Math.max(40, S.life); S.startLife = S.life; act(`ist der Erzfeind: ${S.life} Leben, Komplott-Deck mit ${schemes.length} Komplotten`); commit(); }
     const seats = [me.id, ...botIds()];
-    const pick = seats[Math.floor(Math.random() * seats.length)];
+    const pick = schemes ? me.id : seats[Math.floor(Math.random() * seats.length)];
     botIds().forEach(id => { BOTS[id].onPlay = pick === id; });
     if(isBotId(pick)) withBot(pick, () => botLog("beginnt das Spiel (Auslosung)")); else botLog("Auslosung: Du beginnst. Beende deinen Zug mit «Zug beenden» oben.");
     saveBot(); TURN.active = null; botChanged();
@@ -3044,7 +3053,8 @@ function startBot(name, format, deck, id = "bot"){
   const lib = [], cz = [];
   deck.forEach(t => { if(t.sb) return; (t.cmdr ? cz : lib).push(newCard(t)); });
   useBot(id);
-  BOT = BOTS[id] = Object.assign(freshBot(), {active:true, deckName:name, format, cz, library:shuffle(lib), life: cz.length ? 40 : 20});
+  const deckT = deck.filter(t => !t.sb).map(t => { const {u, ...r} = t; return r; });
+  BOT = BOTS[id] = Object.assign(freshBot(), {active:true, deckName:name, format, cz, library:shuffle(lib), life: cz.length ? 40 : 20, deckT});
   // Mulligan: 2 bis 5 Länder behalten
   for(let tries = 0; tries < 3; tries++){
     BOT.hand = BOT.library.splice(0, 7);
@@ -3064,6 +3074,7 @@ function startBot(name, format, deck, id = "bot"){
   botLog(`spielt ${name} (${lib.length + cz.length} Karten)`);
 }
 $("#bBot").onclick = openBotDialog;
+$("#bArch").onclick = openArchDialog;
 injectBot();
 
 
@@ -3314,6 +3325,7 @@ function onMyTurnStart(){
   const skipDraw = (S.turn === 1 && TURN.starter === me.id) || S.bf.some(c => !c.fd && /^Skip your draw step\.?$/im.test(c.o || ""));
   setTimeout(() => abilEvent({kind:"phase", phase:"draw", mine:true}), 0);
   remindTriggers("upkeep", true); sfx("turn");
+  if(archOn()) setTimeout(() => queued(() => schemeMotion()), 0);
   if(!S.deck.length || !S.library.length){ act(`beginnt den Zug (Runde ${TURN.n}) und enttappt alles`); commit(); return; }
   act(`beginnt den Zug (Runde ${TURN.n}) und enttappt alles${skipDraw ? " (im ersten Zug wird nicht gezogen)" : ""}`);
   if(skipDraw) commit(); else draw(1);
@@ -3404,6 +3416,59 @@ function renderTurn(){
   document.title = (mine ? "▶ Dein Zug · " : (STACK.length && STACK[STACK.length - 1] && !STACK[STACK.length - 1].passes.includes(me.id) ? "● Stapel · " : "")) + "Küchentisch MTG";
 }
 
+/* ---------- Archenemy: Komplotte ----------
+   Du bist der Erzfeind: 40 Leben, du beginnst, die KI-Gegner spielen als Team gegen dich (sie greifen sich nicht an).
+   Zu Beginn deiner ersten Hauptphase setzt du das oberste Komplott in Gang; danach kommt es unter das Komplott-Deck. */
+const ARCH = {cache:null};
+function schemeBody(o){ return String(o || "").split("\n").map(l => l.replace(/^When you set this scheme in motion, /i, "")).map(l => l ? l[0].toUpperCase() + l.slice(1) : l).join("\n"); }
+function schemeAsSpell(sc){ return {n:sc.n, type:"Sorcery", o:schemeBody(sc.o), mc:"", cmc:0, img:sc.img || null}; }
+async function schemeFetch(onProg){
+  if(ARCH.cache) return ARCH.cache;
+  const out = []; let url = API + "/cards/search?" + new URLSearchParams({q:"t:scheme -t:ongoing", unique:"cards", order:"name"}).toString();
+  for(let page = 0; url && page < 5; page++){
+    onProg && onProg(`Lade Komplotte … ${out.length || ""}`);
+    const r = await fetch(url); if(!r.ok) break;
+    const j = await r.json();
+    (j.data || []).forEach(sc => { if(/\bOngoing\b/.test(sc.type_line || "")) return; out.push({n:String(sc.name || "Komplott"), o:String(sc.oracle_text || ""), img:(sc.image_uris && (sc.image_uris.normal || sc.image_uris.large)) || null}); });
+    url = j.has_more ? j.next_page : null; await sleep(110);
+  }
+  if(!out.length) throw new Error("Die Komplotte konnten nicht von Scryfall geladen werden.");
+  return (ARCH.cache = out);
+}
+/* Komplott-Deck: 20 verschiedene Komplotte, zuerst die, welche die App ganz automatisch ausführen kann */
+async function schemeDeckBuild(onProg){
+  const all = await schemeFetch(onProg);
+  const auto = shuffle(all.filter(sc => { try{ return cardCheck(schemeAsSpell(sc)).status === "auto"; }catch(e){ return false; } }));
+  const rest = shuffle(all.filter(sc => !auto.includes(sc)));
+  return shuffle([...auto, ...rest].slice(0, 20));
+}
+function archOn(){ return !!(S && S.arch && S.arch.on); }
+async function schemeMotion(manual){
+  if(!archOn() || !S.arch.deck.length) return;
+  if(!manual && S.arch.lastKey === turnKey()) return;
+  S.arch.lastKey = turnKey();
+  const sc = S.arch.deck.shift(); S.arch.deck.push(sc); S.arch.last = sc; S.arch.n = (S.arch.n || 0) + 1;
+  act(`setzt das Komplott «${sc.n}» in Gang`); commit();
+  await abilModal(`Komplott: ${sc.n}`, (box, done) => {
+    if(okImg(sc.img)){ const im = document.createElement("img"); im.src = sc.img; im.alt = sc.n; im.style.cssText = "width:min(480px,100%);border-radius:12px;display:block"; box.append(im); }
+    box.append(Object.assign(document.createElement("p"), {textContent:sc.o}));
+    box.append(btn("In Gang setzen", () => done(true), "primary"));
+  });
+  const card = newCard(schemeAsSpell(sc));
+  for(const ab of parseAbilities(card).filter(a => a.kind === "spell")) await runAbility(card, ab, {});
+  commit();
+}
+function openArchDialog(){
+  if(!archOn()) return;
+  modalState = {kind:"ask"}; $("#modal").hidden = false;
+  const box = $("#modalBox"); box.innerHTML = ""; box.append(head("Archenemy: Komplotte"));
+  const last = S.arch.last;
+  box.insertAdjacentHTML("beforeend", `<p class="muted" style="margin:0">Komplott-Deck: ${S.arch.deck.length} Komplotte · bisher in Gang gesetzt: ${S.arch.n || 0}. Zu Beginn jedes deiner Züge setzt die App das oberste Komplott automatisch in Gang.</p>`);
+  if(last){ box.append(Object.assign(document.createElement("h3"), {textContent:`Zuletzt: ${last.n}`})); if(okImg(last.img)){ const im = document.createElement("img"); im.src = last.img; im.alt = last.n; im.style.cssText = "width:min(420px,100%);border-radius:12px;display:block"; box.append(im); } else box.append(Object.assign(document.createElement("p"), {textContent:last.o})); }
+  const row = document.createElement("div"); row.className = "row";
+  row.append(btn("Nächstes Komplott jetzt", () => { closeModal(); queued(() => schemeMotion(true)); }, "small"), btn("Archenemy beenden", () => { S.arch.on = false; act("beendet Archenemy"); commit(); closeModal(); }, "small"));
+  box.append(row);
+}
 /* ---------- Endlosschleifen (Infinite Kombos) ---------- */
 // Die App merkt sich nach jedem Schritt die Spiellage. Kommst du nach einer Folge von Aktionen wieder in genau dieselbe Lage
 // und hast dabei nur gewonnen (mehr Mana, Leben, Spielsteine, Schaden am Gegner …), ist das eine Schleife, die sich beliebig
@@ -4852,6 +4917,7 @@ function xExpr(e, src){
   let m;
   if(/^(?:other )?spells? you've cast before it this turn$/.test(e)) return Math.max(0, spellsThisTurn() - 1);
   if((m = e.match(/^twice (.+)$/))){ const v = xExpr(m[1], src); return v == null ? null : 2 * v; }
+  if(/^the life lost this way$/.test(e)) return Math.max(0, (src && src._lostWay) || 0);
   if(/^opponents? who lost life this turn$/.test(e)) return Object.values(S.oppLost || {}).filter(k => k === turnKey()).length;
   if(/^the number of attacking creatures(?: you control)?$/.test(e)) return S.bf.filter(c => !c.fd && isCreature(c) && (S.attacking || []).includes(c.u)).length;
   if(/^the number of eldrazi you control$/.test(e)) return S.bf.filter(c => !c.fd && typeMatch(c, "Eldrazi")).length;
@@ -5128,6 +5194,7 @@ function matchStep2(p, src, full, SELF){
   if(/^(?:arrest — )?detain target creature an opponent controls$/i.test(p)) return [{t:"detain"}];
   if(/^you may choose new targets for the copy$/i.test(p) || /^\(a copy of a permanent spell becomes a token\.?\)$/i.test(p)) return [{t:"skip"}];
   if(/^untap that land$/i.test(p)) return [{t:"untapEv"}];
+  if(/^choose an opponent with the highest life total among your opponents$/i.test(p)) return [{t:"pickHighOpp"}];
   if(/^that player loses (\d+) life$/i.test(p) && ctxHint(full)) return [{t:"evPlayerLose", n:+p.match(/(\d+)/)[1]}];
   if(/^power, or toughness equal to the chosen number$/i.test(p)) return [{t:"skip"}];
   if((m = p.match(/^its controller draws (a|one|two) cards?$/i))) return [{t:"ctrlDraw", n:nWord(m[1]) || 1}];
@@ -6971,7 +7038,13 @@ async function runSteps(steps, src, ctx = {}){
         act(`${src.n}: ${oppByPid(pid)} ${st.t === "pidLoss" ? "verliert" : "erhält"} ${n} Leben`);
         break;
       }
-      case "oppLoss": { const n = await needX(); liveOpps().forEach(o => hitOpponent(o.id, {kind:"loss", amount:n, src:src.n})); break; }
+      case "oppLoss": { const n = await needX(); const os = liveOpps(); os.forEach(o => hitOpponent(o.id, {kind:"loss", amount:n, src:src.n})); src._lostWay = n * os.length; break; }
+      case "pickHighOpp": {
+        const os = liveOpps().map(o => ({...o, life:Number((others[o.id] || {}).life) || 0})); if(!os.length) break;
+        const top = Math.max(...os.map(o => o.life)); const best = os.filter(o => o.life === top);
+        const pick = best.length === 1 ? best[0] : await abilModal(`${src.n}: welcher Gegner (alle mit ${top} Leben)?`, (box, done) => best.forEach(o => box.append(btn(o.name, () => done(o), "small")))) || best[0];
+        ctx.ev = {...(ctx.ev || {}), pid:pick.id}; act(`${src.n}: wählt ${pick.name} (${top} Leben)`); break;
+      }
       case "ctrlGainPower": {
         const t = ctx.target; if(!t || t.kind !== "card") break;
         const pw = Math.max(0, Number(t.card.pw ?? 0) + (t.mine ? (t.card.c || 0) : (Number(t.card.c) || 0)));
@@ -11052,7 +11125,7 @@ function historyAdd(win){
 /* ---------- Automatische Updates ---------- */
 // Liegt die App im Web, prüft sie regelmässig version.json im selben Ordner und lädt sich bei einer neuen Version neu.
 // Alles Wichtige (Spielstand, Deck, Tisch) liegt im Browser-Speicher und ist nach dem Neuladen wieder da.
-const APP_VERSION = "2026.11.16-3";
+const APP_VERSION = "2026.11.16-5";
 const ONLINE = /^https?:$/.test(location.protocol);
 let updPending = null, updTimer = null, updSnoozeUntil = 0;
 function busyForUpdate(){ return botBusy || (!$("#modal").hidden && modalState && ["block","deck"].includes(modalState.kind)); }
@@ -11532,7 +11605,26 @@ $("#poiP").onclick = () => { S.poison++; act(`Giftmarken → ${S.poison}`); comm
 $("#poiM").onclick = () => { S.poison = Math.max(0, S.poison-1); act(`Giftmarken → ${S.poison}`); commit(); };
 $("#bDeck").onclick = openDeckDialog;
 $("#bLim").onclick = () => { if(DR.on){ limShow(); drRender(); } else if(DB){ limShow(); dbRender(); } else limOpenSetup(LS.get("kt-mode", "draft")); };
-$("#bNew").onclick = () => { if(!S.deck.length) return openDeckDialog(); startGame(); };
+$("#bNew").onclick = () => { if(!S.deck.length) return openDeckDialog(); startGame(); restartBots(); };
+/* «Neues Spiel»: die KI-Gegner starten mit (neu gemischt, neue Hand, volle Leben); bei Archenemy auch das Komplott-Deck */
+function restartBots(){
+  if(net.role === "client") return;
+  const ids = botIds(); if(!ids.length && !archOn()) return;
+  ids.forEach(id => {
+    const b = BOTS[id];
+    let deck = Array.isArray(b.deckT) && b.deckT.length ? b.deckT : [...b.library, ...b.hand, ...b.bf, ...b.gy, ...b.ex, ...b.cz].filter(c => !c.tok).map(c => ({n:c.n, img:c.img, back:c.back, type:c.type, o:c.o, mc:c.mc, cmc:c.cmc, pw:c.pwO ?? c.pw, tg:c.tgO ?? c.tg, kw:c.kw || [], pm:c.pm, cmdr:b.cz.includes(c)}));
+    if(deck.length) startBot(b.deckName, b.format, deck, id);
+  });
+  useBot("bot");
+  if(archOn()){ S.arch.deck = shuffle(S.arch.deck); S.arch.n = 0; S.arch.last = null; S.arch.lastKey = null; S.life = Math.max(40, S.life); S.startLife = S.life; act(`ist der Erzfeind: ${S.life} Leben, Komplott-Deck neu gemischt`); }
+  if(!ids.length){ commit(); return; }
+  const seats = [me.id, ...botIds()];
+  const pick = archOn() ? me.id : seats[Math.floor(Math.random() * seats.length)];
+  botIds().forEach(id => { BOTS[id].onPlay = pick === id; });
+  if(isBotId(pick)) withBot(pick, () => botLog("beginnt das neue Spiel (Auslosung)")); else botLog("Neues Spiel – Auslosung: Du beginnst.");
+  saveBot(); commit(); TURN.active = null; botChanged();
+  applyTurn({active:pick, n:1, starter:pick});
+}
 $("#bTurn").onclick = () => passTurn();
 $("#bReroll").onclick = () => rollStarter(true);
 $("#bUntap").onclick = () => { S.bf.forEach(c => { c.tap = false; c.mtap = null; }); act("enttappt alle Karten"); commit(); };

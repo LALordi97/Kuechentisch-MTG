@@ -1,4 +1,4 @@
 {
-  "version": "2026.11.16-2",
-  "notes": "Neu: bis zu drei KI-Gegner gleichzeitig. Im KI-Dialog «Anzahl KI-Gegner» wählen und jedem ein eigenes Deck geben. Die KI spielen der Reihe nach, greifen dich an und lassen sich einzeln angreifen, treffen oder entfernen. Untereinander greifen sie sich nicht an."
+  "version": "2026.11.16-5",
+  "notes": "Neu: Archenemy – im KI-Dialog «Ich bin der Erzfeind» anhaken: 40 Leben, du beginnst, zu Beginn jedes deiner Züge setzt die App ein Komplott aus deinem Komplott-Deck (20 echte Komplotte von Scryfall) in Gang; die KI spielen als Team gegen dich. Ohne Archenemy greifen sich die KI jetzt auch gegenseitig an. «Neues Spiel» startet die KI-Gegner mit neu."
 }
