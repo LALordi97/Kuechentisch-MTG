@@ -18,3 +18,4 @@ node parse_dump.js report27_cards.json   # zeigt, wie die App Kartentexte zerleg
 - `node night_cards.js 30`: nächste ungeprüfte Karten aus `oracle_decks.json` (vom GitHub-Ablauf) als Prüfdatei.
 - `node stackabil_test.js`: Fähigkeiten auf dem Stapel im Mehrspieler (läuft in reg.sh seriell).
 - `node loop_test.js`: Erkennung von Endlosschleifen (Zirda + Grim Monolith, Lion's Eye Diamond, Schaden, Spielsteine).
+- `node multibot_test.js`: mehrere KI-Gegner (Zugfolge, eigene Decks, Kampf, Schaden, Ausscheiden, Speichern; läuft in reg.sh seriell).

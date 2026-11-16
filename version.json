@@ -1,4 +1,4 @@
 {
-  "version": "2026.11.16-1",
-  "notes": "Meld: Hanweir Battlements verschmilzt mit Hanweir Garrison zu Hanweir, the Writhing Township; Mishra, Claimed by Gix verschmilzt im Angriff mit Phyrexian Dragon Engine. Verlässt die verschmolzene Karte das Spiel, gehen beide Karten mit. Token, die «getappt und angreifend» entstehen (Hanweir Garrison u. ä.), greifen jetzt wirklich mit an. Grist, the Hunger Tide: +1 wiederholt sich, solange ein Insekt gemahlen wird; ausserhalb des Spiels ist Grist eine Insekt-Kreatur."
+  "version": "2026.11.16-2",
+  "notes": "Neu: bis zu drei KI-Gegner gleichzeitig. Im KI-Dialog «Anzahl KI-Gegner» wählen und jedem ein eigenes Deck geben. Die KI spielen der Reihe nach, greifen dich an und lassen sich einzeln angreifen, treffen oder entfernen. Untereinander greifen sie sich nicht an."
 }
