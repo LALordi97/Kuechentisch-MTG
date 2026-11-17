@@ -1,0 +1,569 @@
+[
+ [
+  "A Display of My Dark Power",
+  "Sorcery",
+  "Until your next turn, whenever a player taps a land for mana, that player adds one mana of any type that land produced.",
+  "",
+  0
+ ],
+ [
+  "A Premonition of Your Demise",
+  "Sorcery",
+  "Reveal the top two cards of your library and put them into your hand. When you reveal one or more nonland cards this way, this scheme deals damage equal to their total mana value to any target.",
+  "",
+  0
+ ],
+ [
+  "A Reckoning Approaches",
+  "Sorcery",
+  "Look at the top six cards of your library. You may put a creature card from among them onto the battlefield. Put the rest on the bottom of your library in any order.",
+  "",
+  0
+ ],
+ [
+  "All Shall Smolder in My Wake",
+  "Sorcery",
+  "Destroy up to one target artifact, up to one target enchantment, and up to one target nonbasic land.",
+  "",
+  0
+ ],
+ [
+  "All in Good Time",
+  "Sorcery",
+  "Take an extra turn after this one. Schemes can't be set in motion that turn.",
+  "",
+  0
+ ],
+ [
+  "Approach My Molten Realm",
+  "Sorcery",
+  "Until your next turn, if a source would deal damage, it deals double that damage instead.",
+  "",
+  0
+ ],
+ [
+  "Behold My Grandeur",
+  "Sorcery",
+  "Add {U}{B}{R}.\nIf you control six or more lands, you may search your library for a card with mana value 6 or greater, reveal it, put it into your hand, then shuffle.",
+  "",
+  0
+ ],
+ [
+  "Behold the Power of Destruction",
+  "Sorcery",
+  "Destroy all nonland permanents target opponent controls.",
+  "",
+  0
+ ],
+ [
+  "Chaos Is My Plaything",
+  "Sorcery",
+  "For each opponent, exile target permanent that player controls. Then each player reveals cards from the top of their library until they reveal a permanent card, puts it onto the battlefield, and puts the rest on the bottom of their library in a random order.",
+  "",
+  0
+ ],
+ [
+  "Choose Your Champion",
+  "Sorcery",
+  "Target opponent chooses a player. Until your next turn, only you and the chosen player can cast spells and attack with creatures.",
+  "",
+  0
+ ],
+ [
+  "Choose Your Demise",
+  "Sorcery",
+  "Look at the top four cards of your library and separate them into a face-down pile and a face-up pile. An opponent chooses one of those piles. Put the cards in that pile into your hand and the rest on the bottom of your library in any order.",
+  "",
+  0
+ ],
+ [
+  "Dance, Pathetic Marionette",
+  "Sorcery",
+  "Each opponent reveals cards from the top of their library until they reveal a creature card. Choose one of the revealed creature cards and put it onto the battlefield under your control. Put all other cards revealed this way into their owners' graveyards.",
+  "",
+  0
+ ],
+ [
+  "Delight in the Hunt",
+  "Sorcery",
+  "Create a 3/3 black Horror creature token and prevent all damage that would be dealt to creatures you control this turn.",
+  "",
+  0
+ ],
+ [
+  "Drench the Soil in Their Blood",
+  "Sorcery",
+  "After this main phase, there is an additional combat phase followed by an additional main phase. Creatures you control gain vigilance until end of turn.",
+  "",
+  0
+ ],
+ [
+  "Embrace My Diabolical Vision",
+  "Sorcery",
+  "Each player shuffles their hand and graveyard into their library. You draw seven cards, then each other player draws four cards.",
+  "",
+  0
+ ],
+ [
+  "Every Dream a Nightmare",
+  "Sorcery",
+  "Each opponent discards a card. You draw a card for each land card discarded this way.",
+  "",
+  0
+ ],
+ [
+  "Every Hope Shall Vanish",
+  "Sorcery",
+  "Each opponent reveals their hand. Choose a nonland card from each of those hands. Those players discard those cards.",
+  "",
+  0
+ ],
+ [
+  "Every Last Vestige Shall Rot",
+  "Sorcery",
+  "You may pay {X}. If you do, put each nonland permanent target player controls with mana value X or less on the bottom of its owner's library.",
+  "",
+  0
+ ],
+ [
+  "Evil Comes to Fruition",
+  "Sorcery",
+  "Create seven 0/1 green Plant creature tokens. If you control ten or more lands, create seven 3/3 green Elemental creature tokens instead.",
+  "",
+  0
+ ],
+ [
+  "Feed the Machine",
+  "Sorcery",
+  "Target opponent chooses self or others. If that player chooses self, the player sacrifices two creatures of their choice. If the player chooses others, each of your other opponents sacrifices a creature of their choice.",
+  "",
+  0
+ ],
+ [
+  "For Each of You, a Gift",
+  "Sorcery",
+  "For each opponent, create a 3/3 black Horror creature token that attacks that player each combat if able.",
+  "",
+  0
+ ],
+ [
+  "I Am Never Alone",
+  "Sorcery",
+  "Create a token that's a copy of your commander, except it's not legendary.",
+  "",
+  0
+ ],
+ [
+  "I Call for Slaughter",
+  "Sorcery",
+  "Create three 1/1 red Devil creature tokens with \"When this token dies, it deals 1 damage to any target.\" They gain haste until end of turn. If a source you control would deal damage this turn, it deals that much damage plus 1 instead.",
+  "",
+  0
+ ],
+ [
+  "I Call on the Ancient Magics",
+  "Sorcery",
+  "Each other player searches their library for a card, reveals it, and puts it into their hand. Then you search your library for two cards and put them into your hand. Each player shuffles.",
+  "",
+  0
+ ],
+ [
+  "I Delight in Your Convulsions",
+  "Sorcery",
+  "Each opponent loses 3 life. You gain life equal to the life lost this way.",
+  "",
+  0
+ ],
+ [
+  "I Will Savor Your Agony",
+  "Sorcery",
+  "Choose three. You may choose the same mode more than once.\n• Destroy target creature.\n• Target player draws a card.\n• Target player gains 5 life.",
+  "",
+  0
+ ],
+ [
+  "Ignite the Cloneforge!",
+  "Sorcery",
+  "Create a token that's a copy of target permanent an opponent controls.",
+  "",
+  0
+ ],
+ [
+  "Into the Earthen Maw",
+  "Sorcery",
+  "Exile up to one target creature with flying, up to one target creature without flying, and all cards from up to one target opponent's graveyard.",
+  "",
+  0
+ ],
+ [
+  "Introductions Are in Order",
+  "Sorcery",
+  "Choose one —\n• Search your library for a creature card, reveal it, put it into your hand, then shuffle.\n• You may put a creature card from your hand onto the battlefield.",
+  "",
+  0
+ ],
+ [
+  "Kneel Before My Legions",
+  "Sorcery",
+  "Choose one —\n• Create a 4/4 colorless Scarecrow artifact creature token with vigilance.\n• Creatures you control get +3/+3 and gain vigilance and trample until end of turn.",
+  "",
+  0
+ ],
+ [
+  "Know Evil",
+  "Sorcery",
+  "Until your next turn, up to one target opponent can't attack with creatures, up to one target opponent can't cast creature spells, and up to one target opponent can't cast noncreature spells. You can't choose any player as a target more than once.",
+  "",
+  0
+ ],
+ [
+  "Know Naught but Fire",
+  "Sorcery",
+  "It deals damage to each opponent equal to the number of cards in that player's hand.",
+  "",
+  0
+ ],
+ [
+  "Look Skyward and Despair",
+  "Sorcery",
+  "Create a 5/5 red Dragon creature token with flying.",
+  "",
+  0
+ ],
+ [
+  "Make Yourself Useful",
+  "Sorcery",
+  "Destroy target creature an opponent controls. If a creature is destroyed this way, you gain life equal to its toughness.",
+  "",
+  0
+ ],
+ [
+  "May Civilization Collapse",
+  "Sorcery",
+  "Target opponent chooses self or others. If that player chooses self, that player sacrifices two lands of their choice. If the player chooses others, each of your other opponents sacrifices a land of their choice.",
+  "",
+  0
+ ],
+ [
+  "Mortal Flesh Is Weak",
+  "Sorcery",
+  "Each opponent's life total becomes the lowest life total among your opponents.",
+  "",
+  0
+ ],
+ [
+  "My Crushing Masterstroke",
+  "Sorcery",
+  "Gain control of all nonland permanents your opponents control until end of turn. Untap those permanents. They gain haste until end of turn. Each of them attacks its owner this turn if able.",
+  "",
+  0
+ ],
+ [
+  "My Followers Ascend",
+  "Sorcery",
+  "Put five +1/+1 counters on a creature you control and it gains flying and vigilance until end of turn. If you control no creatures, instead create a 4/4 colorless Scarecrow artifact creature token with vigilance.",
+  "",
+  0
+ ],
+ [
+  "My Genius Knows No Bounds",
+  "Sorcery",
+  "You may pay {X}. If you do, you gain X life and draw X cards.",
+  "",
+  0
+ ],
+ [
+  "My Wealth Will Bury You",
+  "Sorcery",
+  "Create a number of Treasure tokens equal to the number of artifacts and enchantments your opponents control. If they control fewer than four artifacts and enchantments, create four Treasure tokens instead. (Treasure tokens are artifacts with \"{T}, Sacrifice this token: Add one mana of any color.\")",
+  "",
+  0
+ ],
+ [
+  "My Will Is Irresistible",
+  "Sorcery",
+  "Choose up to three nonland permanents you don't control. Target opponent chooses one of those permanents. You gain control of the rest.",
+  "",
+  0
+ ],
+ [
+  "My Wings Enfold All",
+  "Sorcery",
+  "Choose one —\n• Draw two cards.\n• Until end of turn, whenever you cast an instant or sorcery spell, copy it. You may choose new targets for the copy.",
+  "",
+  0
+ ],
+ [
+  "My Wish Is Your Command",
+  "Sorcery",
+  "Each opponent reveals their hand. You may choose a noncreature, nonland card revealed this way and cast it without paying its mana cost.",
+  "",
+  0
+ ],
+ [
+  "Nature Demands an Offering",
+  "Sorcery",
+  "Target opponent chooses a creature you don't control and puts it on top of its owner's library, then repeats this process for an artifact, an enchantment, and a land. Then the owner of each permanent chosen this way shuffles.",
+  "",
+  0
+ ],
+ [
+  "No One Will Hear Your Cries",
+  "Sorcery",
+  "Each opponent chooses a creature they control, then sacrifices the rest.",
+  "",
+  0
+ ],
+ [
+  "No Secret Is Hidden from Me",
+  "Sorcery",
+  "Exile cards from the top of your library until you exile a nonland card. You may cast that card without paying its mana cost. Then if you control six or more lands, repeat this process once.",
+  "",
+  0
+ ],
+ [
+  "Only Blood Ends Your Nightmares",
+  "Sorcery",
+  "Each opponent sacrifices a creature of their choice. Then each opponent who didn't sacrifice a creature discards two cards.",
+  "",
+  0
+ ],
+ [
+  "Only I Know What Awaits",
+  "Sorcery",
+  "For each card type among permanents your opponents control, you may put a permanent card of that type from your hand onto the battlefield.",
+  "",
+  0
+ ],
+ [
+  "Pay Tribute to Me",
+  "Sorcery",
+  "Each opponent sacrifices a creature of their choice. If you control six or more lands, each opponent sacrifices another creature of their choice.",
+  "",
+  0
+ ],
+ [
+  "Perhaps You've Met My Cohort",
+  "Sorcery",
+  "Search your library for a planeswalker card, put it onto the battlefield, then shuffle your library.",
+  "",
+  0
+ ],
+ [
+  "Plots That Span Centuries",
+  "Sorcery",
+  "The next time you would set a scheme in motion, set three schemes in motion instead.",
+  "",
+  0
+ ],
+ [
+  "Power Without Equal",
+  "Sorcery",
+  "Draw three cards. You have no maximum hand size until your next turn. If you control six or more lands, you may cast up to three spells from your hand without paying their mana costs.",
+  "",
+  0
+ ],
+ [
+  "Realms Befitting My Majesty",
+  "Sorcery",
+  "Search your library for up to two basic land cards, put them onto the battlefield tapped, then shuffle.",
+  "",
+  0
+ ],
+ [
+  "Roots of All Evil",
+  "Sorcery",
+  "Create five 1/1 green Saproling creature tokens.",
+  "",
+  0
+ ],
+ [
+  "Rot Like the Scum You Are",
+  "Sorcery",
+  "Create a 2/2 green Ooze creature token, then put a number of +1/+1 counters on it equal to the number of lands your opponents control.",
+  "",
+  0
+ ],
+ [
+  "Rotted Ones, Lay Siege",
+  "Sorcery",
+  "For each opponent, create a 2/2 black Zombie creature token that attacks that player each combat if able.",
+  "",
+  0
+ ],
+ [
+  "Running Is Useless",
+  "Sorcery",
+  "Choose any number of creatures with different mana values. Destroy those creatures.",
+  "",
+  0
+ ],
+ [
+  "Surrender Your Thoughts",
+  "Sorcery",
+  "Target opponent chooses self or others. If that player chooses self, that player discards four cards. If the player chooses others, each of your other opponents discards two cards.",
+  "",
+  0
+ ],
+ [
+  "The Dead Shall Serve",
+  "Sorcery",
+  "For each opponent, put up to one target creature card from that player's graveyard onto the battlefield under your control. Each of those creatures attacks its owner each combat if able.",
+  "",
+  0
+ ],
+ [
+  "The Fate of the Flammable",
+  "Sorcery",
+  "Target opponent chooses self or others. If that player chooses self, this scheme deals 6 damage to that player. If the player chooses others, this scheme deals 3 damage to each of your other opponents.",
+  "",
+  0
+ ],
+ [
+  "The Iron Guardian Stirs",
+  "Sorcery",
+  "Create a 4/6 colorless Golem artifact creature token.",
+  "",
+  0
+ ],
+ [
+  "The Mighty Will Fall",
+  "Sorcery",
+  "Choose an opponent with the highest life total among your opponents. That player loses 7 life.",
+  "",
+  0
+ ],
+ [
+  "The Pieces Are Coming Together",
+  "Sorcery",
+  "Draw two cards. Artifact spells you cast this turn cost {2} less to cast.",
+  "",
+  0
+ ],
+ [
+  "There Is No Refuge",
+  "Sorcery",
+  "It deals 3 damage to up to one target creature. Create a 3/3 black Horror creature token.",
+  "",
+  0
+ ],
+ [
+  "This World Belongs to Me",
+  "Sorcery",
+  "Draw two cards. You may play an additional land this turn.",
+  "",
+  0
+ ],
+ [
+  "Time Bends to My Will",
+  "Sorcery",
+  "Take an extra turn after this one. Skip the untap step of that turn.",
+  "",
+  0
+ ],
+ [
+  "Tooth, Claw, and Tail",
+  "Sorcery",
+  "Destroy up to three target nonland permanents.",
+  "",
+  0
+ ],
+ [
+  "What's Yours Is Now Mine",
+  "Sorcery",
+  "Gain control of target creature an opponent controls and untap it.",
+  "",
+  0
+ ],
+ [
+  "When Will You Learn?",
+  "Sorcery",
+  "Each opponent exiles the top card of their library. You may cast any number of spells from among cards exiled this way without paying their mana costs.",
+  "",
+  0
+ ],
+ [
+  "Which of You Burns Brightest?",
+  "Sorcery",
+  "You may pay {X}. If you do, this scheme deals X damage to target opponent or planeswalker and each creature that player or that planeswalker's controller controls.",
+  "",
+  0
+ ],
+ [
+  "You Are Unworthy of Mercy",
+  "Sorcery",
+  "Each opponent sacrifices a nonland permanent of their choice. If you control six or more lands, each opponent sacrifices three nonland permanents of their choice instead.",
+  "",
+  0
+ ],
+ [
+  "You Exist Only to Amuse",
+  "Sorcery",
+  "Choose one. If you control six or more lands, choose both instead.\n• Create three 1/1 red Devil creature tokens with \"When this token dies, it deals 1 damage to any target.\"\n• Until your next turn, creatures your opponents control have base power and toughness 1/1 and lose all abilities.",
+  "",
+  0
+ ],
+ [
+  "You Live Only Because I Will It",
+  "Sorcery",
+  "You may redistribute any number of life totals. (Each affected player or team gets one of those life totals back.)",
+  "",
+  0
+ ],
+ [
+  "You Will Know True Suffering",
+  "Sorcery",
+  "It deals damage equal to your commander's mana value to each noncommander creature your opponents control.",
+  "",
+  0
+ ],
+ [
+  "Your Fate Is Thrice Sealed",
+  "Sorcery",
+  "Reveal the top three cards of your library. Put all land cards revealed this way onto the battlefield and the rest into your hand.",
+  "",
+  0
+ ],
+ [
+  "Your Mistake Is My Triumph",
+  "Sorcery",
+  "Each player mills three cards. Then you put a permanent card from among the milled cards onto the battlefield under your control.",
+  "",
+  0
+ ],
+ [
+  "Your Nightmares Are Delicious",
+  "Sorcery",
+  "Each opponent who has more than five cards in hand discards cards equal to the difference. Then if fewer than three cards were discarded this way, you draw three cards.",
+  "",
+  0
+ ],
+ [
+  "Your Own Face Mocks You",
+  "Sorcery",
+  "Choose up to two target creatures your opponents control. For each one, create a token that's a copy of it. If you created fewer than two tokens this way, create a number of 4/4 colorless Scarecrow artifact creature tokens with vigilance equal to the difference.",
+  "",
+  0
+ ],
+ [
+  "Your Plans Mean Nothing",
+  "Sorcery",
+  "Any number of target players each discard their hands. Each opponent draws cards equal to the number of cards that player discarded minus one. Then if you discarded a card this way, draw seven cards.",
+  "",
+  0
+ ],
+ [
+  "Your Puny Minds Cannot Fathom",
+  "Sorcery",
+  "Draw four cards. You have no maximum hand size until your next turn.",
+  "",
+  0
+ ],
+ [
+  "Your Will Is Not Your Own",
+  "Sorcery",
+  "Gain control of target creature an opponent controls until end of turn. Untap that creature. It gets +3/+3 and gains trample and haste until end of turn.",
+  "",
+  0
+ ]
+]

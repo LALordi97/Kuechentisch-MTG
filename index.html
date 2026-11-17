@@ -1522,7 +1522,7 @@ function setStatus(t){ $("#status").textContent = t; }
 function pub(){
   const strip = c => {
     const base = {u:c.u, tap:c.tap, c:c.c, type:c.type, x:c.x, y:c.y, eq: typeof c.eq === "string" ? c.eq : undefined, chosen: typeof c.chosen === "string" ? c.chosen.slice(0, 60) : undefined, ow: c.ow ? c.ow.name : undefined, phased: c.phased ? true : undefined, void: c.void ? true : undefined, eqPid: typeof c.eqPid === "string" ? c.eqPid : undefined};
-    return c.fd ? {...base, fd:true} : {...base, n:c.n, img:c.img, back:c.back, flip:c.flip, tok:c.tok, pw:c.pwO ?? c.pw, tg:c.tgO ?? c.tg, pto: c.pwO != null, kw:[...(c.kw || []), ...(c.tkw || []), ...(c.kwc || [])].filter(k => !(c.tkwOff || []).includes(String(k).toLowerCase())).slice(0, 10), mc:String(c.mc || "").slice(0, 40), cmc:Number(c.cmc) || 0};
+    return c.fd ? {...base, fd:true} : {...base, n:c.n, img:c.img, back:c.back, flip:c.flip, tok:c.tok, pw:c.pwO ?? c.pw, tg:c.tgO ?? c.tg, pto: c.pwO != null, kw:[...(c.kw || []), ...(c.tkw || []), ...(c.kwc || [])].filter(k => !(c.tkwOff || []).includes(String(k).toLowerCase())).slice(0, 10), mc:String(c.mc || "").slice(0, 40), cmc:Number(c.cmc) || 0, cmdr: c.cmdr ? true : undefined};
   };
   const m = S.match || {w:0, l:0};
   return {name: me.name, life:S.life, poison:S.poison, turn:S.turn, handN:S.hand.length, libN:S.library.length,
@@ -2118,7 +2118,7 @@ const tough0 = c => (c.pumpBase ? c.pumpBase.t : (c.tgO ?? (goyfPT(c) || {}).t ?
 function botLog(text){ sendLog({from:botName(), text, sys:true}); }
 function botSay(text){ if(text && String(text).trim()) sendLog({from:botName(), text:String(text).trim().slice(0, 200), sys:false}); }
 function botPub(){
-  const strip = c => ({u:c.u, n:c.n, img:c.img, back:c.back, type:c.type, tap:c.tap, flip:false, c:c.c, tok:c.tok, x:c.x, y:c.y, void:!!c.void, pw:c.pwO ?? c.pw, tg:c.tgO ?? c.tg, kw:[...(c.kw || []), ...(c.tkw || [])].slice(0, 10), mc:c.mc, cmc:c.cmc});
+  const strip = c => ({u:c.u, n:c.n, img:c.img, back:c.back, type:c.type, tap:c.tap, flip:false, c:c.c, tok:c.tok, x:c.x, y:c.y, void:!!c.void, pw:c.pwO ?? c.pw, tg:c.tgO ?? c.tg, kw:[...(c.kw || []), ...(c.tkw || [])].slice(0, 10), mc:c.mc, cmc:c.cmc, cmdr: c.cmdr ? true : undefined});
   return {name: botName() + (BOT.deckName ? " · " + BOT.deckName : "") + (claudeOn() ? " (Claude)" : ""), initiative: !!BOT.initiative, monarch: !!BOT.monarch, life:BOT.life, poison:BOT.poison, turn:BOT.turn,
     handN:BOT.hand.length, libN:BOT.library.length, bf:BOT.bf.map(strip), gy:BOT.gy.map(strip), ex:BOT.ex.map(strip), cz:BOT.cz.map(strip)};
 }
@@ -3364,7 +3364,7 @@ function onMyTurnStart(){
   if(S.turn === 1) pregameFirstTurnReminder();
   setTimeout(sagaAdvanceAll, 0); // Sagas: Kapitelmarke nach dem Ziehen
   emptyPool("neuer Zug");
-  { const choke = allBfCards().some(x => x.n === "Choke" || /^Islands don't untap during their controllers' untap steps/im.test(x.o || "")); S.bf.forEach(c => { c._noUntap = (choke && typeMatch(c, "Island")) || (c.stun > 0); }); }
+  { const choke = allBfCards().some(x => x.n === "Choke" || /^Islands don't untap during their controllers' untap steps/im.test(x.o || "")); const skipU = !!S.skipUntapNext; if(skipU){ S.skipUntapNext = false; act("überspringt den Enttappschritt (Time Bends to My Will)"); } S.bf.forEach(c => { c._noUntap = skipU || (choke && typeMatch(c, "Island")) || (c.stun > 0); }); }
   S.bf.forEach(c => { delete c.phased; if(c._noUntap){ if(c.stun > 0 && c.tap){ c.stun--; act(`${c.n}: Betäubungsmarke entfernt statt Enttappen (noch ${c.stun})`); } else if(c.tap) act(`${c.n} bleibt getappt (Choke)`); delete c._noUntap; return; } if(c.exertKey != null && c.exertKey === S.turn - 1){ act(`${c.n} bleibt getappt (angestrengt)`); return; } if(!/doesn't untap during your untap step/i.test(c.o || "")) c.tap = false; });
   S.protect = null; if(S.lifeLock && !S.lifeLock.eot) S.lifeLock = null;
   if(Array.isArray(S.locks)) S.locks = S.locks.filter(l => !l.untilNext);
@@ -3489,11 +3489,25 @@ async function schemeDeckBuild(onProg){
   const rest = shuffle(all.filter(sc => !auto.includes(sc)));
   return shuffle([...auto, ...rest].slice(0, 20));
 }
+// KI bei «chooses self or others»: allein → die anderen trifft es (niemand); sonst sich selbst, wenn es sie wenig kostet
+function botSelfOthers(q){
+  if((parseInt(q.on, 10) || 0) <= 0) return "others";
+  const t = String(q.self || "").toLowerCase(); let m;
+  if((m = t.match(/deals (\d+) damage/))) return BOT.life > +m[1] + 10 ? "self" : "others";
+  if((m = t.match(/sacrifices (\w+) (creature|land)s?/))){ const have = BOT.bf.filter(c => /creature/.test(m[2]) ? isCreature(c) : isLand(c)).length; return have === 0 ? "self" : "others"; }
+  if(/discards/.test(t)) return BOT.hand.length <= 1 ? "self" : "others";
+  return "others";
+}
 function archOn(){ return !!(S && S.arch && S.arch.on); }
 async function schemeMotion(manual){
   if(!archOn() || !S.arch.deck.length) return;
   if(!manual && S.arch.lastKey === turnKey()) return;
   S.arch.lastKey = turnKey();
+  if(!manual && S.arch.skipNext){ S.arch.skipNext = false; act("setzt in diesem Zug kein Komplott in Gang (All in Good Time)"); commit(); return; }
+  const times = S.arch.triple ? 3 : 1; S.arch.triple = false;
+  for(let k = 0; k < times && archOn(); k++) await schemeMotionOne();
+}
+async function schemeMotionOne(){
   const sc = S.arch.deck.shift(); S.arch.deck.push(sc); S.arch.last = sc; S.arch.n = (S.arch.n || 0) + 1;
   act(`setzt das Komplott «${sc.n}» in Gang`); commit();
   await abilModal(`Komplott: ${sc.n}`, (box, done) => {
@@ -4956,6 +4970,7 @@ function costMods(spell){
     if(/for each/i.test(m[3])){ if(/experience counter/i.test(m[3])) v *= marksOf().XP; else if(/creature in your party/i.test(m[3])) v *= partySize(); else return; }
     if(v){ less += v; why.push(`${c.n} −${v}`); }
   }));
+  (Array.isArray(S.costLessTurn) ? S.costLessTurn : []).forEach(x => { if(x.key === turnKey() && isType(x.desc) && x.n){ less += x.n; why.push(`${x.src} −${x.n}`); } });
   const TAX = {
     "Sphere of Resistance": () => 1,
     "Thalia, Guardian of Thraben": () => /Creature/.test(t) ? 0 : 1,
@@ -5152,6 +5167,38 @@ function matchStep2(p, src, full, SELF){
   p = p.replace(/^(he|she) deals /i, "it deals ");
   if(/^exile target spell$/i.test(p)) return [{t:"stackExile", plot:/It becomes plotted/i.test(full || "")}];
   if(/^it becomes plotted$/i.test(p)) return [{t:"skip"}];
+  // Nacht 17.11.2026: Komplotte (Archenemy)
+  { const SO = String(full || "").match(/Target opponent chooses self or others\. If that player chooses self, (.+?)\. If the player chooses others, (.+?)\./i);
+    if(SO){
+      if(/^target opponent chooses self or others$/i.test(p)) return [{t:"selfOthers", self:SO[1], others:SO[2]}];
+      if(/^if (?:that|the) player chooses (?:self|others), /i.test(p) || /^(?:that player|the player|each of your other opponents) /i.test(p)) return [{t:"skip"}];
+    } }
+  if(/^it deals damage to each opponent equal to the number of cards in that player's hand$/i.test(p)) return [{t:"oppHandDmg"}];
+  // ganze Komplott-Texte: der erste Teil macht alles, die übrigen Teile entfallen
+  { const F = String(full || "").trim(), WHOLE = [
+      [/^It deals damage equal to your commander's mana value to each noncommander creature your opponents control\.?$/i, () => ({t:"sufferCmdr"})],
+      [/^Create a token that's a copy of your commander, except it's not legendary\.?$/i, () => ({t:"neverAlone"})],
+      [/^Each opponent sacrifices a creature of their choice\. Then each opponent who didn't sacrifice a creature discards two cards\.?$/i, () => ({t:"bloodNight"})],
+      [/^Each opponent chooses a creature they control, then sacrifices the rest\.?$/i, () => ({t:"noOneCries"})],
+      [/^Each opponent who has more than five cards in hand discards cards equal to the difference\. Then if fewer than three cards were discarded this way, you draw three cards\.?$/i, () => ({t:"nightmaresDel"})],
+      [/^Put five \+1\/\+1 counters on a creature you control and it gains flying and vigilance until end of turn\. If you control no creatures, instead create a 4\/4 colorless Scarecrow artifact creature token with vigilance\.?$/i, () => ({t:"followersAscend"})],
+      [/^For each opponent, create an? (\d+\/\d+ [a-z ]+? creature) token that attacks that player each combat if able\.?$/i, mm => ({t:"tokPerOpp", desc:mm[1]})],
+      [/^Each player shuffles their hand and graveyard into their library\. You draw seven cards, then each other player draws four cards\.?$/i, () => ({t:"embraceVision"})],
+      [/^Each opponent reveals their hand\. Choose a nonland card from each of those hands\. Those players discard those cards\.?$/i, () => ({t:"everyHope"})],
+      [/^Each opponent discards a card\. You draw a card for each land card discarded this way\.?$/i, () => ({t:"dreamLand"})]];
+    for(const [re, mk] of WHOLE){ const mm = F.match(re); if(mm) return F.toLowerCase().startsWith(p.toLowerCase()) ? [mk(mm)] : [{t:"skip"}]; } }
+  if(/^each opponent's life total becomes the lowest life total among your opponents$/i.test(p)) return [{t:"lifeLowest"}];
+  if(/^you may play an additional land this turn$/i.test(p)) return [{t:"noteOnly", text:"Du darfst diesen Zug ein zusätzliches Land spielen."}];
+  if((m = p.match(/^(artifact|creature|enchantment|instant|sorcery|noncreature) spells you cast this turn cost \{(\d+)\} less to cast$/i))) return [{t:"costLessTurn", desc:m[1].toLowerCase(), n:+m[2]}];
+  if(/^the next time you would set a scheme in motion, set three schemes in motion instead$/i.test(p)) return [{t:"schemeTriple"}];
+  if(/^schemes can't be set in motion that turn$/i.test(p) && /take an extra turn after this one/i.test(full || "")) return [{t:"schemeSkip"}];
+  if(/^skip the untap step of that turn$/i.test(p) && /take an extra turn after this one/i.test(full || "")) return [{t:"skipUntapNext"}];
+  if(/^create a number of Treasure tokens equal to the number of artifacts and enchantments your opponents control$/i.test(p)) return [{t:"wealthTreasure", min:/If they control fewer than four artifacts and enchantments, create four Treasure tokens instead/i.test(full || "") ? 4 : 0}];
+  if(/^if they control fewer than four artifacts and enchantments, create four Treasure tokens instead$/i.test(p)) return [{t:"skip"}];
+  { const EF = String(full || "").match(/^Create seven 0\/1 green Plant creature tokens\. If you control ten or more lands, create seven 3\/3 green Elemental creature tokens instead/i);
+    if(EF){ if(/^create seven 0\/1 green Plant creature tokens$/i.test(p)) return [{t:"evilFruit"}]; if(/^if you control ten or more lands, create seven /i.test(p)) return [{t:"skip"}]; } }
+  if(/^(?:then )?put a number of \+1\/\+1 counters on it equal to the number of lands your opponents control$/i.test(p)) return [{t:"oozeLands"}];
+  if(/^if a creature is destroyed this way, you gain life equal to its toughness$/i.test(p)) return [{t:"gainTgtTough"}];
   // Nacht 16.11.2026: Grist, the Hunger Tide (+1 wiederholt sich, solange ein Insekt gemahlen wird)
   { const GL = String(full || "").match(/create (an? .+? creature) token, then mill a card\. If an? ([A-Z]\w+) card was milled this way, put a loyalty counter on [^.]+? and repeat this process/i);
     if(GL){
@@ -7186,6 +7233,128 @@ async function runSteps(steps, src, ctx = {}){
         break;
       }
       case "otherwise": if(ctx.ifItRes === false && st.then.length) await runSteps(st.then, src, ctx); break;
+      case "selfOthers": {
+        const opps = liveOpps(); if(!opps.length) break;
+        let pid = opps.length === 1 ? opps[0].id : ((await pickTarget(`${src.n}: welcher Gegner?`, "target opponent", false)) || {}).pid;
+        if(!pid) break;
+        const r = await requestOpp(pid, {kind:"selfOthers", self:st.self, others:st.others, on:liveOpps().length - 1, src:src.n});
+        const ch = r && (r.choice === "self" || r.choice === "others") ? r.choice : "self";
+        act(`${src.n}: ${oppByPid(pid)} wählt «${ch === "self" ? "sich selbst" : "die anderen"}»`);
+        const hit = async (eff, who) => {
+          let m; eff = String(eff).replace(/^(?:that player|the player|each of your other opponents) /i, "");
+          if((m = eff.match(/^this scheme deals (\d+) damage to (?:that player|each of your other opponents)$/i))){ hitOpponent(who, {kind:"damage", amount:+m[1], src:src.n}); act(`${src.n}: ${m[1]} Schaden an ${oppByPid(who)}`); return; }
+          eff = eff.replace(/^this scheme /i, "");
+          await oppInteraction("that player " + eff.replace(/ of their choice$/i, ""), src, {...ctx, pid:who});
+        };
+        if(ch === "self") await hit(st.self, pid);
+        else for(const o of liveOpps().filter(o => o.id !== pid)) await hit(st.others, o.id);
+        break;
+      }
+      case "sufferCmdr": {
+        const cm = S.bf.find(c => c.cmdr && !c.fd) || (S.cz || [])[0];
+        if(!cm){ act(`${src.n}: kein Commander`); break; }
+        const n = Number(cm.cmc) || 0; if(!n) break;
+        for(const o of liveOpps()) (Array.isArray((others[o.id] || {}).bf) ? others[o.id].bf : []).filter(c => c && !c.fd && /Creature/.test(c.type || "") && !c.cmdr).forEach(c => hitOpponent(o.id, {kind:"damage", amount:n, card:c.u, src:src.n}));
+        act(`${src.n}: ${n} Schaden (Manawert von ${cm.n}) an jede Nicht-Commander-Kreatur der Gegner`); break;
+      }
+      case "neverAlone": {
+        const cm = S.bf.find(c => c.cmdr && !c.fd) || (S.cz || [])[0];
+        if(!cm){ act(`${src.n}: kein Commander`); break; }
+        const tk = newCard({n:cm.n, type:String(cm.type || "").replace(/^Legendary\s+/i, ""), o:cm.o, mc:cm.mc, cmc:cm.cmc, img:cm.img, pw:cm.pw, tg:cm.tg, kw:cm.kw, tok:true});
+        S.bf.push(tk); markOnMove(tk, "stack", "bf"); act(`${src.n}: Token-Kopie von ${cm.n} (nicht legendär)`); commit(); break;
+      }
+      case "bloodNight": {
+        for(const o of liveOpps()){
+          const r = await requestOpp(o.id, {kind:"sacrifice", n:1, desc:"creature", src:src.n});
+          const got = r && Array.isArray(r.cards) && r.cards.length;
+          act(`${src.n}: ${o.name} opfert ${got ? r.cards.join(", ") : "keine Kreatur"}`);
+          if(!got) await oppInteraction("that player discards two cards", src, {...ctx, pid:o.id});
+        }
+        break;
+      }
+      case "noOneCries": {
+        for(const o of liveOpps()){
+          const k = (Array.isArray((others[o.id] || {}).bf) ? others[o.id].bf : []).filter(c => c && !c.fd && /Creature/.test(c.type || "")).length;
+          if(k > 1){ const r = await requestOpp(o.id, {kind:"sacrifice", n:k - 1, desc:"creature", src:src.n}); act(`${src.n}: ${o.name} behält eine Kreatur und opfert ${r && r.cards && r.cards.length ? r.cards.join(", ") : "nichts"}`); }
+        }
+        break;
+      }
+      case "nightmaresDel": {
+        let tot = 0;
+        for(const o of liveOpps()){
+          const h = Number((others[o.id] || {}).handN) || 0; if(h <= 5) continue;
+          const r = await requestOpp(o.id, {kind:"discard", n:h - 5, src:src.n});
+          const k = r && Array.isArray(r.cards) ? r.cards.length : 0; tot += k; act(`${src.n}: ${o.name} wirft ${k} Karte(n) ab`);
+        }
+        if(tot < 3){ act(`${src.n}: nur ${tot} abgeworfen – du ziehst drei`); draw(3); }
+        break;
+      }
+      case "followersAscend": {
+        const cr = S.bf.filter(c => !c.fd && isCreature(c));
+        if(!cr.length){ await makeTokens({n:"a", desc:"4/4 colorless Scarecrow artifact creature", extra:"vigilance", tapped:false}, src, ctx); break; }
+        const pick = cr.length === 1 ? cr[0] : (await pickCards(`${src.n}: welche Kreatur bekommt fünf +1/+1-Marken?`, cr, 1))[0];
+        if(!pick) break;
+        pick.c = (pick.c || 0) + 5; ctx.last = pick; act(`${src.n}: fünf +1/+1-Marken auf ${pick.n}`); abilEvent({kind:"countersOn", c:pick});
+        await runSteps([{t:"pump", who:"it", p:"+0", tg:"+0", kw:"flying and vigilance"}], src, ctx); commit(); break;
+      }
+      case "tokPerOpp": {
+        for(const o of liveOpps()){
+          await makeTokens({n:"a", desc:st.desc, extra:"", tapped:false}, src, ctx);
+          const tk = S.bf[S.bf.length - 1];
+          if(tk && tk.tok){ const nm = isBotId(o.id) ? botName(o.id) : o.name; tk.o = (tk.o ? tk.o + "\n" : "") + `This creature attacks ${nm} each combat if able.`; act(`${src.n}: ${tk.n} greift jeden Kampf ${nm} an, wenn möglich`); }
+        }
+        commit(); break;
+      }
+      case "embraceVision": {
+        S.library = shuffle([...S.library, ...S.hand, ...S.gy]); S.hand = []; S.gy = [];
+        act(`${src.n}: mischt Hand und Friedhof in die Bibliothek und zieht sieben`); draw(7);
+        for(const o of liveOpps()){ await requestOpp(o.id, {kind:"shuffleDraw", n:4, src:src.n}); act(`${src.n}: ${o.name} mischt Hand und Friedhof in die Bibliothek und zieht vier`); }
+        break;
+      }
+      case "everyHope": for(const o of liveOpps()) await oppInteraction("that player reveals their hand. you choose a nonland card from it. that player discards that card", src, {...ctx, pid:o.id}); break;
+      case "dreamLand": {
+        let lands = 0;
+        for(const o of liveOpps()){ const r = await requestOpp(o.id, {kind:"discard", n:1, src:src.n}); lands += r ? (Number(r.lands) || 0) : 0; act(`${src.n}: ${o.name} wirft ${r && r.cards && r.cards.length ? r.cards.join(", ") : "nichts"} ab`); }
+        if(lands){ act(`${src.n}: ${lands} Land/Länder abgeworfen – du ziehst ${lands}`); draw(lands); }
+        break;
+      }
+      case "oppHandDmg": {
+        for(const o of liveOpps()){ const n = Number((others[o.id] || {}).handN) || 0; if(n){ hitOpponent(o.id, {kind:"damage", amount:n, src:src.n}); act(`${src.n}: ${n} Schaden an ${oppByPid(o.id)} (Handkarten)`); } }
+        break;
+      }
+      case "lifeLowest": {
+        const opps = liveOpps(); if(!opps.length) break;
+        const low = Math.min(...opps.map(o => Number((others[o.id] || {}).life) || 0));
+        for(const o of opps){ const l = Number((others[o.id] || {}).life) || 0; if(l > low){ hitOpponent(o.id, {kind:"loss", amount:l - low, src:src.n}); act(`${src.n}: ${oppByPid(o.id)} verliert ${l - low} Leben (auf ${low})`); } }
+        break;
+      }
+      case "noteOnly": act(`${src.n}: ${st.text}`); toast(`<b>${esc(src.n)}:</b> ${esc(st.text)}`); break;
+      case "costLessTurn": S.costLessTurn = [...(Array.isArray(S.costLessTurn) ? S.costLessTurn : []).filter(x => x.key === turnKey()), {key:turnKey(), desc:st.desc, n:st.n, src:src.n}]; act(`${src.n}: ${st.desc}-Zauber kosten diesen Zug {${st.n}} weniger`); break;
+      case "schemeTriple": if(S.arch){ S.arch.triple = true; act(`${src.n}: beim nächsten Mal werden drei Komplotte in Gang gesetzt`); } break;
+      case "schemeSkip": if(S.arch){ S.arch.skipNext = true; act(`${src.n}: im Zusatzzug wird kein Komplott in Gang gesetzt`); } break;
+      case "skipUntapNext": S.skipUntapNext = true; act(`${src.n}: im Zusatzzug wird nicht enttappt`); break;
+      case "wealthTreasure": {
+        const n = Math.max(st.min || 0, oppBfCards().filter(c => /\b(Artifact|Enchantment)\b/.test(c.type || "")).length);
+        if(n) await makeTokens({n:String(n), desc:"Treasure", extra:"", tapped:false}, src, ctx);
+        break;
+      }
+      case "evilFruit": {
+        const ten = S.bf.filter(c => !c.fd && isLand(c)).length >= 10;
+        await makeTokens({n:"7", desc: ten ? "3/3 green Elemental creature" : "0/1 green Plant creature", extra:"", tapped:false}, src, ctx);
+        break;
+      }
+      case "oozeLands": {
+        const tk = [...S.bf].reverse().find(c => c.tok && /Ooze/i.test((c.n || "") + " " + (c.type || "")));
+        const n = oppBfCards().filter(c => isLand(c)).length;
+        if(tk && n){ tk.c = (tk.c || 0) + n; act(`${src.n}: ${n} +1/+1-Marken auf ${tk.n}`); abilEvent({kind:"countersOn", c:tk}); commit(); }
+        break;
+      }
+      case "gainTgtTough": {
+        const t = ctx.target; if(!t || !t.card || kwHas(t.card, "indestructible")) break;
+        const n = Math.max(0, Number(tough(t.card)) || 0);
+        if(n) await runSteps([{t:"gain", n:String(n)}], src, ctx);
+        break;
+      }
       case "oppTriple": {
         let pids = [];
         if(st.who === "each opponent") pids = liveOpps().map(o => o.id);
@@ -10392,7 +10561,7 @@ function receiveReq(m){
       if(!q.random && S.hand.length && p.length < Math.min(n, S.hand.length)){ const rest = S.hand.filter(c => !p.includes(c)); while(p.length < Math.min(n, S.hand.length)) p.push(rest.shift()); }
       p.forEach(c => moveCard(c.u, "gy"));
       if(p.length) act(`wirft ${p.map(c => c.n).join(", ")} ab (${by}: ${src})`);
-      commit(); reply({cards:p.map(c => c.n)});
+      commit(); reply({cards:p.map(c => c.n), lands:p.filter(isLand).length});
     });
     return;
   }
@@ -10419,6 +10588,7 @@ function receiveReq(m){
   if(q.kind === "searchBasic"){ queuedNow(async () => { let ok = false; if(await confirmMay({n:`${by}: ${src}`}, "ein Standardland suchen")){ await searchStep({what:"a basic land card", rest:q.tapped ? "put it onto the battlefield tapped" : "put it onto the battlefield"}, {n:`${by}: ${src}`}, {}); ok = true; } reply({ok}); }); return; }
   if(q.kind === "secretNumber"){ queuedNow(async () => { const n = await askNumber(`${by} (${src}): deine geheime Zahl`, "Wähle eine Zahl (0 oder mehr). Alle zeigen gleichzeitig auf."); reply({n: Math.max(0, n || 0)}); }); return; }
   if(q.kind === "wheelMay"){ const n = Math.max(1, Math.min(10, parseInt(q.n, 10) || 5)); queuedNow(async () => { const yes = await confirmMay({n:`${by}: ${src}`}, `deine Hand abwerfen und ${n} Karten ziehen`); if(yes){ const k = S.hand.length; S.gy.push(...S.hand.splice(0)); draw(n); act(`wirft ${k} Karten ab und zieht ${n} (${by}: ${src})`); commit(); } reply({ok:yes}); }); return; }
+  if(q.kind === "shuffleDraw"){ const n = Math.max(0, Math.min(10, parseInt(q.n, 10) || 0)); S.library = shuffle([...S.library, ...S.hand, ...S.gy]); S.hand = []; S.gy = []; act(`mischt Hand und Friedhof in die Bibliothek (${by}: ${src})`); if(n) draw(n); commit(); reply({ok:true}); return; }
   if(q.kind === "wheel7"){ const k = S.hand.length; S.gy.push(...S.hand.splice(0)); draw(7); act(`wirft ${k} Karten ab und zieht sieben (${by}: ${src})`); commit(); reply({ok:true}); return; }
   if(q.kind === "giveExiled"){
     const c = S.ex.find(x => x.u === q.u);
@@ -10480,6 +10650,7 @@ function receiveReq(m){
   if(q.kind === "discardOrCounter"){ queued(async () => { const p = S.hand.length ? await pickCards(`${src}: eine Karte abwerfen, sonst wird dein Zauber gekontert`, S.hand.slice(), 1, {none:"Nicht abwerfen"}) : []; if(p && p[0] && S.hand.includes(p[0])){ moveCard(p[0].u, "gy"); act(`wirft ${p[0].n} ab (${src})`); commit(); reply({discarded:p[0].n}); return; } act(`${src}: dein Zauber wird gekontert`); reply({discarded:null}); }); return; }
   if(q.kind === "discardRandom"){ const n = Math.max(0, Math.min(10, parseInt(q.n, 10) || 1)); const out = []; for(let i = 0; i < n && S.hand.length; i++){ const d = S.hand[Math.floor(Math.random() * S.hand.length)]; moveCard(d.u, "gy"); out.push(d.n); } act(`wirft zufällig ab: ${out.join(", ") || "nichts"} (${by}: ${src})`); commit(); reply({cards:out}); return; }
   if(q.kind === "delayDraw"){ S.denial = [...(S.denial || []), {n:Math.max(1, Math.min(5, parseInt(q.n, 10) || 1)), may:!!q.may, src:String(src)}]; act(`${src}: du darfst im nächsten Upkeep ziehen`); commit(); reply({ok:true}); return; }
+  if(q.kind === "selfOthers"){ queued(async () => { const v = await abilModal(`${by} (${src}): du wählst`, (box, done) => { box.append(Object.assign(document.createElement("p"), {textContent:`Selbst: ${String(q.self || "").slice(0, 160)}. Andere: ${String(q.others || "").slice(0, 160)}.`})); box.append(btn("Ich selbst", () => done("self"), "primary"), btn("Die anderen Gegner", () => done("others"), "primary")); }); reply({choice:v || "self"}); }); return; }
   if(q.kind === "vote"){ const opts = (Array.isArray(q.options) ? q.options : []).slice(0, 4).map(String); const DE = {evidence:"Beweise (Clue)", bribery:"Bestechung (Treasure)"}; queued(async () => { const v = await abilModal(`${by} (${src}): deine Stimme`, (box, done) => opts.forEach(o => box.append(btn(DE[o] || o, () => done(o), "primary")))); reply({vote:v || opts[0]}); }); return; }
   if(q.kind === "slave"){ S.slaveBy = by; act(`${by} wird deinen nächsten Zug kontrollieren (${src})`); toast(`<b>${esc(src)}:</b> ${esc(by)} kontrolliert deinen nächsten Zug.`, 10000); commit(); reply({ok:true}); return; }
   if(q.kind === "arcum"){ const c = S.bf.find(x => x.u === q.u); if(!c){ reply({ok:false}); return; } moveCard(c.u, "gy"); act(`opfert ${c.n} (${by}: ${src})`); commit();
@@ -10561,7 +10732,7 @@ function botReq(m){
     const p = order.slice(0, n);
     p.forEach(c => { BOT.hand.splice(BOT.hand.indexOf(c), 1); BOT.gy.push(c); });
     if(p.length) botLog(`wirft ${p.map(c => c.n).join(", ")} ab`); botChanged();
-    reply({cards:p.map(c => c.n)}); return;
+    reply({cards:p.map(c => c.n), lands:p.filter(isLand).length}); return;
   }
   if(q.kind === "draw"){ const n = Math.max(1, Math.min(10, parseInt(q.n, 10) || 1)); botDraw(n); botLog(`zieht ${n} Karte(n) (${String(q.src || "").slice(0, 60)})`); botChanged(); reply({n}); return; }
   if(q.kind === "library"){ reply({cards:BOT.library.map(pubCard)}); return; }
@@ -10578,6 +10749,7 @@ function botReq(m){
   if(q.kind === "searchBasic"){ const c = BOT.library.find(x => /\bBasic\b/.test(x.type || "") && isLand(x)); if(c){ BOT.library.splice(BOT.library.indexOf(c), 1); c.tap = !!q.tapped; BOT.bf.push(c); BOT.library = shuffle(BOT.library); botLog(`sucht ${c.n}`); botChanged(); } reply({ok:!!c}); return; }
   if(q.kind === "secretNumber"){ const n = BOT.life > 10 ? Math.floor(Math.random() * 3) : 0; botLog(`wählt geheim ${n}`); reply({n}); return; }
   if(q.kind === "wheelMay"){ const n = Math.max(1, parseInt(q.n, 10) || 5); const yes = BOT.hand.length < n; if(yes){ BOT.gy.push(...BOT.hand.splice(0)); botDraw(n); botLog(`wirft die Hand ab und zieht ${n}`); botChanged(); } else botLog("behält die Hand"); reply({ok:yes}); return; }
+  if(q.kind === "shuffleDraw"){ const n = Math.max(0, parseInt(q.n, 10) || 0); BOT.library = shuffle([...BOT.library, ...BOT.hand, ...BOT.gy]); BOT.hand = []; BOT.gy = []; if(n) botDraw(n); botLog(`mischt Hand und Friedhof in die Bibliothek und zieht ${n}`); botChanged(); reply({ok:true}); return; }
   if(q.kind === "wheel7"){ BOT.gy.push(...BOT.hand.splice(0)); botDraw(7); botLog("wirft die Hand ab und zieht sieben"); botChanged(); reply({ok:true}); return; }
   if(q.kind === "giveExiled"){ const c = BOT.ex.find(x => x.u === q.u); if(c){ BOT.ex.splice(BOT.ex.indexOf(c), 1); botLog(`${c.n} wird aus dem Exil gespielt`); botChanged(); } reply(c ? {card:fullCard(c)} : null); return; }
   if(q.kind === "chooseCards"){
@@ -10608,6 +10780,7 @@ function botReq(m){
   if(q.kind === "discardOrCounter"){ if(BOT.hand.length){ const c = BOT.hand.slice().sort((a, b) => (isLand(b) - isLand(a)) || (a.cmc || 0) - (b.cmc || 0))[0]; BOT.hand.splice(BOT.hand.indexOf(c), 1); BOT.gy.push(c); botLog(`wirft ${c.n} ab`); botChanged(); reply({discarded:c.n}); return; } reply({discarded:null}); return; }
   if(q.kind === "discardRandom"){ const n = Math.max(0, parseInt(q.n, 10) || 1); const out = []; for(let i = 0; i < n && BOT.hand.length; i++){ const d = BOT.hand.splice(Math.floor(Math.random() * BOT.hand.length), 1)[0]; BOT.gy.push(d); out.push(d.n); } botLog(`wirft zufällig ab: ${out.join(", ")}`); botChanged(); reply({cards:out}); return; }
   if(q.kind === "delayDraw"){ botDraw(Math.max(1, parseInt(q.n, 10) || 1)); botLog("zieht (Arcane Denial)"); botChanged(); reply({ok:true}); return; }
+  if(q.kind === "selfOthers"){ const v = botSelfOthers(q); botLog(`wählt «${v === "self" ? "sich selbst" : "die anderen"}» (${q.src || "Komplott"})`); reply({choice:v}); return; }
   if(q.kind === "vote"){ const opts = Array.isArray(q.options) ? q.options : []; reply({vote:opts[Math.floor(Math.random() * opts.length)]}); return; }
   if(q.kind === "slave"){ botLog(`wird im nächsten Zug von ${q.src || "Mindslaver"} kontrolliert – bitte sag der KI, was sie tun soll`); reply({ok:true}); return; }
   if(q.kind === "arcum"){ const c = BOT.bf.find(x => x.u === q.u); if(!c){ reply({ok:false}); return; } botToZone(c, "gy"); const a = BOT.library.find(x => /\bArtifact\b/.test(x.type || "") && !/\bCreature\b/.test(x.type || "")); if(a){ BOT.library.splice(BOT.library.indexOf(a), 1); BOT.bf.push(a); BOT.library = shuffle(BOT.library); } botLog(`opfert ${c.n}${a ? ", holt " + a.n : ""}`); botChanged(); reply({ok:true, found:a ? a.n : null}); return; }
@@ -11193,7 +11366,7 @@ function historyAdd(win){
 /* ---------- Automatische Updates ---------- */
 // Liegt die App im Web, prüft sie regelmässig version.json im selben Ordner und lädt sich bei einer neuen Version neu.
 // Alles Wichtige (Spielstand, Deck, Tisch) liegt im Browser-Speicher und ist nach dem Neuladen wieder da.
-const APP_VERSION = "2026.11.16-6";
+const APP_VERSION = "2026.11.17-1";
 const ONLINE = /^https?:$/.test(location.protocol);
 let updPending = null, updTimer = null, updSnoozeUntil = 0;
 function busyForUpdate(){ return botBusy || (!$("#modal").hidden && modalState && ["block","deck"].includes(modalState.kind)); }
