@@ -31,7 +31,7 @@ const click = async t => { const b = [...d.querySelectorAll('#modalBox button')]
   const bear = (x = {}) => N('Bär', 'Creature — Bear', '', {pw:2, tg:2, ...x});
   // alle einmaligen Komplotte dieser Nacht werden als automatisch erkannt
   const AUTO = ['Feed the Machine', 'May Civilization Collapse', 'Surrender Your Thoughts', 'The Fate of the Flammable', 'Know Naught but Fire', 'Mortal Flesh Is Weak', 'This World Belongs to Me', 'The Pieces Are Coming Together', 'Plots That Span Centuries', 'All in Good Time', 'Time Bends to My Will', 'My Wealth Will Bury You', 'Evil Comes to Fruition', 'Rot Like the Scum You Are', 'Make Yourself Useful',
-    'You Will Know True Suffering', 'I Am Never Alone', 'Only Blood Ends Your Nightmares', 'No One Will Hear Your Cries', 'Your Nightmares Are Delicious', 'My Followers Ascend', 'Rotted Ones, Lay Siege', 'For Each of You, a Gift', 'Embrace My Diabolical Vision', 'Every Hope Shall Vanish', 'Every Dream a Nightmare'];
+    'You Will Know True Suffering', 'I Am Never Alone', 'Only Blood Ends Your Nightmares', 'No One Will Hear Your Cries', 'Your Nightmares Are Delicious', 'My Followers Ascend', 'Rotted Ones, Lay Siege', 'For Each of You, a Gift', 'Embrace My Diabolical Vision', 'Every Hope Shall Vanish', 'Every Dream a Nightmare', 'Your Mistake Is My Triumph', 'I Call on the Ancient Magics'];
   for(const n of AUTO){ w.__sc = scheme(n); const st = ev('cardCheck(schemeAsSpell(window.__sc)).status'); check(st === 'auto', `${n}: automatisch (${st})`); }
 
   // Ein Gegner: «chooses self or others» – die KI wählt die anderen (es gibt keine)
@@ -123,6 +123,20 @@ const click = async t => { const b = [...d.querySelectorAll('#modalBox button')]
   check(ev('BOTS.bot.hand.length') === 1 && S().hand.length === 1, `Every Dream a Nightmare: Land abgeworfen → ich ziehe eine (${S().hand.length})`);
   await reset(); ev('withBot("bot", () => { BOT.hand = [newCard({n:"Zauberbär", type:"Creature — Bear", o:"", mc:"{1}{G}", cmc:2})]; botChanged(); })'); await runScheme('Every Dream a Nightmare'); await wait(150);
   check(ev('BOTS.bot.hand.length') === 0 && S().hand.length === 0, 'Every Dream a Nightmare: kein Land → kein Ziehen');
+
+  // Your Mistake Is My Triumph: bleibende Karte aus einem gemahlenen Stapel
+  await reset(); ev('withBot("bot", () => { BOT.library = [newCard({n:"Zauberbär", type:"Creature — Bear", o:"", mc:"{1}{G}", cmc:2, pw:2, tg:2}), newCard({n:"Blitz", type:"Instant", o:""}), newCard({n:"Island", type:"Basic Land — Island", o:""}), newCard({n:"Island", type:"Basic Land — Island", o:""})]; botChanged(); })');
+  await runScheme('Your Mistake Is My Triumph', 'Zauberbär'); await wait(200); await click('Fertig'); await wait(150);
+  check(S().gy.length === 3 && ev('BOTS.bot.gy.length') === 2 && S().bf.some(c => c.n === 'Zauberbär') && ev('BOTS.bot.library.length') === 1, `Your Mistake Is My Triumph: alle mahlen drei, Zauberbär der KI kommt zu mir (${S().bf.map(c => c.n).join(', ')} | KI-Friedhof ${ev('BOTS.bot.gy.map(c => c.n).join()')})`);
+  // I Call on the Ancient Magics
+  await reset(); ev('withBot("bot", () => { BOT.library = [...Array(5).fill(0).map(() => newCard({n:"Island", type:"Basic Land — Island", o:""})), newCard({n:"Riese", type:"Creature — Giant", o:"", mc:"{5}{R}", cmc:6, pw:6, tg:6})]; BOT.hand = []; botChanged(); })');
+  ev('S.library.push(newCard({n:"Ziel A", type:"Sorcery", o:""}), newCard({n:"Ziel B", type:"Instant", o:""})); commit()');
+  w.__sc = scheme('I Call on the Ancient Magics'); ev('window.__done = false; (async () => { const card = newCard(schemeAsSpell(window.__sc)); for(const ab of parseAbilities(card).filter(a => a.kind === "spell")) await runAbility(card, ab, {}); commit(); window.__done = true; })()');
+  for(let i = 0; i < 20 && !open(); i++) await wait(50);
+  for(const n of ['Ziel A', 'Ziel B']){ const el = [...d.querySelectorAll('#modalBox .card')].find(e => e.textContent.includes(n)); if(el) el.click(); await wait(40); }
+  await click('Fertig'); for(let i = 0; i < 40 && !w.__done; i++) await wait(50); await drain();
+  check(ev('BOTS.bot.hand.map(c => c.n).join()') === 'Riese', `I Call on the Ancient Magics: KI sucht eine Karte auf die Hand (${ev('BOTS.bot.hand.map(c => c.n).join()')})`);
+  check(S().hand.map(c => c.n).sort().join() === 'Ziel A,Ziel B' && S().library.length === 20, `I Call on the Ancient Magics: ich suche zwei Karten (${S().hand.map(c => c.n).join(', ')})`);
 
   // Zweiter KI-Gegner
   ev('startBot("Zwei", "Test", Array(30).fill(0).map(() => ({n:"Island", type:"Basic Land — Island", o:""})), "bot2"); useBot("bot"); injectBot(); commit()'); await wait(50);

@@ -5185,7 +5185,9 @@ function matchStep2(p, src, full, SELF){
       [/^For each opponent, create an? (\d+\/\d+ [a-z ]+? creature) token that attacks that player each combat if able\.?$/i, mm => ({t:"tokPerOpp", desc:mm[1]})],
       [/^Each player shuffles their hand and graveyard into their library\. You draw seven cards, then each other player draws four cards\.?$/i, () => ({t:"embraceVision"})],
       [/^Each opponent reveals their hand\. Choose a nonland card from each of those hands\. Those players discard those cards\.?$/i, () => ({t:"everyHope"})],
-      [/^Each opponent discards a card\. You draw a card for each land card discarded this way\.?$/i, () => ({t:"dreamLand"})]];
+      [/^Each opponent discards a card\. You draw a card for each land card discarded this way\.?$/i, () => ({t:"dreamLand"})],
+      [/^Each player mills three cards\. Then you put a permanent card from among the milled cards onto the battlefield under your control\.?$/i, () => ({t:"mistakeTriumph"})],
+      [/^Each other player searches their library for a card, reveals it, and puts it into their hand\. Then you search your library for two cards and put them into your hand\. Each player shuffles\.?$/i, () => ({t:"ancientMagics"})]];
     for(const [re, mk] of WHOLE){ const mm = F.match(re); if(mm) return F.toLowerCase().startsWith(p.toLowerCase()) ? [mk(mm)] : [{t:"skip"}]; } }
   if(/^each opponent's life total becomes the lowest life total among your opponents$/i.test(p)) return [{t:"lifeLowest"}];
   if(/^you may play an additional land this turn$/i.test(p)) return [{t:"noteOnly", text:"Du darfst diesen Zug ein zusätzliches Land spielen."}];
@@ -7316,6 +7318,23 @@ async function runSteps(steps, src, ctx = {}){
         let lands = 0;
         for(const o of liveOpps()){ const r = await requestOpp(o.id, {kind:"discard", n:1, src:src.n}); lands += r ? (Number(r.lands) || 0) : 0; act(`${src.n}: ${o.name} wirft ${r && r.cards && r.cards.length ? r.cards.join(", ") : "nichts"} ab`); }
         if(lands){ act(`${src.n}: ${lands} Land/Länder abgeworfen – du ziehst ${lands}`); draw(lands); }
+        break;
+      }
+      case "mistakeTriumph": {
+        const PERM = c => c && /\b(Artifact|Creature|Enchantment|Land|Planeswalker|Battle)\b/.test(c.type || "");
+        const mine = S.library.splice(0, 3); S.gy.push(...mine); act(`${src.n}: mahlt ${mine.length} Karte(n)`); commit();
+        const owner = new Map(); const pool = mine.filter(PERM); pool.forEach(c => owner.set(c.u, me.id));
+        for(const o of liveOpps()){ const r = await requestOpp(o.id, {kind:"mill", n:3, src:src.n}); const cs = r && Array.isArray(r.cards) ? r.cards : []; act(`${src.n}: ${o.name} mahlt ${cs.map(c => c.n).join(", ") || "nichts"}`); cs.filter(PERM).forEach(c => { owner.set(c.u, o.id); pool.push(c); }); }
+        if(!pool.length){ act(`${src.n}: keine bleibende Karte gemahlen`); break; }
+        const pick = (await pickCards(`${src.n}: welche gemahlene bleibende Karte kommt unter deiner Kontrolle ins Spiel?`, pool, 1)) || [];
+        const c = pick[0] || pool[0], pid = owner.get(c.u);
+        if(pid === me.id){ moveCard(c.u, "bf"); act(`${src.n}: bringt ${c.n} aus dem Friedhof ins Spiel`); }
+        else { const r = await requestOpp(pid, {kind:"giveFromGy", u:c.u, src:src.n}); act(`${src.n}: ${c.n} aus dem Friedhof von ${oppByPid(pid)} ${r && r.ok ? "kommt unter deiner Kontrolle ins Spiel" : "nicht gefunden"}`); }
+        commit(); break;
+      }
+      case "ancientMagics": {
+        for(const o of liveOpps()){ const r = await requestOpp(o.id, {kind:"tutorHand", src:src.n}); act(`${src.n}: ${o.name} ${r && r.card ? `sucht ${r.card} und nimmt sie auf die Hand` : r && r.ok ? "sucht eine Karte auf die Hand" : "nimmt nichts"}`); }
+        await searchStep({what:"up to two cards", rest:"put them into your hand", label:"zwei Karten"}, src, ctx);
         break;
       }
       case "oppHandDmg": {
@@ -10588,6 +10607,7 @@ function receiveReq(m){
   if(q.kind === "searchBasic"){ queuedNow(async () => { let ok = false; if(await confirmMay({n:`${by}: ${src}`}, "ein Standardland suchen")){ await searchStep({what:"a basic land card", rest:q.tapped ? "put it onto the battlefield tapped" : "put it onto the battlefield"}, {n:`${by}: ${src}`}, {}); ok = true; } reply({ok}); }); return; }
   if(q.kind === "secretNumber"){ queuedNow(async () => { const n = await askNumber(`${by} (${src}): deine geheime Zahl`, "Wähle eine Zahl (0 oder mehr). Alle zeigen gleichzeitig auf."); reply({n: Math.max(0, n || 0)}); }); return; }
   if(q.kind === "wheelMay"){ const n = Math.max(1, Math.min(10, parseInt(q.n, 10) || 5)); queuedNow(async () => { const yes = await confirmMay({n:`${by}: ${src}`}, `deine Hand abwerfen und ${n} Karten ziehen`); if(yes){ const k = S.hand.length; S.gy.push(...S.hand.splice(0)); draw(n); act(`wirft ${k} Karten ab und zieht ${n} (${by}: ${src})`); commit(); } reply({ok:yes}); }); return; }
+  if(q.kind === "tutorHand"){ queuedNow(async () => { const ctx = {}; await searchStep({what:"a card", rest:"reveal it, put it into your hand"}, {n:`${by}: ${src}`}, ctx); const c = (ctx.searched || [])[0]; if(c) act(`zeigt ${c.n} und nimmt sie auf die Hand (${by}: ${src})`); commit(); reply({ok:true, card:c ? c.n : null}); }); return; }
   if(q.kind === "shuffleDraw"){ const n = Math.max(0, Math.min(10, parseInt(q.n, 10) || 0)); S.library = shuffle([...S.library, ...S.hand, ...S.gy]); S.hand = []; S.gy = []; act(`mischt Hand und Friedhof in die Bibliothek (${by}: ${src})`); if(n) draw(n); commit(); reply({ok:true}); return; }
   if(q.kind === "wheel7"){ const k = S.hand.length; S.gy.push(...S.hand.splice(0)); draw(7); act(`wirft ${k} Karten ab und zieht sieben (${by}: ${src})`); commit(); reply({ok:true}); return; }
   if(q.kind === "giveExiled"){
@@ -10749,6 +10769,7 @@ function botReq(m){
   if(q.kind === "searchBasic"){ const c = BOT.library.find(x => /\bBasic\b/.test(x.type || "") && isLand(x)); if(c){ BOT.library.splice(BOT.library.indexOf(c), 1); c.tap = !!q.tapped; BOT.bf.push(c); BOT.library = shuffle(BOT.library); botLog(`sucht ${c.n}`); botChanged(); } reply({ok:!!c}); return; }
   if(q.kind === "secretNumber"){ const n = BOT.life > 10 ? Math.floor(Math.random() * 3) : 0; botLog(`wählt geheim ${n}`); reply({n}); return; }
   if(q.kind === "wheelMay"){ const n = Math.max(1, parseInt(q.n, 10) || 5); const yes = BOT.hand.length < n; if(yes){ BOT.gy.push(...BOT.hand.splice(0)); botDraw(n); botLog(`wirft die Hand ab und zieht ${n}`); botChanged(); } else botLog("behält die Hand"); reply({ok:yes}); return; }
+  if(q.kind === "tutorHand"){ const c = [...BOT.library].sort((a, b) => (isLand(a) - isLand(b)) || ((b.cmc || 0) - (a.cmc || 0)))[0]; if(c){ BOT.library.splice(BOT.library.indexOf(c), 1); BOT.hand.push(c); } BOT.library = shuffle(BOT.library); botLog(c ? `sucht ${c.n} und nimmt sie auf die Hand` : "findet nichts"); botChanged(); reply({ok:!!c, card:c ? c.n : null}); return; }
   if(q.kind === "shuffleDraw"){ const n = Math.max(0, parseInt(q.n, 10) || 0); BOT.library = shuffle([...BOT.library, ...BOT.hand, ...BOT.gy]); BOT.hand = []; BOT.gy = []; if(n) botDraw(n); botLog(`mischt Hand und Friedhof in die Bibliothek und zieht ${n}`); botChanged(); reply({ok:true}); return; }
   if(q.kind === "wheel7"){ BOT.gy.push(...BOT.hand.splice(0)); botDraw(7); botLog("wirft die Hand ab und zieht sieben"); botChanged(); reply({ok:true}); return; }
   if(q.kind === "giveExiled"){ const c = BOT.ex.find(x => x.u === q.u); if(c){ BOT.ex.splice(BOT.ex.indexOf(c), 1); botLog(`${c.n} wird aus dem Exil gespielt`); botChanged(); } reply(c ? {card:fullCard(c)} : null); return; }
@@ -11366,7 +11387,7 @@ function historyAdd(win){
 /* ---------- Automatische Updates ---------- */
 // Liegt die App im Web, prüft sie regelmässig version.json im selben Ordner und lädt sich bei einer neuen Version neu.
 // Alles Wichtige (Spielstand, Deck, Tisch) liegt im Browser-Speicher und ist nach dem Neuladen wieder da.
-const APP_VERSION = "2026.11.17-1";
+const APP_VERSION = "2026.11.17-2";
 const ONLINE = /^https?:$/.test(location.protocol);
 let updPending = null, updTimer = null, updSnoozeUntil = 0;
 function busyForUpdate(){ return botBusy || (!$("#modal").hidden && modalState && ["block","deck"].includes(modalState.kind)); }
