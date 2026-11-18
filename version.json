@@ -1,4 +1,4 @@
 {
   "version": "2026.11.18-3",
-  "notes": "Testzweig Mindslaver (Etappe 1) auf den Stand von main gebracht: Wer den Zug eines Mitspielers steuert, sieht in einer Leiste dessen Hand und Fähigkeiten und klickt selbst: Karten ausspielen, Fähigkeiten aktivieren, Angreifer wählen, nächste Phase, Zug beenden."
+  "notes": "Testzweig Mindslaver (Etappe 2): Wer den Zug eines Mitspielers steuert, tappt dessen Länder einzeln für Mana und bekommt dessen Dialoge (Ziele, Bezahlen, Karten wählen, Zahlen) bei sich angezeigt – sein Klick wird beim Gesteuerten ausgeführt."
 }

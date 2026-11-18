@@ -1122,7 +1122,7 @@ function btn(label, fn, cls){ const b = document.createElement("button"); b.text
 
 function renderModal(){
   const box = $("#modalBox"), st = modalState; if(!st) return;
-  if(["deck","token","big","ask","block"].includes(st.kind)) return; // statisch gebaut
+  if(["deck","token","big","ask","block","slaveDlg"].includes(st.kind)) return; // statisch gebaut
   box.innerHTML = "";
   if(st.kind === "zone"){
     const cards = S[st.zone];
@@ -1563,7 +1563,7 @@ function applyAll(msg){
   renderAll();
 }
 /* Nachrichten an einen Spieler: über den Host weitergeleitet */
-const ROUTED = ["give", "hit", "attack", "blocks", "cres", "st_resolve", "req", "resp", "slaveView", "slaveAct"];
+const ROUTED = ["give", "hit", "attack", "blocks", "cres", "st_resolve", "req", "resp", "slaveView", "slaveAct", "slaveDlg"];
 const HOSTED = ["pass", "roll", "phase", "st_push", "st_pass", "st_cancel", "st_redirect", "st_tuck", "st_counter"];
 function sendTo(pid, m){
   m.to = pid; m.from = me.id; m.by = me.name || "Gegner";
@@ -1601,6 +1601,7 @@ function deliver(m){
     case "req": return receiveReq(m);
     case "resp": return receiveResp(m);
     case "slaveView": return receiveSlaveView(m);
+    case "slaveDlg": return receiveSlaveDlg(m);
     case "slaveAct": return receiveSlaveAct(m);
   }
 }
@@ -6415,14 +6416,14 @@ async function meldInto(cards, into, src){
   commit(); return m;
 }
 /* Mindslaver (Etappe 1): der Steuernde sieht die Hand des Gesteuerten und löst dessen Aktionen aus.
-   Die App des Gesteuerten führt sie aus; Dialoge (Ziele, Bezahlen) erscheinen noch beim Gesteuerten. */
+   Die App des Gesteuerten führt sie aus; Dialoge siehe Etappe 2 (slaveDlgPush). */
 const slavedNow = () => !!(S.slaved && S.slaved.key === turnKey() && TURN.active === me.id);
 let SLAVE_SENT = "";
 function slavePush(){
   if(!S.slaved) return;
   if(!slavedNow()){ const pid = S.slaved.pid; delete S.slaved; SLAVE_SENT = ""; sendTo(pid, {t:"slaveView", done:true}); return; }
   const view = {t:"slaveView", key:S.slaved.key, phase:TURN.phase, hand:S.hand.slice(0, 40).map(pubCard), pool:poolStr(poolOf()), lands:S.bf.filter(c => !c.fd && !c.tap && isLand(c)).length,
-    atk:attackEligible().slice(0, 30).map(c => ({u:c.u, n:c.n, pw:power(c), tg:tough(c)})), targets:attackTargets().slice(0, 8).map(id => ({id, n:id === "bot" ? "KI" : displayName(id)})),
+    atk:attackEligible().slice(0, 30).map(c => ({u:c.u, n:c.n, pw:power(c), tg:tough(c)})), targets:attackTargets().slice(0, 8).map(id => ({id, n:isBotId(id) ? botName(id) : displayName(id)})), mana:slaveManaList().map(x => ({u:x.c.u, n:x.c.n, o:x.opts.map(slaveManaLabel)})),
     abil:S.bf.filter(c => !c.fd).slice(0, 40).map(c => ({u:c.u, n:c.n, list:parseAbilities(c).map((a, i) => ({i, k:a.kind, l:String((a.cost || "") + ": " + (a.text || "")).slice(0, 90)})).filter(a => a.k === "act" || a.k === "loy")})).filter(x => x.list.length)};
   const sig = JSON.stringify(view); if(sig === SLAVE_SENT) return; SLAVE_SENT = sig;
   sendTo(S.slaved.pid, view);
@@ -6434,7 +6435,8 @@ function receiveSlaveView(m){
   SLAVE_VIEW = {pid:String(m.from), name:String(m.by || "Gegner").slice(0, 24), phase:+m.phase || 0, hand:(Array.isArray(m.hand) ? m.hand : []).slice(0, 40).map(x => { const c = cleanInfo(x); if(c) c.mc = String((x && x.mc) || "").slice(0, 40); return c; }).filter(Boolean), pool:String(m.pool || "").slice(0, 60), lands:+m.lands || 0,
     atk:(Array.isArray(m.atk) ? m.atk : []).slice(0, 30).map(x => ({u:String((x && x.u) || "").slice(0, 20), n:String((x && x.n) || "Kreatur").slice(0, 150), pw:+(x && x.pw) || 0, tg:+(x && x.tg) || 0})),
     targets:(Array.isArray(m.targets) ? m.targets : []).slice(0, 8).map(x => ({id:String((x && x.id) || "").slice(0, 40), n:String((x && x.n) || "").slice(0, 24)})).filter(x => x.id),
-    abil:(Array.isArray(m.abil) ? m.abil : []).slice(0, 40).map(x => ({u:String((x && x.u) || "").slice(0, 20), n:String((x && x.n) || "").slice(0, 150), list:(Array.isArray(x && x.list) ? x.list : []).slice(0, 8).map(a => ({i:+a.i || 0, l:String(a.l || "").slice(0, 90)}))})).filter(x => x.u && x.list.length)};
+    abil:(Array.isArray(m.abil) ? m.abil : []).slice(0, 40).map(x => ({u:String((x && x.u) || "").slice(0, 20), n:String((x && x.n) || "").slice(0, 150), list:(Array.isArray(x && x.list) ? x.list : []).slice(0, 8).map(a => ({i:+a.i || 0, l:String(a.l || "").slice(0, 90)}))})).filter(x => x.u && x.list.length),
+    mana:(Array.isArray(m.mana) ? m.mana : []).slice(0, 40).map(x => ({u:String((x && x.u) || "").slice(0, 20), n:String((x && x.n) || "").slice(0, 80), o:(Array.isArray(x && x.o) ? x.o : []).slice(0, 6).map(t => String(t).slice(0, 60))})).filter(x => x.u && x.o.length)};
   renderSlaveBar();
 }
 function slaveSend(a, extra = {}){ if(!SLAVE_VIEW) return; sendTo(SLAVE_VIEW.pid, {t:"slaveAct", a, ...extra}); }
@@ -6453,6 +6455,12 @@ function renderSlaveBar(){
   if(!v.hand.length) hand.append(Object.assign(document.createElement("span"), {className:"muted", textContent:"Hand leer"}));
   v.hand.forEach(c => { const b = btn(`${c.n}${c.mc ? " " + c.mc : ""}`, () => slaveSend("play", {u:c.u}), "small"); b.title = `${c.type || ""}\n${c.o || ""}`; b.dataset.u = c.u; b.className = "small slaveCard"; hand.append(b); });
   bar.append(hand);
+  if(SLAVE_DLG) row.append(btn("Offener Dialog …", () => renderSlaveDlg(true), "small primary"));
+  if((v.mana || []).length){
+    const mr = document.createElement("div"); mr.className = "row"; mr.style.flexWrap = "wrap";
+    v.mana.forEach(c => c.o.forEach((o, i) => mr.append(btn(`${c.n}: ${o}`, () => slaveSend("tapMana", {u:c.u, i}), "small slaveMana"))));
+    bar.append(Object.assign(document.createElement("div"), {className:"stat", textContent:"Mana (Land oder Quelle tappen):"}), mr);
+  }
   if(v.abil.length){
     const ab = document.createElement("div"); ab.className = "row"; ab.style.flexWrap = "wrap";
     v.abil.forEach(c => c.list.forEach(a => { const b = btn(`${c.n} – ${a.l}`, () => slaveSend("activate", {u:c.u, i:a.i}), "small slaveAbil"); ab.append(b); }));
@@ -6506,6 +6514,85 @@ async function receiveSlaveAct(m){
     return declareAttack(chosen, [...chosen.values()][0]);
   }
   if(m.a === "pass"){ act(`${by} beendet deinen Zug (Mindslaver)`); return passTurn(); }
+  if(m.a === "tapMana"){
+    const x = slaveManaList().find(y => y.c.u === m.u); const o = x && x.opts[+m.i]; if(!o) return;
+    act(`${by} tappt ${x.c.n} für Mana (Mindslaver)`);
+    return tapForMana(x.c, o);
+  }
+  if(m.a === "dlg"){
+    if(+m.id !== SLAVE_DLG_N || $("#modal").hidden) return;
+    const els = slaveDlgEls();
+    (Array.isArray(m.vals) ? m.vals : []).slice(0, 30).forEach(x => { const el = Array.isArray(x) && els[+x[0]]; if(!el || (el.tagName !== "INPUT" && el.tagName !== "SELECT")) return;
+      if(el.type === "checkbox"){ if(el.checked !== !!x[1]){ el.checked = !!x[1]; el.dispatchEvent(new Event("change", {bubbles:true})); } }
+      else if(String(el.value) !== String(x[1])){ el.value = String(x[1]).slice(0, 60); el.dispatchEvent(new Event("input", {bubbles:true})); el.dispatchEvent(new Event("change", {bubbles:true})); } });
+    const el = m.i != null && m.i !== "" ? els[+m.i] : null;
+    if(el && !(el.tagName === "BUTTON" && el.disabled) && el.tagName !== "INPUT" && el.tagName !== "SELECT"){ el.click(); }
+    return;
+  }
+}
+/* Mindslaver (Etappe 2): Manaquellen einzeln tappen; Dialoge des Gesteuerten (Ziele, Bezahlen, Auswahl …) erscheinen beim Steuernden.
+   Beim Gesteuerten beobachtet ein MutationObserver den Dialog und schickt eine Abbildung (Knöpfe, Karten, Eingaben); der Steuernde
+   klickt bei sich, die App des Gesteuerten führt genau diesen Klick aus. */
+function slaveManaList(){
+  return S.bf.filter(c => !c.fd && !c.tap).slice(0, 40).map(c => ({c, opts:(manaChoices(c) || []).filter(o => !o.noTap && !o.sac && !o.sacOther && !o.discardHand && !o.tapOthers && !o.cost)})).filter(x => x.opts.length);
+}
+function slaveManaLabel(o){ return (o.combo ? `${o.combo} Mana in beliebigen Farben` : o.add && o.add.length ? symStr(o.add) : "kein Mana") + (o.pain ? ` (${o.pain} Schaden an dir)` : "") + (o.life ? ` (${o.life} Leben)` : ""); }
+let SLAVE_DLG_SENT = "", SLAVE_DLG_T = null, SLAVE_DLG_N = 0;
+function slaveDlgEls(){ const box = $("#modalBox"); return box ? [...box.querySelectorAll("button, .card, input, select")].filter(el => !el.closest(".slaveNote") && !(el.classList.contains("card") && el.closest("button"))) : []; }
+function slaveDlgSnap(){
+  if($("#modal").hidden) return {close:true};
+  const box = $("#modalBox");
+  const title = ((box.querySelector("h2") || {}).textContent || "").slice(0, 160);
+  const texts = [...box.querySelectorAll("p, h3")].filter(el => !el.closest(".slaveNote") && !el.closest("button") && !el.closest(".card")).slice(0, 12).map(el => ({h:el.tagName === "H3", t:el.textContent.trim().slice(0, 200)})).filter(x => x.t);
+  const items = slaveDlgEls().slice(0, 80).map((el, i) => {
+    if(el.tagName === "BUTTON") return {i, k:"btn", l:el.textContent.trim().slice(0, 120), p:el.classList.contains("primary"), d:!!el.disabled};
+    if(el.tagName === "SELECT") return {i, k:"sel", v:el.value, o:[...el.options].slice(0, 20).map(o => [String(o.value).slice(0, 60), o.textContent.slice(0, 60)])};
+    if(el.tagName === "INPUT") return {i, k:"in", t:el.type, v:el.type === "checkbox" ? !!el.checked : String(el.value).slice(0, 20)};
+    return {i, k:"card", l:(el.textContent || el.title || "Karte").trim().replace(/\s+/g, " ").slice(0, 80), p:el.classList.contains("picked")};
+  });
+  return {title, texts, items};
+}
+function slaveDlgPush(){
+  if(!slavedNow()){ SLAVE_DLG_SENT = ""; return; }
+  const snap = slaveDlgSnap();
+  if(!snap.close){ const box = $("#modalBox"); if(!box.querySelector(".slaveNote")){ const n = Object.assign(document.createElement("p"), {className:"slaveNote err", textContent:`Mindslaver: ${S.slaved.name || "Der Steuernde"} entscheidet diesen Dialog.`}); const h = box.querySelector(".dhead"); if(h) h.after(n); else box.prepend(n); } }
+  const sig = JSON.stringify(snap); if(sig === SLAVE_DLG_SENT) return;
+  if(snap.close && !SLAVE_DLG_SENT) return;
+  SLAVE_DLG_SENT = snap.close ? "" : sig;
+  if(!snap.close) SLAVE_DLG_N++;
+  sendTo(S.slaved.pid, {t:"slaveDlg", ...snap, id:SLAVE_DLG_N});
+}
+try{ new MutationObserver(() => { if(!S.slaved) return; clearTimeout(SLAVE_DLG_T); SLAVE_DLG_T = setTimeout(() => { try{ slaveDlgPush(); }catch(e){ console.error(e); } }, 60); })
+  .observe($("#modal"), {attributes:true, attributeFilter:["hidden", "class", "disabled"], childList:true, subtree:true, characterData:true}); }catch(e){}
+let SLAVE_DLG = null;
+function receiveSlaveDlg(m){
+  if(!SLAVE_VIEW || m.from !== SLAVE_VIEW.pid) return;
+  if(m.close){ SLAVE_DLG = null; if(modalState && modalState.kind === "slaveDlg") closeModal(); renderSlaveBar(); return; }
+  const items = (Array.isArray(m.items) ? m.items : []).slice(0, 80).map(x => ({i:+(x && x.i) || 0, k:["btn", "card", "sel", "in"].includes(x && x.k) ? x.k : "btn", l:String((x && x.l) || "").slice(0, 120), p:!!(x && x.p), d:!!(x && x.d), t:String((x && x.t) || "").slice(0, 12), v:x && typeof x.v === "boolean" ? x.v : String((x && x.v) ?? "").slice(0, 60), o:(Array.isArray(x && x.o) ? x.o : []).slice(0, 20).map(o => [String((o || [])[0] ?? "").slice(0, 60), String((o || [])[1] ?? "").slice(0, 60)])}));
+  SLAVE_DLG = {id:+m.id || 0, title:String(m.title || "").slice(0, 160), texts:(Array.isArray(m.texts) ? m.texts : []).slice(0, 12).map(x => ({h:!!(x && x.h), t:String((x && x.t) || "").slice(0, 200)})), items};
+  renderSlaveBar(); renderSlaveDlg(false);
+}
+function renderSlaveDlg(force){
+  const d = SLAVE_DLG; if(!d || !SLAVE_VIEW) return;
+  if(!$("#modal").hidden && !(modalState && modalState.kind === "slaveDlg") && !force){ toast(`<b>Mindslaver:</b> ${esc(SLAVE_VIEW.name)} hat einen Dialog offen – «Offener Dialog …» in der Leiste.`); return; }
+  modalState = {kind:"slaveDlg"}; $("#modal").hidden = false;
+  const box = $("#modalBox"); box.innerHTML = ""; box.append(head(`Mindslaver – ${SLAVE_VIEW.name}: ${d.title.replace(/Schliessen$/, "")}`));
+  d.texts.forEach(x => box.append(Object.assign(document.createElement(x.h ? "h3" : "p"), {className:x.h ? "" : "muted", textContent:x.t})));
+  const vals = () => [...box.querySelectorAll("[data-ri]")].filter(el => el.tagName === "INPUT" || el.tagName === "SELECT").map(el => [+el.dataset.ri, el.type === "checkbox" ? el.checked : el.value]);
+  const send = i => slaveSend("dlg", {id:d.id, i, vals:vals()});
+  const cards = document.createElement("div"); cards.className = "row"; cards.style.flexWrap = "wrap";
+  const rest = document.createElement("div"); rest.className = "row"; rest.style.flexWrap = "wrap";
+  d.items.forEach(it => {
+    let el;
+    if(it.k === "btn"){ if(it.l === "Schliessen" || it.l === "×") return; el = btn(it.l || "…", () => send(it.i), it.p ? "primary" : "small"); el.disabled = it.d; rest.append(el); }
+    else if(it.k === "card"){ el = btn(`${it.p ? "✓ " : ""}${it.l}`, () => send(it.i), it.p ? "primary slaveDlgCard" : "small slaveDlgCard"); cards.append(el); }
+    else if(it.k === "sel"){ el = document.createElement("select"); it.o.forEach(([v, t]) => el.append(new Option(t, v))); el.value = String(it.v); rest.append(el); }
+    else { el = document.createElement("input"); el.type = it.t === "checkbox" ? "checkbox" : it.t === "number" ? "number" : "text"; if(el.type === "checkbox"){ el.checked = !!it.v; el.onchange = () => send(null); } else { el.value = String(it.v); el.style.width = "90px"; } rest.append(el); }
+    el.dataset.ri = it.i;
+  });
+  if(cards.childNodes.length) box.append(cards);
+  box.append(rest);
+  box.append(Object.assign(document.createElement("p"), {className:"stat", textContent:`Du entscheidest für ${SLAVE_VIEW.name}; die App führt deine Wahl bei ${SLAVE_VIEW.name} aus.`}));
 }
 /* Attraktionen (Unfinity): öffnen und besuchen */
 async function openAttraction(src){

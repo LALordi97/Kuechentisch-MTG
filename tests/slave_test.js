@@ -1,4 +1,4 @@
-// Mindslaver Etappe 1: Anna steuert Bens Zug über das Netz
+// Mindslaver Etappe 1 und 2: Anna steuert Bens Zug über das Netz (Etappe 2: Mana einzeln tappen, Dialoge beim Steuernden)
 // Mehrspieler-Test: drei JSDOM-Fenster, verbunden über eine nachgebaute PeerJS-Schicht
 const {JSDOM} = require('jsdom'); const fs = require('fs');
 const FILE = process.argv[2] || require('path').join(__dirname, '..', 'index.html');
@@ -83,6 +83,46 @@ const passB = async () => { await wait(60); const b = btnText(B, 'OK, weiter', '
   check(!!abB, 'Leiste zeigt Bens Fähigkeiten');
   if(abB){ abB.click(); await wait(400); for(let i = 0; i < 3; i++){ const ok = [...B.document.querySelectorAll('#stackBox button')].find(b => /OK/.test(b.textContent)); if(ok) ok.click(); const okA = [...A.document.querySelectorAll('#stackBox button')].find(b => /OK/.test(b.textContent)); if(okA) okA.click(); await wait(200); } }
   check(ev(B, 'S.hand.some(c => c.n === "Zug1")') && ev(B, 'S.bf.find(c => c.n === "Orakel").tap'), 'Anna aktiviert Orakel: Ben zieht, Orakel getappt');
+
+  // Etappe 2: Anna tappt Bens Land einzeln für Mana
+  ev(B, `S.bf.push(newCard({n:"Mountain", type:"Basic Land — Mountain", o:"({T}: Add {R}.)"})); S.pool = emptyPoolObj(); commit()`); await wait(250);
+  const manaB = [...bar().querySelectorAll('button.slaveMana')].find(b => /Mountain/.test(b.textContent));
+  check(!!manaB && /\{R\}/.test(manaB.textContent), `Leiste zeigt Bens Mountain als Manaquelle (${manaB && manaB.textContent})`);
+  if(manaB){ manaB.click(); await wait(250); }
+  check(ev(B, 'S.bf.find(c => c.n === "Mountain").tap') && ev(B, 'poolTotal(poolOf())') === 1, `Anna tappt Mountain: Ben hat {R} im Pool (${ev(B, 'poolStr(poolOf())')})`);
+  check(!/Mountain/.test([...bar().querySelectorAll('button.slaveMana')].map(b => b.textContent).join(' ')), 'getapptes Land verschwindet aus der Manaleiste');
+  // Etappe 2: Dialog des Gesteuerten erscheint bei Anna (Karten wählen)
+  ev(B, `S.hand.push(newCard({n:"Wahl A", type:"Instant"}), newCard({n:"Wahl B", type:"Instant"})); commit(); window.__pick = null; queued(async () => { window.__pick = await pickCards("Welche Karte?", S.hand.filter(c => /^Wahl/.test(c.n)), 1, {none:"Keine"}); })`); await wait(300);
+  check(!$(B, '#modal').hidden && /entscheidet diesen Dialog/.test($(B, '#modalBox').textContent), 'Ben sieht den Dialog mit dem Hinweis, dass Anna entscheidet');
+  check(!$(A, '#modal').hidden && /Mindslaver – Ben: Welche Karte\?/.test(($(A, '#modalBox h2') || {}).textContent || ''), `Anna bekommt Bens Dialog (${($(A, '#modalBox h2') || {}).textContent})`);
+  { const cb = [...A.document.querySelectorAll('#modalBox button.slaveDlgCard')].find(b => /Wahl B/.test(b.textContent)); check(!!cb, 'Anna sieht die Karten als Knöpfe'); if(cb){ cb.click(); await wait(300); } }
+  check(ev(B, 'window.__pick && window.__pick.map(c => c.n).join()') === 'Wahl B' && $(B, '#modal').hidden, `Annas Klick wählt bei Ben «Wahl B» (${ev(B, 'JSON.stringify((window.__pick || []).map(c => c.n))')})`);
+  await wait(150); check($(A, '#modal').hidden, 'Dialog bei Anna geht zu');
+  // Etappe 2: Zahl eingeben (askNumber) und Knöpfe
+  ev(B, `window.__num = null; queued(async () => { window.__num = await askNumber("Wert für X", "Test"); })`); await wait(300);
+  { const inp = $(A, '#modalBox input[type=number]'); check(!!inp, 'Anna bekommt das Zahlenfeld'); if(inp){ inp.value = '4'; await click(A, 'Weiter'); await wait(300); } }
+  check(ev(B, 'window.__num') === 4, `Ben bekommt X = 4 (${ev(B, 'window.__num')})`);
+  // Etappe 2: Kontrollkästchen und Ja/Nein
+  ev(B, `window.__yes = null; queued(async () => { window.__yes = await confirmMay({n:"Test"}, "eine Karte ziehen"); })`); await wait(300);
+  await click(A, 'Ja'); await wait(300);
+  check(ev(B, 'window.__yes') === true, 'Anna klickt «Ja» in Bens Frage');
+
+  // Etappe 2 im echten Ablauf: Anna wirkt Bens Lightning Bolt, wählt das Ziel bei sich
+  ev(B, `S.hand.push(newCard({n:"Lightning Bolt", type:"Instant", o:"Lightning Bolt deals 3 damage to any target.", mc:"{R}", cmc:1})); commit()`); await wait(250);
+  { const lifeA = ev(A, 'S.life'); const bb = [...bar().querySelectorAll('button.slaveCard')].find(b => /Lightning Bolt/.test(b.textContent)); if(bb) bb.click();
+    let picked = false;
+    for(let i = 0; i < 20 && !picked; i++){ await wait(150);
+      const okB = [...B.document.querySelectorAll('#stackBox button')].find(b => /OK/.test(b.textContent)); if(okB) okB.click();
+      const okA = [...A.document.querySelectorAll('#stackBox button')].find(b => /OK/.test(b.textContent)); if(okA) okA.click();
+      const t = [...A.document.querySelectorAll('#modalBox button')].find(b => /^Mindslaver/.test(($(A, '#modalBox h2') || {}).textContent || '') && /^Anna \(/.test(b.textContent.trim()));
+      if(t){ t.click(); picked = true; } }
+    await wait(500);
+    check(picked && ev(A, 'S.life') === lifeA - 3, `Lightning Bolt: Anna wählt bei sich das Ziel (sich selbst) und nimmt 3 (${lifeA} → ${ev(A, 'S.life')})`); }
+  // veraltete Klicks (alte Dialog-Nummer) werden ignoriert
+  ev(B, `window.__yes = null; queued(async () => { window.__yes = await confirmMay({n:"Test"}, "nochmals"); })`); await wait(300);
+  ev(B, `receiveSlaveAct({from:${JSON.stringify(aId)}, a:"dlg", id:SLAVE_DLG_N - 1, i:0})`); await wait(100);
+  check(!$(B, '#modal').hidden && ev(B, 'window.__yes') === null, 'veralteter Klick wird ignoriert');
+  await click(A, 'Nein'); await wait(300); check(ev(B, 'window.__yes') === false, 'Anna klickt «Nein»');
   // Ein anderer Spieler darf nicht steuern
   ev(B, `receiveSlaveAct({from:"fremd", a:"pass"})`); await wait(150);
   check(ev(B, 'TURN.active') === bId, 'fremde Steuerbefehle werden ignoriert');
