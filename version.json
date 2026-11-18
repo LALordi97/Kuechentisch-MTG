@@ -1,4 +1,4 @@
 {
-  "version": "2026.11.18-1",
-  "notes": "Archenemy: 18 weitere Komplotte laufen jetzt automatisch (u. a. Running Is Useless, Every Last Vestige Shall Rot, No Secret Is Hidden from Me, My Wish Is Your Command, Your Plans Mean Nothing, Choose Your Demise, The Dead Shall Serve, My Wings Enfold All, Chaos Is My Plaything, My Will Is Irresistible, You Live Only Because I Will It, Know Evil, Choose Your Champion). Die KI hält sich jetzt an Sperren «bis zu deinem nächsten Zug»."
+  "version": "2026.11.18-2",
+  "notes": "Archenemy: 20 weitere Komplotte laufen jetzt automatisch, neu auch You Exist Only to Amuse (mit sechs Ländern beide Modi) und Nature Demands an Offering (der Gegner wählt im Dialog). Beastbind-Wirkungen («verliert alle Fähigkeiten bis zum nächsten Zug») enden jetzt wirklich, auch bei der KI."
 }

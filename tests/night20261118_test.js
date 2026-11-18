@@ -34,7 +34,7 @@ const clickCard = async t => { const el = [...d.querySelectorAll('#modalBox .car
   };
   const cr = (n, cmc, x = {}) => N(n, 'Creature — Bear', '', {pw:2, tg:2, cmc, mc:`{${cmc}}`, ...x});
   const AUTO = ['A Premonition of Your Demise', 'Running Is Useless', 'Every Last Vestige Shall Rot', 'No Secret Is Hidden from Me', 'When Will You Learn?', 'My Wish Is Your Command', 'Your Plans Mean Nothing', 'Choose Your Demise', 'The Dead Shall Serve', 'My Wings Enfold All',
-    'Dance, Pathetic Marionette', 'Chaos Is My Plaything', 'My Will Is Irresistible', 'Only I Know What Awaits', 'Your Own Face Mocks You', 'You Live Only Because I Will It', 'Know Evil', 'Choose Your Champion'];
+    'Dance, Pathetic Marionette', 'Chaos Is My Plaything', 'My Will Is Irresistible', 'Only I Know What Awaits', 'Your Own Face Mocks You', 'You Live Only Because I Will It', 'Know Evil', 'Choose Your Champion', 'You Exist Only to Amuse', 'Nature Demands an Offering'];
   for(const n of AUTO){ w.__sc = scheme(n); const st = ev('cardCheck(schemeAsSpell(window.__sc)).status'); check(st === 'auto', `${n}: automatisch (${st})`); }
 
   // A Premonition of Your Demise: zwei auf die Hand, Schaden = Manawert der Nichtlandkarten
@@ -161,6 +161,38 @@ const clickCard = async t => { const el = [...d.querySelectorAll('#modalBox .car
     check(open() && /keine Kreaturenzauber/.test($('#modalBox').textContent), 'Know Evil (Mitspieler): Warnung beim Kreaturenzauber'); await click('Nicht wirken'); await wait(50);
     w.__res = undefined; ev('castWarn(newCard({n:"Blitz", type:"Instant", o:""}), "hand").then(r => window.__res = r)'); await wait(100);
     check(w.__res === true && !open(), `Know Evil (Mitspieler): Spontanzauber ohne Warnung (${open() ? $('#modalBox').textContent.slice(0, 200) : w.__res})`); ev('delete others.zz'); await drain(); }
+
+  // You Exist Only to Amuse: ohne sechs Länder Modus 2 gewählt
+  await reset(); botSet('bf', [cr('Flieger', 3, {pw:3, tg:3, o:'Flying'})]);
+  await runScheme('You Exist Only to Amuse', [async () => { const b = [...d.querySelectorAll('#modalBox button')].find(b => /^Until your next turn/.test(b.textContent)); if(b) b.click(); await wait(40); await click('Ausführen'); }]); await wait(100);
+  { const c = ev('BOTS.bot.bf[0]'); check(c.pw === 1 && c.tg === 1 && c.o === '' && S().bf.length === 0, `You Exist Only to Amuse: KI-Kreatur 1/1 ohne Fähigkeiten, keine Teufel (${c.pw}/${c.tg})`); }
+  ev('TURN = {active:me.id, n:22, starter:me.id, phase:0}; remindTriggers("upkeep", true)'); await wait(50);
+  { const c = ev('BOTS.bot.bf[0]'); check(c.pw === 3 && c.o === 'Flying', `You Exist Only to Amuse: zu meinem nächsten Zug wieder 3/3 mit Flying (${c.pw}/${c.tg})`); }
+  // mit sechs Ländern beide Modi ohne Auswahl
+  await reset(); ev('for(let i = 0; i < 6; i++) S.bf.push(newCard({n:"Swamp", type:"Basic Land — Swamp", o:""})); commit()'); botSet('bf', [cr('Flieger', 3, {pw:3, tg:3})]);
+  await runScheme('You Exist Only to Amuse'); await wait(100);
+  check(S().bf.filter(c => c.tok && /Devil/.test(c.n + c.type)).length === 3 && ev('BOTS.bot.bf[0].pw') === 1, `You Exist Only to Amuse: sechs Länder → drei Teufel und 1/1 (${S().bf.filter(c => c.tok).length})`);
+
+  // Nature Demands an Offering: KI wählt ihre billigsten Karten, sie werden in ihre Bibliothek gemischt
+  await reset(); botSet('bf', [cr('Klein', 1), cr('Gross', 6), N('Ring', 'Artifact', '', {cmc:2}), N('Aura', 'Enchantment — Aura', '', {cmc:3}), N('Island', 'Basic Land — Island', '')]);
+  ev('S.bf.push(newCard({n:"Mein Bär", type:"Creature — Bear", o:"", pw:2, tg:2, cmc:2})); commit()');
+  await runScheme('Nature Demands an Offering'); await wait(150);
+  check(ev('BOTS.bot.bf.map(c => c.n).join()') === 'Gross' && ev('BOTS.bot.library.length') === 24 && S().bf.length === 1, `Nature Demands an Offering: Klein, Ring, Aura, Island in die KI-Bibliothek, Gross bleibt, mein Bär bleibt (${ev('BOTS.bot.bf.map(c => c.n).join()')})`);
+  // Mitspieler wählt im Dialog
+  { w.eval('window.__oldSend = sendTo; sendTo = (to, m) => { if(m && m.t === "resp") window.__resp = m.data; else window.__oldSend(to, m); }'); w.__resp = null;
+    ev('receiveReq({from:"x", by:"Anna", id:"r4", req:{kind:"natureOffer", groups:[{type:"Creature", cards:[{u:"k1", n:"Kreatur1", type:"Artifact Creature"}]}, {type:"Artifact", cards:[{u:"k1", n:"Kreatur1", type:"Artifact Creature"}, {u:"k2", n:"Ring2", type:"Artifact"}]}, {type:"Enchantment", cards:[]}, {type:"Land", cards:[]}], src:"Nature Demands an Offering"}})'); await wait(120);
+    const okB = () => [...d.querySelectorAll('#modalBox button')].find(b => b.textContent.trim() === 'Fertig');
+    check(open() && okB() && okB().disabled, 'Nature Demands (Mitspieler): Fertig erst nach der Wahl');
+    await clickCard('Kreatur1'); check(okB() && okB().disabled, 'Nature Demands (Mitspieler): Artefakt fehlt noch');
+    const rings = [...d.querySelectorAll('#modalBox .card')].filter(e => e.textContent.includes('Ring2')); rings[0].click(); await wait(40);
+    okB().click(); await wait(80); check(w.__resp && JSON.stringify(w.__resp.us) === JSON.stringify(['k1', 'k2', null, null]), `Nature Demands (Mitspieler): Antwort (${JSON.stringify(w.__resp)})`); ev('sendTo = window.__oldSend'); }
+
+  // Beastbind-Wirkung auf meiner Kreatur endet im nächsten Zug des Verursachers (bbBy = Spieler-ID, nicht Name)
+  await reset(); ev('S.bf.push(newCard({n:"Mein Flieger", type:"Creature — Bird", o:"Flying", pw:3, tg:3})); commit()');
+  ev('applyHitToCard(S.bf[0], {kind:"beastbind", from:"bot", by:"KI", amount:0}, false)');
+  check(S().bf[0].pw === 2 && S().bf[0].bbBy === 'bot', `Beastbind: 2/2, gemerkt wird die ID (${S().bf[0].bbBy})`);
+  ev('TURN = {active:"bot", n:21, starter:me.id, phase:0}; remindTriggers("upkeep", false)'); await wait(30);
+  check(S().bf[0].pw === 3 && S().bf[0].o === 'Flying', `Beastbind: im Zug der KI wieder 3/3 mit Flying (${S().bf[0].pw})`);
 
   // Mitspieler: pickOne im Dialog
   { w.eval('window.__oldSend = sendTo; sendTo = (to, m) => { if(m && m.t === "resp") window.__resp = m.data; else window.__oldSend(to, m); }'); w.__resp = null;

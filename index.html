@@ -3178,7 +3178,8 @@ function applyHitToCard(c, m, isBot){
   if(m.kind === "maze"){ c.tap = false; c.mazeKey = turnKey(); return `${name} wird enttappt – kein Kampfschaden durch und an sie diesen Zug`; }
   if(m.kind === "stun"){ c.stun = (c.stun || 0) + Math.max(1, parseInt(m.amount, 10) || 1); return `${name}: ${c.stun} Betäubungsmarke(n)`; }
   if(m.kind === "bottom"){ if(c.tok){ move("gy"); return `${name} (Token) verschwindet`; } if(isBot){ BOT.bf.splice(BOT.bf.indexOf(c), 1); BOT.library.push(c); } else { moveCard(c.u, "library"); const i = S.library.indexOf(c); if(i >= 0){ S.library.splice(i, 1); S.library.push(c); } } return `${name} kommt unter die Bibliothek`; }
-  if(m.kind === "beastbind"){ if(!c._bbO) c._bbO = {o:c.o, kw:c.kw, pw:c.pw, tg:c.tg}; c.o = ""; c.kw = []; delete c._ab; delete c._abO; c.noAb = true; if(isCreature(c) || c.pw != null){ c.pw = 2; c.tg = 2; } c.bbBy = String(m.by || ""); return `${name} verliert alle Fähigkeiten${c.pw === 2 ? " und ist 2/2" : ""} bis zum nächsten Zug von ${oppByPid(m.by)}`; }
+  if(m.kind === "beastbind"){ if(!c._bbO) c._bbO = {o:c.o, kw:c.kw, pw:c.pw, tg:c.tg}; c.o = ""; c.kw = []; delete c._ab; delete c._abO; c.noAb = true; const bp = parseInt(m.amount, 10) || 2; if(isCreature(c) || c.pw != null){ c.pw = bp; c.tg = bp; } c.bbBy = String(m.from || m.by || ""); return `${name} verliert alle Fähigkeiten${c.pw === bp ? ` und ist ${bp}/${bp}` : ""} bis zum nächsten Zug von ${oppByPid(m.from || m.by)}`; }
+  if(m.kind === "shuffleIn"){ if(c.tok){ move("gy"); return `${name} (Token) verschwindet`; } if(isBot){ BOT.bf.splice(BOT.bf.indexOf(c), 1); BOT.library.push(c); BOT.library = shuffle(BOT.library); } else { moveCard(c.u, "library"); S.library = shuffle(S.library); } return `${name} kommt in die Bibliothek, sie wird gemischt`; }
   if(m.kind === "detain"){ c.detainBy = String(m.by || ""); return `${name} ist festgehalten: kann nicht angreifen, blocken oder Fähigkeiten aktivieren bis zum nächsten Zug von ${oppByPid(m.by)}`; }
   if(m.kind === "faceDown"){ if(!c.tok){ c.fd = true; } return `${name} wird umgedreht (2/2, verdeckt)`; }
   if(m.kind === "frog"){ if(!c._frogO) c._frogO = {o:c.o, kw:c.kw, pw:c.pw, tg:c.tg, type:c.type}; c.o = ""; c.kw = []; c.noAb = true; c.pw = 1; c.tg = 1; c.type = "Creature — Frog"; c.mc = "{U}"; delete c._ab; delete c._abO; return `${name} ist ein 1/1-Frosch ohne Fähigkeiten`; }
@@ -3404,7 +3405,8 @@ function remindTriggers(kind, myTurn){
   if(kind === "combat" && myTurn && S.bf.some(x => !x.fd && /^Other Goblin creatures you control attack each combat if able/im.test(x.o || ""))){ const gb = S.bf.filter(c => !c.tap && isCreature(c) && typeMatch(c, "Goblin") && !/^Other Goblin creatures you control attack/im.test(c.o || "")); if(gb.length) toast(`<b>Goblin Rabblemaster:</b> ${esc(gb.map(c => c.n).join(", "))} muss angreifen, wenn möglich.`); }
   if(kind === "combat" && myTurn){ const g = S.bf.filter(c => c.goad && !c.tap && isCreature(c)); if(g.length) toast(`<b>Goad:</b> ${esc(g.map(c => c.n + " (nicht " + c.goad + ")").join(", "))} muss angreifen, wenn möglich.`); }
   if(kind === "upkeep") karnRevert();
-  if(kind === "upkeep"){ S.bf.forEach(c => { if(c.detainBy && c.detainBy === TURN.active){ delete c.detainBy; act(`${c.n} ist nicht mehr festgehalten`); } if(c._bbO && c.bbBy === TURN.active){ Object.assign(c, c._bbO); delete c._bbO; delete c.bbBy; delete c.noAb; delete c._ab; delete c._abO; act(`${c.n} hat seine Fähigkeiten zurück`); } }); }
+  if(kind === "upkeep"){ S.bf.forEach(c => { if(c.detainBy && c.detainBy === TURN.active){ delete c.detainBy; act(`${c.n} ist nicht mehr festgehalten`); } if(c._bbO && c.bbBy === TURN.active){ Object.assign(c, c._bbO); delete c._bbO; delete c.bbBy; delete c.noAb; delete c._ab; delete c._abO; act(`${c.n} hat seine Fähigkeiten zurück`); } });
+    if(myTurn && typeof BOTS === "object") Object.keys(BOTS).forEach(id => withBot(id, () => { let ch = false; BOT.bf.forEach(c => { if(c._bbO && c.bbBy === me.id){ Object.assign(c, c._bbO); delete c._bbO; delete c.bbBy; delete c.noAb; delete c._ab; delete c._abO; ch = true; } }); if(ch){ botLog("Kreaturen haben ihre Fähigkeiten zurück"); botChanged(); } })); }
   if(kind === "upkeep" && myTurn && S.taxNext){ S.taxNext = false; commit(); }
   if(kind === "upkeep" && !myTurn && S.bf.some(x => !x.fd && /^Untap all permanents you control during each other player's untap step/im.test(x.o || ""))){ const l = S.bf.filter(x => x.tap); l.forEach(x => { x.tap = false; }); if(l.length) act(`Seedborn Muse: enttappt ${l.length} bleibende Karte(n)`); }
   if(kind === "upkeep" && myTurn && allBfCards().some(x => x.n === "The Tabernacle at Pendrell Vale" || /^All creatures have "At the beginning of your upkeep, destroy this creature unless you pay \{1\}/im.test(x.o || ""))) queued(async () => {
@@ -5042,7 +5044,7 @@ function parseAbilities(c){
   const out = [];
   const isPW = /Planeswalker/.test(c.type || ""), isSpell = /\b(Instant|Sorcery)\b/.test(c.type || ""), saga = isSaga(c);
   const ltTexts = lifeTriggers(c).map(t => t.text.slice(0, 50));
-  const MODAL_RE = /(?:^|\.\s*)choose (one|two|three|up to one|up to two|up to three|one or more|one or both|any number)(?: or more)?\s*(?:[—-]|\. If you control a commander as you cast this spell, you may choose both instead\.?|\. You may choose the same mode more than once\.?)\s*$/i;
+  const MODAL_RE = /(?:^|\.\s*)choose (one|two|three|up to one|up to two|up to three|one or more|one or both|any number)(?: or more)?\s*(?:[—-]|\. If you control a commander as you cast this spell, you may choose both instead\.?|\. If you control six or more lands, choose both instead\.?|\. You may choose the same mode more than once\.?)\s*$/i;
   const withModal = (ab) => { const mm = ab.text.match(MODAL_RE); if(mm){ ab.modal = {n:/or more/i.test(mm[0]) ? "one or more" : mm[1].toLowerCase(), modes:[], line:mm[0]}; ab.text = ab.text.slice(0, mm.index).trim(); } return ab; };
   String(c.o).split("\n").forEach(raw => {
     let line = cleanLine(raw); if(!line) return;
@@ -5181,6 +5183,7 @@ function matchStep2(p, src, full, SELF){
     } }
   if(/^it deals damage to each opponent equal to the number of cards in that player's hand$/i.test(p)) return [{t:"oppHandDmg"}];
   if(/^until end of turn, whenever you cast an instant or sorcery spell, copy it$/i.test(p)) return [{t:"wingsCopy"}];
+  if(/^until your next turn, creatures your opponents control have base power and toughness 1\/1 and lose all abilities$/i.test(p)) return [{t:"oppBase11"}];
   if(/^you may choose new targets for the copy$/i.test(p) && /whenever you cast an instant or sorcery spell, copy it\./i.test(full || "") && /^Until end of turn, whenever/im.test(full || "")) return [{t:"skip"}];
   // ganze Komplott-Texte: der erste Teil macht alles, die übrigen Teile entfallen
   { const F = String(full || "").trim(), WHOLE = [
@@ -5213,7 +5216,8 @@ function matchStep2(p, src, full, SELF){
       [/^Choose up to two target creatures your opponents control\. For each one, create a token that's a copy of it\. If you created fewer than two tokens this way, create a number of 4\/4 colorless Scarecrow artifact creature tokens with vigilance equal to the difference\.?$/i, () => ({t:"faceMocks"})],
       [/^You may redistribute any number of life totals\.?(?:\s*\([^)]*\))?$/i, () => ({t:"lifeRedist"})],
       [/^Until your next turn, up to one target opponent can't attack with creatures, up to one target opponent can't cast creature spells, and up to one target opponent can't cast noncreature spells\. You can't choose any player as a target more than once\.?$/i, () => ({t:"knowEvil"})],
-      [/^Target opponent chooses a player\. Until your next turn, only you and the chosen player can cast spells and attack with creatures\.?$/i, () => ({t:"champion"})]];
+      [/^Target opponent chooses a player\. Until your next turn, only you and the chosen player can cast spells and attack with creatures\.?$/i, () => ({t:"champion"})],
+      [/^Target opponent chooses a creature you don't control and puts it on top of its owner's library, then repeats this process for an artifact, an enchantment, and a land\. Then the owner of each permanent chosen this way shuffles\.?$/i, () => ({t:"natureOffer"})]];
     for(const [re, mk] of WHOLE){ const mm = F.match(re); if(mm) return F.toLowerCase().startsWith(p.toLowerCase()) ? [mk(mm)] : [{t:"skip"}]; } }
   if(/^each opponent's life total becomes the lowest life total among your opponents$/i.test(p)) return [{t:"lifeLowest"}];
   if(/^you may play an additional land this turn$/i.test(p)) return [{t:"noteOnly", text:"Du darfst diesen Zug ein zusätzliches Land spielen."}];
@@ -7577,6 +7581,23 @@ async function runSteps(steps, src, ctx = {}){
         const locked = opps.filter(o => o.id !== ch);
         locked.forEach(o => { S.locks.push({key:turnKey(), untilNext:true, pid:o.id, src:src.n}); S.locks.push({key:turnKey(), untilNext:true, noAttack:true, pid:o.id, src:src.n}); });
         act(`${src.n}: ${oppByPid(pid)} wählt ${ch === me.id ? "dich" : oppByPid(ch)} – bis zu deinem nächsten Zug ${locked.length ? `können ${locked.map(o => o.name).join(", ")} weder Zauber wirken noch angreifen` : "darf niemand sonst gesperrt werden"}`);
+        break;
+      }
+      case "oppBase11": {
+        let k = 0; for(const o of liveOpps()) (Array.isArray((others[o.id] || {}).bf) ? others[o.id].bf : []).filter(c => c && !c.fd && /Creature/.test(c.type || "")).forEach(c => { hitOpponent(o.id, {kind:"beastbind", card:c.u, by:me.id, amount:1, src:src.n}); k++; });
+        act(`${src.n}: ${k} gegnerische Kreatur(en) sind bis zu deinem nächsten Zug 1/1 ohne Fähigkeiten`);
+        break;
+      }
+      case "natureOffer": {
+        const opps = liveOpps(); if(!opps.length) break;
+        let pid = opps[0].id;
+        if(opps.length > 1){ const t = await pickTarget(`${src.n}: welcher Gegner wählt?`, "target opponent", false); if(t) pid = t.pid; }
+        const all = opps.flatMap(o => (Array.isArray((others[o.id] || {}).bf) ? others[o.id].bf : []).filter(c => c && !c.fd && !c.phased).map(c => ({...pubCard(c), pid:o.id})));
+        const groups = ["Creature", "Artifact", "Enchantment", "Land"].map(t => ({type:t, cards:all.filter(c => new RegExp(`\\b${t}\\b`).test(c.type || ""))}));
+        if(!groups.some(g => g.cards.length)){ act(`${src.n}: die Gegner haben keine passenden bleibenden Karten`); break; }
+        const r = await requestOpp(pid, {kind:"natureOffer", groups, src:src.n});
+        const us = []; groups.forEach((g, i) => { let u = r && Array.isArray(r.us) ? r.us[i] : null; if(!g.cards.some(c => c.u === u) || us.includes(u)) u = (g.cards.find(c => !us.includes(c.u)) || {}).u || null; if(u) us.push(u); });
+        for(const u of us){ const c = all.find(x => x.u === u); hitOpponent(c.pid, {kind:"shuffleIn", card:u, src:src.n}); act(`${src.n}: ${oppByPid(pid)} wählt ${c.n} von ${oppByPid(c.pid)} – sie kommt in die Bibliothek, die gemischt wird`); }
         break;
       }
       case "wingsCopy": {
@@ -10211,6 +10232,7 @@ async function pickStackAbil(src, st){
   return abilModal(`${src.n}: was kontern?`, (box, done) => { [...list].reverse().forEach(x => box.append(btn(stackLabel(x), () => done(x), "small"))); box.append(btn("Nichts", () => done(null), "small")); });
 }
 async function chooseModes(src, modal){
+  if(modal.line && /If you control six or more lands, choose both instead/i.test(modal.line) && S.bf.filter(c => !c.fd && /\bLand\b/.test(c.type || "")).length >= 6){ act(`${src.n}: sechs oder mehr Länder – beide Modi`); return modal.modes.slice(); }
   if(modal.line && /You may choose the same mode more than once/i.test(modal.line)){
     const n = nWord(modal.n) || 3;
     return abilModal(`${src.n}: ${n} Modi wählen (auch mehrfach)`, (box, done) => {
@@ -10858,6 +10880,16 @@ function receiveReq(m){
   if(q.kind === "wheelMay"){ const n = Math.max(1, Math.min(10, parseInt(q.n, 10) || 5)); queuedNow(async () => { const yes = await confirmMay({n:`${by}: ${src}`}, `deine Hand abwerfen und ${n} Karten ziehen`); if(yes){ const k = S.hand.length; S.gy.push(...S.hand.splice(0)); draw(n); act(`wirft ${k} Karten ab und zieht ${n} (${by}: ${src})`); commit(); } reply({ok:yes}); }); return; }
   if(q.kind === "revealUntilCreature"){ const rev = []; let hit = null; while(S.library.length){ const c = S.library.shift(); rev.push(c); if(/\bCreature\b/.test(c.type || "")){ hit = c; break; } } S.gy.push(...rev); act(`deckt ${rev.map(c => c.n).join(", ") || "nichts"} auf, sie kommen in den Friedhof (${by}: ${src}${hit ? `, ${by} darf ${hit.n} nehmen` : ""})`); commit(); reply({cards:rev.map(pubCard), hit:hit ? pubCard(hit) : null}); return; }
   if(q.kind === "revealPerm"){ const rev = []; let hit = null; while(S.library.length){ const c = S.library.shift(); if(isPermanentType(c)){ hit = c; break; } rev.push(c); } S.library.push(...shuffle(rev)); if(hit){ S.hand.push(hit); moveCard(hit.u, "bf"); } act(`deckt ${[...rev, hit].filter(Boolean).map(c => c.n).join(", ") || "nichts"} auf${hit ? ` – ${hit.n} kommt ins Spiel` : ""} (${by}: ${src})`); commit(); reply({card:hit ? hit.n : null}); return; }
+  if(q.kind === "natureOffer"){ const groups = (Array.isArray(q.groups) ? q.groups : []).slice(0, 4).map(g => ({type:String(g.type || "").slice(0, 20), cards:(Array.isArray(g.cards) ? g.cards : []).slice(0, 40)})); queuedNow(async () => {
+    const us = await abilModal(`${by} (${src}): wähle je eine bleibende Karte, die ${by} nicht kontrolliert`, (box, done) => {
+      box.append(Object.assign(document.createElement("p"), {textContent:"Die gewählten Karten kommen oben auf die Bibliothek ihres Besitzers, der danach mischt."}));
+      const pick = groups.map(() => null); const ok = btn("Fertig", () => done(pick), "primary");
+      const upd = () => { ok.disabled = groups.some((g, i) => !pick[i] && g.cards.some(c => !pick.includes(c.u))); };
+      groups.forEach((g, i) => { if(!g.cards.length) return; box.append(Object.assign(document.createElement("h3"), {textContent:{Creature:"Kreatur", Artifact:"Artefakt", Enchantment:"Verzauberung", Land:"Land"}[g.type] || g.type}));
+        const grid = document.createElement("div"); grid.className = "grid z-modal"; const els = [];
+        g.cards.forEach(c => { const el = cardEl({...c}, false, "hand"); el.style.setProperty("--w", "80px"); el.style.cursor = "pointer"; el.title = c.pid === me.id ? "deine Karte" : ""; el.addEventListener("click", () => { if(pick.includes(c.u) && pick[i] !== c.u) return; pick[i] = pick[i] === c.u ? null : c.u; els.forEach(e => e.classList.toggle("picked", e.dataset.u === pick[i])); upd(); }); el.dataset.u = c.u; els.push(el); grid.append(el); }); box.append(grid); });
+      box.append(ok); upd();
+    }); reply({us: us || []}); }); return; }
   if(q.kind === "choosePlayer"){ const ps = (Array.isArray(q.players) ? q.players : []).slice(0, 8).filter(p => p && typeof p.pid === "string"); queuedNow(async () => {
     const pid = await abilModal(`${by} (${src}): wähle einen Spieler`, (box, done) => {
       box.append(Object.assign(document.createElement("p"), {textContent:`Bis zum nächsten Zug von ${by} dürfen nur ${by} und der gewählte Spieler Zauber wirken und angreifen.`}));
@@ -11039,6 +11071,7 @@ function botReq(m){
   if(q.kind === "revealUntilCreature"){ const rev = []; let hit = null; while(BOT.library.length){ const c = BOT.library.shift(); rev.push(c); if(/\bCreature\b/.test(c.type || "")){ hit = c; break; } } BOT.gy.push(...rev); botLog(`deckt ${rev.length} Karte(n) auf, sie kommen in den Friedhof`); botChanged(); reply({cards:rev.map(pubCard), hit:hit ? pubCard(hit) : null}); return; }
   if(q.kind === "revealPerm"){ const rev = []; let hit = null; while(BOT.library.length){ const c = BOT.library.shift(); if(isPermanentType(c)){ hit = c; break; } rev.push(c); } BOT.library.push(...shuffle(rev)); if(hit){ hit.tap = false; BOT.bf.push(hit); } botLog(hit ? `bringt ${hit.n} ins Spiel` : "findet keine bleibende Karte"); botChanged(); reply({card:hit ? hit.n : null}); return; }
   if(q.kind === "choosePlayer"){ botLog("wählt sich selbst"); reply({pid:BOT_ID}); return; }
+  if(q.kind === "natureOffer"){ const us = []; (Array.isArray(q.groups) ? q.groups : []).forEach(g => { const cs = (Array.isArray(g.cards) ? g.cards : []).filter(c => !us.includes(c.u)).sort((a, b) => ((a.pid === BOT_ID) - (b.pid === BOT_ID)) || (a.pid === BOT_ID ? (Number(a.cmc) || 0) - (Number(b.cmc) || 0) : (Number(b.cmc) || 0) - (Number(a.cmc) || 0))); us.push(cs[0] ? cs[0].u : null); }); botLog("wählt die Karten für die Bibliothek"); reply({us}); return; }
   if(q.kind === "pickOne"){ const cards = Array.isArray(q.cards) ? q.cards : []; const own = cards.filter(c => BOT.bf.some(x => x.u === c.u)); const best = [...(own.length ? own : cards)].sort((a, b) => (Number(b.cmc) || 0) - (Number(a.cmc) || 0))[0]; botLog(best ? `behält ${best.n}` : "wählt nichts"); reply({u:best ? best.u : null}); return; }
   if(q.kind === "giveHandCard"){ const c = BOT.hand.find(x => x.u === q.u); if(c){ BOT.hand.splice(BOT.hand.indexOf(c), 1); botLog(`verliert ${c.n} aus der Hand`); botChanged(); } reply(c ? {card:fullCard(c)} : null); return; }
   if(q.kind === "pickPile"){ const up = Array.isArray(q.up) ? q.up : [], dn = Math.max(0, parseInt(q.downN, 10) || 0); const val = up.reduce((a, c) => a + (/\bLand\b/.test(c.type || "") ? 1 : 1 + (Number(c.cmc) || 0) / 2), 0); const pile = val <= dn * 2 ? "up" : "down"; botLog(`gibt den ${pile === "down" ? "verdeckten" : "offenen"} Stapel`); reply({pile}); return; }
@@ -11660,7 +11693,7 @@ function historyAdd(win){
 /* ---------- Automatische Updates ---------- */
 // Liegt die App im Web, prüft sie regelmässig version.json im selben Ordner und lädt sich bei einer neuen Version neu.
 // Alles Wichtige (Spielstand, Deck, Tisch) liegt im Browser-Speicher und ist nach dem Neuladen wieder da.
-const APP_VERSION = "2026.11.18-1";
+const APP_VERSION = "2026.11.18-2";
 const ONLINE = /^https?:$/.test(location.protocol);
 let updPending = null, updTimer = null, updSnoozeUntil = 0;
 function busyForUpdate(){ return botBusy || (!$("#modal").hidden && modalState && ["block","deck"].includes(modalState.kind)); }
