@@ -1527,7 +1527,7 @@ function pub(){
   const m = S.match || {w:0, l:0};
   return {name: me.name, life:S.life, poison:S.poison, turn:S.turn, handN:S.hand.length, libN:S.library.length,
     initiative: !!S.initiative, monarch: !!S.monarch, taxNext: !!S.taxNext, bf:S.bf.map(strip), gy:S.gy.map(strip), ex:S.ex.map(strip), cz:S.cz.map(strip), match: (m.w || m.l) ? `${m.w}–${m.l}` : "",
-    pool: poolStr(poolOf()), marks: marksPub(), protect: !!(S.protect), locks: (Array.isArray(S.locks) ? S.locks : []).filter(l => l && (l.key === turnKey() || l.untilNext)).slice(0, 5).map(l => ({key:l.untilNext ? turnKey() : l.key, noncreature:!!l.noncreature, noAttack:!!l.noAttack, noBlockNoFly:!!l.noBlockNoFly, pid: typeof l.pid === "string" ? l.pid.slice(0, 40) : null, src:String(l.src || "").slice(0, 60)})), companion: S.companion ? String(S.companion.n).slice(0, 80) : "", mat: LOOK.mat, sleeve: okColor(LOOK.sleeve) ? LOOK.sleeve : "", avatar: okImg(LOOK.avatar) ? LOOK.avatar : "", deckName: String(S.deckName || "").slice(0, 40)};
+    pool: poolStr(poolOf()), marks: marksPub(), protect: !!(S.protect), locks: (Array.isArray(S.locks) ? S.locks : []).filter(l => l && (l.key === turnKey() || l.untilNext)).slice(0, 5).map(l => ({key:l.untilNext ? turnKey() : l.key, noncreature:!!l.noncreature, creature:!!l.creature, noAttack:!!l.noAttack, noBlockNoFly:!!l.noBlockNoFly, pid: typeof l.pid === "string" ? l.pid.slice(0, 40) : null, src:String(l.src || "").slice(0, 60)})), companion: S.companion ? String(S.companion.n).slice(0, 80) : "", mat: LOOK.mat, sleeve: okColor(LOOK.sleeve) ? LOOK.sleeve : "", avatar: okImg(LOOK.avatar) ? LOOK.avatar : "", deckName: String(S.deckName || "").slice(0, 40)};
 }
 let pushTimer = null;
 function schedulePush(){ clearTimeout(pushTimer); pushTimer = setTimeout(pushState, 120); }
@@ -2324,6 +2324,7 @@ function heurResolve(c){
   const d = perm ? 0 : drawCount(c); if(d && !/opponent draws|target player draws/i.test(c.o || "")) botDraw(d);
 }
 function botCastHeur(c, why){
+  if(!isLand(c) && botCastLocked(c)) return false;
   const plan = castPlan(c, BOT.cz.includes(c) ? 2 * BOT.cmdCasts : 0); if(!plan) return false;
   castFromHand(c, plan);
   botLog(`${isPermanentType(c) ? "spielt" : "wirkt"} ${c.n}${why ? " – " + why : ""}`);
@@ -2580,6 +2581,7 @@ function runAction(a){
   } else if(a.type === "cast"){
     const c = BOT.hand.find(x => x.u === a.card) || BOT.cz.find(x => x.u === a.card);
     if(!c || isLand(c)) return;
+    if(botCastLocked(c)){ botLog(`darf ${c.n} nicht wirken (Sperre)`); return; }
     const plan = castPlan(c, BOT.cz.includes(c) ? 2 * BOT.cmdCasts : 0);
     if(!plan){ botLog(`wollte ${c.n} wirken, hat aber nicht das passende Mana`); return; }
     castFromHand(c, plan);
@@ -2626,6 +2628,7 @@ async function botTurn(){
       botPlayLand(); heurPrecombat(); const pk = botPickTarget(); attackers = pk.atk; atkTarget = pk.d.id;
     }
     botChanged();
+    { const lk = attackers.length && botAttackLocked(); if(lk){ botLog(`darf nicht angreifen (${lk.src})`); attackers = []; } }
     if(attackers.length){
       attackers.forEach(c => { if(!kwHas(c, "vigilance")) c.tap = true; });
       botChanged();
@@ -2795,7 +2798,7 @@ function openAttackDialog(preTarget){
     if(ptUnknown(c) || c.pwO != null) w.append(ptInputs(c));
     g.append(w);
   });
-  const noAtk = [S, ...Object.values(others)].flatMap(o => Array.isArray(o && o.locks) ? o.locks : []).find(l => l && l.noAttack && l.key === turnKey());
+  const noAtk = [S, ...Object.values(others)].flatMap(o => Array.isArray(o && o.locks) ? o.locks : []).find(l => l && l.noAttack && l.key === turnKey() && (!l.pid || l.pid === me.id));
   if(noAtk) box.append(Object.assign(document.createElement("p"), {className:"err", textContent:`${noAtk.src}: Kreaturen können diesen Zug nicht angreifen.`}));
   box.append(targets.length === 1 ? Object.assign(document.createElement("p"), {className:"muted", textContent:`Ziel: ${displayName(def)}`}) : "", g);
   box.append(Object.assign(document.createElement("p"), {className:"stat", textContent:"Kreaturen, die erst diesen Zug ins Spiel kamen, dürfen nicht angreifen (ausser mit Eile). Angreifer werden getappt, ausser mit Wachsamkeit."}));
@@ -2941,7 +2944,10 @@ function botChooseBlocks(attackers){
 }
 /* --- Reaktion auf Zauber (Gegenzauber) --- */
 function botCastLocked(spell){
-  return (Array.isArray(S.locks) ? S.locks : []).some(l => l && l.key === turnKey() && !l.noAttack && !l.noBlockNoFly && (!l.pid || l.pid === BOT_ID) && (!l.noncreature || !isCreature(spell)));
+  return (Array.isArray(S.locks) ? S.locks : []).some(l => l && (l.key === turnKey() || l.untilNext) && !l.noAttack && !l.noBlockNoFly && (!l.pid || l.pid === BOT_ID) && (!l.noncreature || !isCreature(spell)) && (!l.creature || isCreature(spell)));
+}
+function botAttackLocked(){
+  return (Array.isArray(S.locks) ? S.locks : []).find(l => l && l.noAttack && l.untilNext && l.pid === BOT_ID) || null;
 }
 async function botChooseCounter(card){
   const counters = BOT.hand.filter(c => counterMatch(c, card) && castPlan(c) && !botCastLocked(c));
@@ -5174,6 +5180,8 @@ function matchStep2(p, src, full, SELF){
       if(/^if (?:that|the) player chooses (?:self|others), /i.test(p) || /^(?:that player|the player|each of your other opponents) /i.test(p)) return [{t:"skip"}];
     } }
   if(/^it deals damage to each opponent equal to the number of cards in that player's hand$/i.test(p)) return [{t:"oppHandDmg"}];
+  if(/^until end of turn, whenever you cast an instant or sorcery spell, copy it$/i.test(p)) return [{t:"wingsCopy"}];
+  if(/^you may choose new targets for the copy$/i.test(p) && /whenever you cast an instant or sorcery spell, copy it\./i.test(full || "") && /^Until end of turn, whenever/im.test(full || "")) return [{t:"skip"}];
   // ganze Komplott-Texte: der erste Teil macht alles, die übrigen Teile entfallen
   { const F = String(full || "").trim(), WHOLE = [
       [/^It deals damage equal to your commander's mana value to each noncommander creature your opponents control\.?$/i, () => ({t:"sufferCmdr"})],
@@ -5187,7 +5195,25 @@ function matchStep2(p, src, full, SELF){
       [/^Each opponent reveals their hand\. Choose a nonland card from each of those hands\. Those players discard those cards\.?$/i, () => ({t:"everyHope"})],
       [/^Each opponent discards a card\. You draw a card for each land card discarded this way\.?$/i, () => ({t:"dreamLand"})],
       [/^Each player mills three cards\. Then you put a permanent card from among the milled cards onto the battlefield under your control\.?$/i, () => ({t:"mistakeTriumph"})],
-      [/^Each other player searches their library for a card, reveals it, and puts it into their hand\. Then you search your library for two cards and put them into your hand\. Each player shuffles\.?$/i, () => ({t:"ancientMagics"})]];
+      [/^Each other player searches their library for a card, reveals it, and puts it into their hand\. Then you search your library for two cards and put them into your hand\. Each player shuffles\.?$/i, () => ({t:"ancientMagics"})],
+      // Nacht 18.11.2026: weitere Komplotte
+      [/^Reveal the top two cards of your library and put them into your hand\. When you reveal one or more nonland cards this way, this scheme deals damage equal to their total mana value to any target\.?$/i, () => ({t:"premonition"})],
+      [/^Choose any number of creatures with different mana values\. Destroy those creatures\.?$/i, () => ({t:"runningUseless"})],
+      [/^You may pay \{X\}\. If you do, put each nonland permanent target player controls with mana value X or less on the bottom of its owner's library\.?$/i, () => ({t:"vestigeRot"})],
+      [/^Exile cards from the top of your library until you exile a nonland card\. You may cast that card without paying its mana cost\. Then if you control six or more lands, repeat this process once\.?$/i, () => ({t:"noSecret"})],
+      [/^Each opponent exiles the top card of their library\. You may cast any number of spells from among cards exiled this way without paying their mana costs\.?$/i, () => ({t:"whenLearn"})],
+      [/^Each opponent reveals their hand\. You may choose a noncreature, nonland card revealed this way and cast it without paying its mana cost\.?$/i, () => ({t:"wishCommand"})],
+      [/^Any number of target players each discard their hands\. Each opponent draws cards equal to the number of cards that player discarded minus one\. Then if you discarded a card this way, draw seven cards\.?$/i, () => ({t:"plansNothing"})],
+      [/^Look at the top four cards of your library and separate them into a face-down pile and a face-up pile\. An opponent chooses one of those piles\. Put the cards in that pile into your hand and the rest on the bottom of your library in any order\.?$/i, () => ({t:"chooseDemise"})],
+      [/^For each opponent, put up to one target creature card from that player's graveyard onto the battlefield under your control\. Each of those creatures attacks its owner each combat if able\.?$/i, () => ({t:"deadServe"})],
+      [/^Each opponent reveals cards from the top of their library until they reveal a creature card\. Choose one of the revealed creature cards and put it onto the battlefield under your control\. Put all other cards revealed this way into their owners' graveyards\.?$/i, () => ({t:"danceMarionette"})],
+      [/^For each opponent, exile target permanent that player controls\. Then each player reveals cards from the top of their library until they reveal a permanent card, puts it onto the battlefield, and puts the rest on the bottom of their library in a random order\.?$/i, () => ({t:"chaosPlay"})],
+      [/^Choose up to three nonland permanents you don't control\. Target opponent chooses one of those permanents\. You gain control of the rest\.?$/i, () => ({t:"willIrresist"})],
+      [/^For each card type among permanents your opponents control, you may put a permanent card of that type from your hand onto the battlefield\.?$/i, () => ({t:"onlyIKnow"})],
+      [/^Choose up to two target creatures your opponents control\. For each one, create a token that's a copy of it\. If you created fewer than two tokens this way, create a number of 4\/4 colorless Scarecrow artifact creature tokens with vigilance equal to the difference\.?$/i, () => ({t:"faceMocks"})],
+      [/^You may redistribute any number of life totals\.?(?:\s*\([^)]*\))?$/i, () => ({t:"lifeRedist"})],
+      [/^Until your next turn, up to one target opponent can't attack with creatures, up to one target opponent can't cast creature spells, and up to one target opponent can't cast noncreature spells\. You can't choose any player as a target more than once\.?$/i, () => ({t:"knowEvil"})],
+      [/^Target opponent chooses a player\. Until your next turn, only you and the chosen player can cast spells and attack with creatures\.?$/i, () => ({t:"champion"})]];
     for(const [re, mk] of WHOLE){ const mm = F.match(re); if(mm) return F.toLowerCase().startsWith(p.toLowerCase()) ? [mk(mm)] : [{t:"skip"}]; } }
   if(/^each opponent's life total becomes the lowest life total among your opponents$/i.test(p)) return [{t:"lifeLowest"}];
   if(/^you may play an additional land this turn$/i.test(p)) return [{t:"noteOnly", text:"Du darfst diesen Zug ein zusätzliches Land spielen."}];
@@ -7337,6 +7363,228 @@ async function runSteps(steps, src, ctx = {}){
         await searchStep({what:"up to two cards", rest:"put them into your hand", label:"zwei Karten"}, src, ctx);
         break;
       }
+      case "premonition": {
+        const top = S.library.splice(0, 2); S.hand.push(...top);
+        act(`${src.n}: deckt ${top.map(c => c.n).join(", ") || "nichts"} auf und nimmt sie auf die Hand`); commit();
+        const nl = top.filter(c => !isLand(c)), mv = nl.reduce((a, c) => a + (Number(c.cmc) || 0), 0);
+        if(!nl.length){ act(`${src.n}: keine Nichtlandkarte aufgedeckt`); break; }
+        if(!mv){ act(`${src.n}: Manawert zusammen 0 – kein Schaden`); break; }
+        const t = await pickTarget(`${src.n}: ${mv} Schaden an …`, "any target", false);
+        if(t){ ctx.target = t; damageTarget(t, mv, src); }
+        break;
+      }
+      case "runningUseless": {
+        const pool = [...S.bf.filter(c => !c.fd && isCreature(c)).map(c => ({c, pid:me.id})),
+          ...liveOpps().flatMap(o => (Array.isArray((others[o.id] || {}).bf) ? others[o.id].bf : []).filter(c => c && !c.fd && /Creature/.test(c.type || "")).map(c => ({c, pid:o.id})))];
+        if(!pool.length){ act(`${src.n}: keine Kreatur im Spiel`); break; }
+        const p = (await pickCards(`${src.n}: Kreaturen mit verschiedenen Manawerten zerstören (je Manawert höchstens eine)`, pool.map(x => x.c), pool.length, {none:"Keine"})) || [];
+        const seen = new Set(), keep = [];
+        p.forEach(c => { const mv = Number(c.cmc) || 0; if(!seen.has(mv)){ seen.add(mv); keep.push(c); } });
+        if(keep.length < p.length) act(`${src.n}: je Manawert nur eine Kreatur – ${p.length - keep.length} Wahl/Wahlen entfallen`);
+        keep.forEach(c => { const x = pool.find(y => y.c === c); actOnTarget({kind:"card", mine:x.pid === me.id, pid:x.pid, card:c}, "destroy", src); });
+        if(!keep.length) act(`${src.n}: keine Kreatur gewählt`);
+        break;
+      }
+      case "vestigeRot": {
+        const t = await pickTarget(`${src.n}: welcher Spieler?`, "target player", false); if(!t || t.kind !== "player") break;
+        if(!(await confirmMay(src, "{X} bezahlen"))){ act(`${src.n}: X nicht bezahlt`); break; }
+        const X = await askNumber(`${src.n}: Wert für X`, "Jede bleibende Nichtlandkarte des Spielers mit Manawert X oder weniger kommt unter die Bibliothek ihres Besitzers.");
+        if(X == null || X < 0) break;
+        if(X > 0 && !(await payFor({n:src.n, mc:`{${X}}`, cmc:X, type:"Ability", o:""}))){ act(`${src.n}: X nicht bezahlt`); break; }
+        const f = c => c && !c.fd && !isLand(c) && (Number(c.cmc) || 0) <= X;
+        if(t.pid === me.id){ const list = S.bf.filter(f); list.forEach(c => applyHitToCard(c, {kind:"bottom"}, false)); act(`${src.n}: ${list.length} deiner bleibenden Karten (Manawert ≤ ${X}) unter die Bibliothek`); }
+        else { const list = (Array.isArray((others[t.pid] || {}).bf) ? others[t.pid].bf : []).filter(f); list.forEach(c => hitOpponent(t.pid, {kind:"bottom", card:c.u, src:src.n})); act(`${src.n}: ${list.length} bleibende Karte(n) von ${oppByPid(t.pid)} (Manawert ≤ ${X}) unter die Bibliothek`); }
+        break;
+      }
+      case "noSecret": {
+        for(let round = 0; round < 2; round++){
+          if(round && S.bf.filter(c => !c.fd && /\bLand\b/.test(c.type || "")).length < 6) break;
+          const ex = []; let hit = null;
+          while(S.library.length){ const c = S.library.shift(); S.ex.push(c); ex.push(c); if(!isLand(c)){ hit = c; break; } }
+          act(`${src.n}: verbannt ${ex.map(c => c.n).join(", ") || "nichts"}${round ? " (Wiederholung, sechs oder mehr Länder)" : ""}`); commit();
+          if(hit && await confirmMay(src, `${hit.n} gratis wirken`)) await castFree(hit, {});
+          commit();
+        }
+        break;
+      }
+      case "whenLearn": {
+        const got = [];
+        for(const o of liveOpps()){ const r = await requestOpp(o.id, {kind:"exileTop", src:src.n}); if(r && r.card){ receiveGive({card:{...r.card, ow:{id:o.id, name:o.name}}, zone:"ex"}); got.push(S.ex[S.ex.length - 1]); act(`${src.n}: ${o.name} verbannt ${r.card.n}`); } }
+        const spells = got.filter(c => c && !isLand(c));
+        const p = spells.length ? ((await pickCards(`${src.n}: welche Zauber gratis wirken?`, spells, spells.length, {none:"Keine"})) || []) : [];
+        for(const c of p) await castFree(c, {});
+        if(!spells.length) act(`${src.n}: kein Zauber verbannt`);
+        break;
+      }
+      case "wishCommand": {
+        const pool = [];
+        for(const o of liveOpps()){ const r = await requestOpp(o.id, {kind:"hand", src:src.n}); const h = r && Array.isArray(r.hand) ? r.hand : []; act(`${src.n}: ${o.name} zeigt ${h.map(c => c.n).join(", ") || "keine Karten"}`); h.filter(c => c && !/\b(Creature|Land)\b/.test(c.type || "")).forEach(c => pool.push({c, pid:o.id})); }
+        if(!pool.length){ act(`${src.n}: keine Nichtkreatur-Nichtlandkarte aufgedeckt`); break; }
+        const p = (await pickCards(`${src.n}: welche Karte gratis wirken?`, pool.map(x => x.c), 1, {none:"Keine"})) || [];
+        if(!p[0]) break;
+        const x = pool.find(y => y.c === p[0]); const r = await requestOpp(x.pid, {kind:"giveHandCard", u:p[0].u, src:src.n});
+        if(!r || !r.card){ act(`${src.n}: ${p[0].n} ist nicht mehr auf der Hand`); break; }
+        receiveGive({card:{...r.card, ow:{id:x.pid, name:oppByPid(x.pid)}}, zone:"ex"});
+        await castFree(S.ex[S.ex.length - 1], {});
+        break;
+      }
+      case "plansNothing": {
+        const ps = [{pid:me.id, name:`Du (${S.hand.length} Handkarten)`}, ...liveOpps().map(o => ({pid:o.id, name:`${o.name} (${Number((others[o.id] || {}).handN) || 0} Handkarten)`}))];
+        const chosen = await abilModal(`${src.n}: welche Spieler werfen ihre Hand ab?`, (box, done) => {
+          const sel = new Set(); const row = document.createElement("div"); row.className = "row";
+          ps.forEach(p => { const b = btn(p.name, () => { if(sel.has(p.pid)) sel.delete(p.pid); else sel.add(p.pid); b.classList.toggle("primary", sel.has(p.pid)); }, "small"); row.append(b); });
+          box.append(row, btn("Weiter", () => done([...sel]), "primary"), btn("Keine", () => done([]), "small"));
+        }) || [];
+        let mine = 0; const disc = {};
+        if(chosen.includes(me.id)){ mine = S.hand.length; S.gy.push(...S.hand.splice(0)); act(`${src.n}: du wirfst deine Hand ab (${mine})`); commit(); }
+        for(const o of liveOpps()){ if(!chosen.includes(o.id)) continue; const r = await requestOpp(o.id, {kind:"discard", n:20, random:true, src:src.n}); disc[o.id] = r && Array.isArray(r.cards) ? r.cards.length : 0; act(`${src.n}: ${o.name} wirft ${disc[o.id]} Karte(n) ab`); }
+        for(const o of liveOpps()){ const k = (disc[o.id] || 0) - 1; if(k > 0){ await requestOpp(o.id, {kind:"draw", n:k, src:src.n}); act(`${src.n}: ${o.name} zieht ${k}`); } }
+        if(mine > 0){ draw(7); act(`${src.n}: du ziehst sieben`); }
+        break;
+      }
+      case "chooseDemise": {
+        const top = S.library.splice(0, 4); if(!top.length){ act(`${src.n}: Bibliothek leer`); break; }
+        const down = (await pickCards(`${src.n}: welche Karten kommen in den verdeckten Stapel? (der Rest liegt offen)`, top, top.length, {none:"Keine (alle offen)"})) || [];
+        const up = top.filter(c => !down.includes(c));
+        const opps = liveOpps(); let pile = "up";
+        if(opps.length){
+          let pid = opps[0].id;
+          if(opps.length > 1){ const t = await pickTarget(`${src.n}: welcher Gegner wählt den Stapel?`, "target opponent", false); if(t) pid = t.pid; }
+          const r = await requestOpp(pid, {kind:"pickPile", up:up.map(pubCard), downN:down.length, src:src.n});
+          pile = r && r.pile === "down" ? "down" : "up";
+          act(`${src.n}: ${oppByPid(pid)} wählt den ${pile === "down" ? "verdeckten" : "offenen"} Stapel`);
+        }
+        const take = pile === "down" ? down : up, rest = pile === "down" ? up : down;
+        S.hand.push(...take); S.library.push(...rest);
+        act(`${src.n}: ${take.length} Karte(n) auf die Hand${pile === "up" && take.length ? ` (${take.map(c => c.n).join(", ")})` : ""}, ${rest.length} unter die Bibliothek`);
+        break;
+      }
+      case "deadServe": {
+        for(const o of liveOpps()){
+          const gy = (Array.isArray((others[o.id] || {}).gy) ? others[o.id].gy : []).filter(c => c && /Creature/.test(c.type || ""));
+          if(!gy.length){ act(`${src.n}: keine Kreaturenkarte im Friedhof von ${o.name}`); continue; }
+          const p = (await pickCards(`${src.n}: bis zu eine Kreaturenkarte aus dem Friedhof von ${o.name}`, gy, 1, {none:"Keine"})) || [];
+          if(!p[0]) continue;
+          const before = S.bf.length; const r = await requestOpp(o.id, {kind:"giveFromGy", u:p[0].u, src:src.n}); await new Promise(z => setTimeout(z, 30));
+          const c = r && r.ok && S.bf.length > before ? S.bf[S.bf.length - 1] : null;
+          if(!c){ act(`${src.n}: ${p[0].n} nicht gefunden`); continue; }
+          const nm = isBotId(o.id) ? botName(o.id) : o.name;
+          c.o = (c.o ? c.o + "\n" : "") + `This creature attacks ${nm} each combat if able.`; delete c._ab;
+          act(`${src.n}: ${c.n} kommt unter deiner Kontrolle ins Spiel und greift jeden Kampf ${nm} an, wenn möglich`);
+        }
+        commit(); break;
+      }
+      case "danceMarionette": {
+        const pool = [];
+        for(const o of liveOpps()){ const r = await requestOpp(o.id, {kind:"revealUntilCreature", src:src.n}); const cs = r && Array.isArray(r.cards) ? r.cards : []; act(`${src.n}: ${o.name} deckt ${cs.map(c => c.n).join(", ") || "nichts"} auf`); if(r && r.hit) pool.push({c:r.hit, pid:o.id}); }
+        if(!pool.length){ act(`${src.n}: keine Kreaturenkarte aufgedeckt`); break; }
+        const p = pool.length === 1 ? [pool[0].c] : ((await pickCards(`${src.n}: welche aufgedeckte Kreatur kommt unter deiner Kontrolle ins Spiel?`, pool.map(x => x.c), 1)) || []);
+        const x = pool.find(y => y.c === p[0]) || pool[0];
+        const r = await requestOpp(x.pid, {kind:"giveFromGy", u:x.c.u, src:src.n});
+        act(`${src.n}: ${x.c.n} von ${oppByPid(x.pid)} ${r && r.ok ? "kommt unter deiner Kontrolle ins Spiel" : "nicht gefunden"}`);
+        break;
+      }
+      case "chaosPlay": {
+        for(const o of liveOpps()){
+          const bf = (Array.isArray((others[o.id] || {}).bf) ? others[o.id].bf : []).filter(c => c && !c.fd && !c.phased);
+          if(!bf.length) continue;
+          const p = (await pickCards(`${src.n}: welche bleibende Karte von ${o.name} verbannen?`, bf, 1, {none:"Keine"})) || [];
+          if(p[0]){ hitOpponent(o.id, {kind:"exile", card:p[0].u, src:src.n}); act(`${src.n}: verbannt ${p[0].n} von ${o.name}`); }
+        }
+        const rev = []; let hit = null;
+        while(S.library.length){ const c = S.library.shift(); if(isPermanentType(c)){ hit = c; break; } rev.push(c); }
+        S.library.push(...shuffle(rev));
+        if(hit){ S.hand.push(hit); moveCard(hit.u, "bf"); }
+        act(`${src.n}: du deckst ${[...rev, hit].filter(Boolean).map(c => c.n).join(", ") || "nichts"} auf${hit ? ` – ${hit.n} kommt ins Spiel` : ""}`); commit();
+        for(const o of liveOpps()){ const r = await requestOpp(o.id, {kind:"revealPerm", src:src.n}); act(`${src.n}: ${o.name} ${r && r.card ? `bringt ${r.card} ins Spiel` : "findet keine bleibende Karte"}`); }
+        break;
+      }
+      case "willIrresist": {
+        const pool = liveOpps().flatMap(o => (Array.isArray((others[o.id] || {}).bf) ? others[o.id].bf : []).filter(c => c && !c.fd && !c.phased && !/\bLand\b/.test(c.type || "")).map(c => ({c, pid:o.id})));
+        if(!pool.length){ act(`${src.n}: keine bleibende Nichtlandkarte der Gegner`); break; }
+        const p = (await pickCards(`${src.n}: bis zu drei bleibende Nichtlandkarten, die du nicht kontrollierst`, pool.map(x => x.c), 3, {none:"Keine"})) || [];
+        if(!p.length) break;
+        const opps = liveOpps(); let pid = opps[0].id;
+        if(opps.length > 1){ const t = await pickTarget(`${src.n}: welcher Gegner wählt eine davon aus?`, "target opponent", false); if(t) pid = t.pid; }
+        const r = await requestOpp(pid, {kind:"pickOne", cards:p.map(pubCard), src:src.n});
+        const keepU = r && r.u && p.some(c => c.u === r.u) ? r.u : p[0].u;
+        act(`${src.n}: ${oppByPid(pid)} wählt ${p.find(c => c.u === keepU).n} – sie bleibt`);
+        for(const c of p){ if(c.u === keepU) continue; const x = pool.find(y => y.c === c); const g = await requestOpp(x.pid, {kind:"giveMe", u:c.u, src:src.n}); act(`${src.n}: ${g && g.ok ? "übernimmt" : "kann nicht übernehmen:"} ${c.n}`); }
+        break;
+      }
+      case "onlyIKnow": {
+        const TYPES = ["Artifact", "Creature", "Enchantment", "Land", "Planeswalker", "Battle"];
+        const opp = liveOpps().flatMap(o => (Array.isArray((others[o.id] || {}).bf) ? others[o.id].bf : []).filter(c => c && !c.fd));
+        const types = TYPES.filter(t => opp.some(c => new RegExp(`\\b${t}\\b`).test(c.type || "")));
+        if(!types.length){ act(`${src.n}: die Gegner haben keine bleibenden Karten`); break; }
+        for(const t of types){
+          const list = S.hand.filter(c => isPermanentType(c) && new RegExp(`\\b${t}\\b`).test(c.type || ""));
+          if(!list.length) continue;
+          const p = (await pickCards(`${src.n}: eine bleibende Karte vom Typ ${t} aus der Hand ins Spiel?`, list, 1, {none:"Keine"})) || [];
+          if(p[0]){ moveCard(p[0].u, "bf"); act(`${src.n}: ${p[0].n} kommt ins Spiel (${t})`); commit(); }
+        }
+        break;
+      }
+      case "faceMocks": {
+        let made = 0; const used = new Set();
+        for(let i = 0; i < 2; i++){
+          const t = await pickTarget(`${src.n}: Token-Kopie von welcher gegnerischen Kreatur? (${i + 1}/2)`, "target creature an opponent controls", true);
+          if(!t || t.kind !== "card" || t.mine || used.has(t.card.u)) break;
+          used.add(t.card.u); ctx.last = t.card;
+          await runSteps([{t:"tokenCopy", who:"it", n:"a"}], src, {...ctx, last:t.card}); made++;
+        }
+        for(let i = made; i < 2; i++) await makeTokens({n:"a", desc:"4/4 colorless Scarecrow artifact creature", extra:"vigilance", tapped:false}, src, ctx);
+        if(made < 2) act(`${src.n}: ${2 - made} Vogelscheuche(n) 4/4 mit Wachsamkeit`);
+        break;
+      }
+      case "lifeRedist": {
+        const ps = [{pid:me.id, name:"Du", life:S.life}, ...liveOpps().map(o => ({pid:o.id, name:o.name, life:Number((others[o.id] || {}).life) || 0}))];
+        const res = await abilModal(`${src.n}: Lebenspunkte neu verteilen`, (box, done) => {
+          box.append(Object.assign(document.createElement("p"), {textContent:"Jeder betroffene Spieler bekommt einen der Lebenspunktestände. Jeder Stand darf nur einmal vergeben werden."}));
+          const sels = ps.map((p, i) => { const row = document.createElement("div"); row.className = "row"; const sel = document.createElement("select"); sel.dataset.i = i; ps.forEach((q, j) => sel.append(Object.assign(document.createElement("option"), {value:String(j), textContent:`${q.life} (von ${q.name})`, selected:i === j}))); row.append(Object.assign(document.createElement("span"), {textContent:`${p.name} (${p.life}) bekommt: `}), sel); box.append(row); return sel; });
+          const err = Object.assign(document.createElement("p"), {className:"err"}); box.append(err);
+          box.append(btn("Verteilen", () => { const v = sels.map(x => +x.value); if(new Set(v).size !== v.length){ err.textContent = "Jeder Stand nur einmal."; return; } done(v); }, "primary"), btn("Nicht verteilen", () => done(null), "small"));
+        });
+        if(!res) break;
+        const now = ps.map((p, i) => ps[res[i]].life);
+        ps.forEach((p, i) => { const d = now[i] - p.life; if(!d) return;
+          if(p.pid === me.id){ S.life = now[i]; act(`${src.n}: dein Leben wird ${now[i]}`); }
+          else { hitOpponent(p.pid, {kind:d > 0 ? "heal" : "loss", amount:Math.abs(d), src:src.n}); act(`${src.n}: ${p.name} hat jetzt ${now[i]} Leben`); } });
+        break;
+      }
+      case "knowEvil": {
+        const opps = liveOpps(); if(!opps.length) break;
+        const ROWS = [["noAttack", "kann nicht mit Kreaturen angreifen"], ["creature", "kann keine Kreaturenzauber wirken"], ["noncreature", "kann keine Nichtkreaturenzauber wirken"]];
+        const res = await abilModal(`${src.n}: bis zu deinem nächsten Zug`, (box, done) => {
+          box.append(Object.assign(document.createElement("p"), {textContent:"Jeder Gegner darf höchstens einmal gewählt werden."}));
+          const sels = ROWS.map(([k, label], i) => { const row = document.createElement("div"); row.className = "row"; const sel = document.createElement("select"); sel.append(Object.assign(document.createElement("option"), {value:"", textContent:"niemand"})); opps.forEach((o, j) => sel.append(Object.assign(document.createElement("option"), {value:o.id, textContent:o.name, selected:j === i}))); row.append(sel, Object.assign(document.createElement("span"), {textContent:` ${label}`})); box.append(row); return sel; });
+          const err = Object.assign(document.createElement("p"), {className:"err"}); box.append(err);
+          box.append(btn("Weiter", () => { const v = sels.map(x => x.value); const used = v.filter(Boolean); if(new Set(used).size !== used.length){ err.textContent = "Jeden Gegner nur einmal wählen."; return; } done(v); }, "primary"), btn("Abbrechen", () => done(null), "small"));
+        });
+        if(!res) break;
+        S.locks = (Array.isArray(S.locks) ? S.locks : []).filter(l => l.key === turnKey() || l.untilNext);
+        ROWS.forEach(([k, label], i) => { const pid = res[i]; if(!pid) return; S.locks.push({key:turnKey(), untilNext:true, pid, src:src.n, [k]:true}); act(`${src.n}: ${oppByPid(pid)} ${label} (bis zu deinem nächsten Zug)`); });
+        break;
+      }
+      case "champion": {
+        const opps = liveOpps(); if(!opps.length) break;
+        let pid = opps[0].id;
+        if(opps.length > 1){ const t = await pickTarget(`${src.n}: welcher Gegner wählt einen Spieler?`, "target opponent", false); if(t) pid = t.pid; }
+        const players = [{pid:me.id, name:me.name || "Archenemy"}, ...opps.map(o => ({pid:o.id, name:o.name}))];
+        const r = await requestOpp(pid, {kind:"choosePlayer", players, src:src.n});
+        const ch = r && players.some(p => p.pid === r.pid) ? r.pid : pid;
+        S.locks = (Array.isArray(S.locks) ? S.locks : []).filter(l => l.key === turnKey() || l.untilNext);
+        const locked = opps.filter(o => o.id !== ch);
+        locked.forEach(o => { S.locks.push({key:turnKey(), untilNext:true, pid:o.id, src:src.n}); S.locks.push({key:turnKey(), untilNext:true, noAttack:true, pid:o.id, src:src.n}); });
+        act(`${src.n}: ${oppByPid(pid)} wählt ${ch === me.id ? "dich" : oppByPid(ch)} – bis zu deinem nächsten Zug ${locked.length ? `können ${locked.map(o => o.name).join(", ")} weder Zauber wirken noch angreifen` : "darf niemand sonst gesperrt werden"}`);
+        break;
+      }
+      case "wingsCopy": {
+        S.emblems = Array.isArray(S.emblems) ? S.emblems : [];
+        S.emblems.push(Object.assign(newCard({n:`${src.n} (bis Zugende)`, type:"Emblem", o:"Whenever you cast an instant or sorcery spell, copy that spell."}), {eot:turnKey()}));
+        act(`${src.n}: bis Ende des Zuges wird jeder Spontanzauber und jede Hexerei, die du wirkst, kopiert`);
+        break;
+      }
       case "oppHandDmg": {
         for(const o of liveOpps()){ const n = Number((others[o.id] || {}).handN) || 0; if(n){ hitOpponent(o.id, {kind:"damage", amount:n, src:src.n}); act(`${src.n}: ${n} Schaden an ${oppByPid(o.id)} (Handkarten)`); } }
         break;
@@ -7822,7 +8070,7 @@ async function runSteps(steps, src, ctx = {}){
       case "cloakDagger": {
         const t = await pickTarget(`${src.n}: welcher Gegner?`, "target opponent", false); if(!t) break;
         const crs = ((isBotId(t.pid) ? botOf(t.pid).bf : ((others[t.pid] || {}).bf || [])) || []).filter(c => c && /Creature/.test(c.type || ""));
-        const r = await requestOpp(t.pid, {kind:"hand", src:src.n}); const hand = (r && Array.isArray(r.cards) ? r.cards : []).filter(c => !/\bLand\b/.test(c.type || ""));
+        const r = await requestOpp(t.pid, {kind:"hand", src:src.n}); const hand = (r && Array.isArray(r.hand) ? r.hand : r && Array.isArray(r.cards) ? r.cards : []).filter(c => !/\bLand\b/.test(c.type || ""));
         const opts = [...hand.map(c => ({...c, n:`${c.n} (Hand)`, _z:"hand"})), ...crs.map(c => ({...c, n:`${c.n} (im Spiel)`, _z:"bf"}))];
         const p = opts.length ? await pickCards(`${src.n}: eine Karte verbannen, bis ${src.n} das Spiel verlässt`, opts, 1, {none:"Keine"}) : []; if(!p || !p[0]) break;
         if(p[0]._z === "hand"){ const g = await requestOpp(t.pid, {kind:"discardThis", u:p[0].u, toEx:true, src:src.n}); act(`${src.n}: verbannt ${p[0].n.replace(/ \(Hand\)$/, "")} aus der Hand`); }
@@ -9862,7 +10110,7 @@ async function castWarn(c, zone){
   const tk = turnKey();
   Object.entries(others).forEach(([id, o]) => {
     if(!o || id === me.id) return;
-    (Array.isArray(o.locks) ? o.locks : []).forEach(l => { if(l && l.key === tk && !l.noAttack && (!l.pid || l.pid === me.id) && (!l.noncreature || !isCreature(c))) why.push(`${l.src}: du kannst diesen Zug keine ${l.noncreature ? "Nicht-Kreatur-" : ""}Zauber wirken`); });
+    (Array.isArray(o.locks) ? o.locks : []).forEach(l => { if(l && l.key === tk && !l.noAttack && (!l.pid || l.pid === me.id) && (!l.noncreature || !isCreature(c)) && (!l.creature || isCreature(c))) why.push(`${l.src}: du kannst diesen Zug keine ${l.noncreature ? "Nicht-Kreatur-" : l.creature ? "Kreatur" : ""}${l.creature ? "enzauber" : "Zauber"} wirken`); });
     const names = (Array.isArray(o.bf) ? o.bf : []).filter(x => x && !x.fd).map(x => x.n);
     if(TURN.active === id && names.some(n => /^(Grand Abolisher|Jennifer Walters|Myrel, Shield of Argive|Dosan the Falling Leaf)/.test(n))) why.push(`${names.find(n => /^(Grand Abolisher|Jennifer Walters|Myrel|Dosan)/.test(n))}: im Zug von ${o.name || "diesem Spieler"} darfst du keine Zauber wirken`);
     if(TURN.active === id && names.includes("Voice of Victory")) why.push(`Voice of Victory: im Zug von ${o.name || "diesem Spieler"} darfst du keine Zauber wirken`);
@@ -9912,6 +10160,7 @@ function abilEvent(ev, extraSrc){
   if(ev && (ev.kind === "oppCast" || ev.kind === "oppDraw") && ev.pid && ev.nth == null){ const k = `${ev.kind}|${ev.pid}|${turnKey()}`; OPP_COUNT[k] = (OPP_COUNT[k] || 0) + 1; ev.nth = OPP_COUNT[k]; }
   if(!abilAuto()) return;
   const srcs = S.bf.filter(c => !c.fd);
+  if(Array.isArray(S.emblems) && S.emblems.some(e => e.eot && e.eot !== turnKey())) S.emblems = S.emblems.filter(e => !e.eot || e.eot === turnKey());
   (Array.isArray(S.emblems) ? S.emblems : []).forEach(e => srcs.push(e));
   (extraSrc || []).forEach(c => { if(c && !srcs.includes(c)) srcs.push(c); });
   const fire = [];
@@ -10607,6 +10856,24 @@ function receiveReq(m){
   if(q.kind === "searchBasic"){ queuedNow(async () => { let ok = false; if(await confirmMay({n:`${by}: ${src}`}, "ein Standardland suchen")){ await searchStep({what:"a basic land card", rest:q.tapped ? "put it onto the battlefield tapped" : "put it onto the battlefield"}, {n:`${by}: ${src}`}, {}); ok = true; } reply({ok}); }); return; }
   if(q.kind === "secretNumber"){ queuedNow(async () => { const n = await askNumber(`${by} (${src}): deine geheime Zahl`, "Wähle eine Zahl (0 oder mehr). Alle zeigen gleichzeitig auf."); reply({n: Math.max(0, n || 0)}); }); return; }
   if(q.kind === "wheelMay"){ const n = Math.max(1, Math.min(10, parseInt(q.n, 10) || 5)); queuedNow(async () => { const yes = await confirmMay({n:`${by}: ${src}`}, `deine Hand abwerfen und ${n} Karten ziehen`); if(yes){ const k = S.hand.length; S.gy.push(...S.hand.splice(0)); draw(n); act(`wirft ${k} Karten ab und zieht ${n} (${by}: ${src})`); commit(); } reply({ok:yes}); }); return; }
+  if(q.kind === "revealUntilCreature"){ const rev = []; let hit = null; while(S.library.length){ const c = S.library.shift(); rev.push(c); if(/\bCreature\b/.test(c.type || "")){ hit = c; break; } } S.gy.push(...rev); act(`deckt ${rev.map(c => c.n).join(", ") || "nichts"} auf, sie kommen in den Friedhof (${by}: ${src}${hit ? `, ${by} darf ${hit.n} nehmen` : ""})`); commit(); reply({cards:rev.map(pubCard), hit:hit ? pubCard(hit) : null}); return; }
+  if(q.kind === "revealPerm"){ const rev = []; let hit = null; while(S.library.length){ const c = S.library.shift(); if(isPermanentType(c)){ hit = c; break; } rev.push(c); } S.library.push(...shuffle(rev)); if(hit){ S.hand.push(hit); moveCard(hit.u, "bf"); } act(`deckt ${[...rev, hit].filter(Boolean).map(c => c.n).join(", ") || "nichts"} auf${hit ? ` – ${hit.n} kommt ins Spiel` : ""} (${by}: ${src})`); commit(); reply({card:hit ? hit.n : null}); return; }
+  if(q.kind === "choosePlayer"){ const ps = (Array.isArray(q.players) ? q.players : []).slice(0, 8).filter(p => p && typeof p.pid === "string"); queuedNow(async () => {
+    const pid = await abilModal(`${by} (${src}): wähle einen Spieler`, (box, done) => {
+      box.append(Object.assign(document.createElement("p"), {textContent:`Bis zum nächsten Zug von ${by} dürfen nur ${by} und der gewählte Spieler Zauber wirken und angreifen.`}));
+      const row = document.createElement("div"); row.className = "row"; ps.forEach(p => row.append(btn(p.pid === me.id ? `Ich (${String(p.name).slice(0, 24)})` : String(p.name).slice(0, 24), () => done(p.pid), "primary"))); box.append(row);
+    }); reply({pid: pid || me.id}); }); return; }
+  if(q.kind === "pickOne"){ const cards = (Array.isArray(q.cards) ? q.cards : []).slice(0, 3); queuedNow(async () => {
+    const u = await abilModal(`${by} (${src}): welche Karte behält ihr? ${by} übernimmt die anderen`, (box, done) => {
+      const grid = document.createElement("div"); grid.className = "grid z-modal"; cards.forEach(c => { const el = cardEl({...c}, false, "hand"); el.style.setProperty("--w", "96px"); el.style.cursor = "pointer"; el.addEventListener("click", () => done(c.u)); grid.append(el); }); box.append(grid);
+    }); reply({u: u || (cards[0] && cards[0].u)}); }); return; }
+  if(q.kind === "giveHandCard"){ const c = S.hand.find(x => x.u === q.u); if(c){ S.hand.splice(S.hand.indexOf(c), 1); act(`${by} nimmt ${c.n} aus deiner Hand und wirkt sie gratis (${src})`); commit(); } reply(c ? {card:fullCard(c)} : null); return; }
+  if(q.kind === "pickPile"){ const up = (Array.isArray(q.up) ? q.up : []).slice(0, 4), dn = Math.max(0, Math.min(4, parseInt(q.downN, 10) || 0)); queuedNow(async () => {
+    const pile = await abilModal(`${by} (${src}): welchen Stapel bekommt ${by} auf die Hand?`, (box, done) => {
+      box.append(Object.assign(document.createElement("p"), {textContent:`Offener Stapel (${up.length}): ${up.map(c => c.n).join(", ") || "leer"} – verdeckter Stapel: ${dn} Karte(n). Der andere Stapel kommt unter seine Bibliothek.`}));
+      const grid = document.createElement("div"); grid.className = "grid z-modal"; up.forEach(c => { const el = cardEl({...c}, false, "hand"); el.style.setProperty("--w", "96px"); grid.append(el); }); box.append(grid);
+      const row = document.createElement("div"); row.className = "row"; row.append(btn(`Offener Stapel (${up.length})`, () => done("up"), "primary"), btn(`Verdeckter Stapel (${dn})`, () => done("down"), "primary")); box.append(row);
+    }); reply({pile: pile === "down" ? "down" : "up"}); }); return; }
   if(q.kind === "tutorHand"){ queuedNow(async () => { const ctx = {}; await searchStep({what:"a card", rest:"reveal it, put it into your hand"}, {n:`${by}: ${src}`}, ctx); const c = (ctx.searched || [])[0]; if(c) act(`zeigt ${c.n} und nimmt sie auf die Hand (${by}: ${src})`); commit(); reply({ok:true, card:c ? c.n : null}); }); return; }
   if(q.kind === "shuffleDraw"){ const n = Math.max(0, Math.min(10, parseInt(q.n, 10) || 0)); S.library = shuffle([...S.library, ...S.hand, ...S.gy]); S.hand = []; S.gy = []; act(`mischt Hand und Friedhof in die Bibliothek (${by}: ${src})`); if(n) draw(n); commit(); reply({ok:true}); return; }
   if(q.kind === "wheel7"){ const k = S.hand.length; S.gy.push(...S.hand.splice(0)); draw(7); act(`wirft ${k} Karten ab und zieht sieben (${by}: ${src})`); commit(); reply({ok:true}); return; }
@@ -10769,6 +11036,12 @@ function botReq(m){
   if(q.kind === "searchBasic"){ const c = BOT.library.find(x => /\bBasic\b/.test(x.type || "") && isLand(x)); if(c){ BOT.library.splice(BOT.library.indexOf(c), 1); c.tap = !!q.tapped; BOT.bf.push(c); BOT.library = shuffle(BOT.library); botLog(`sucht ${c.n}`); botChanged(); } reply({ok:!!c}); return; }
   if(q.kind === "secretNumber"){ const n = BOT.life > 10 ? Math.floor(Math.random() * 3) : 0; botLog(`wählt geheim ${n}`); reply({n}); return; }
   if(q.kind === "wheelMay"){ const n = Math.max(1, parseInt(q.n, 10) || 5); const yes = BOT.hand.length < n; if(yes){ BOT.gy.push(...BOT.hand.splice(0)); botDraw(n); botLog(`wirft die Hand ab und zieht ${n}`); botChanged(); } else botLog("behält die Hand"); reply({ok:yes}); return; }
+  if(q.kind === "revealUntilCreature"){ const rev = []; let hit = null; while(BOT.library.length){ const c = BOT.library.shift(); rev.push(c); if(/\bCreature\b/.test(c.type || "")){ hit = c; break; } } BOT.gy.push(...rev); botLog(`deckt ${rev.length} Karte(n) auf, sie kommen in den Friedhof`); botChanged(); reply({cards:rev.map(pubCard), hit:hit ? pubCard(hit) : null}); return; }
+  if(q.kind === "revealPerm"){ const rev = []; let hit = null; while(BOT.library.length){ const c = BOT.library.shift(); if(isPermanentType(c)){ hit = c; break; } rev.push(c); } BOT.library.push(...shuffle(rev)); if(hit){ hit.tap = false; BOT.bf.push(hit); } botLog(hit ? `bringt ${hit.n} ins Spiel` : "findet keine bleibende Karte"); botChanged(); reply({card:hit ? hit.n : null}); return; }
+  if(q.kind === "choosePlayer"){ botLog("wählt sich selbst"); reply({pid:BOT_ID}); return; }
+  if(q.kind === "pickOne"){ const cards = Array.isArray(q.cards) ? q.cards : []; const own = cards.filter(c => BOT.bf.some(x => x.u === c.u)); const best = [...(own.length ? own : cards)].sort((a, b) => (Number(b.cmc) || 0) - (Number(a.cmc) || 0))[0]; botLog(best ? `behält ${best.n}` : "wählt nichts"); reply({u:best ? best.u : null}); return; }
+  if(q.kind === "giveHandCard"){ const c = BOT.hand.find(x => x.u === q.u); if(c){ BOT.hand.splice(BOT.hand.indexOf(c), 1); botLog(`verliert ${c.n} aus der Hand`); botChanged(); } reply(c ? {card:fullCard(c)} : null); return; }
+  if(q.kind === "pickPile"){ const up = Array.isArray(q.up) ? q.up : [], dn = Math.max(0, parseInt(q.downN, 10) || 0); const val = up.reduce((a, c) => a + (/\bLand\b/.test(c.type || "") ? 1 : 1 + (Number(c.cmc) || 0) / 2), 0); const pile = val <= dn * 2 ? "up" : "down"; botLog(`gibt den ${pile === "down" ? "verdeckten" : "offenen"} Stapel`); reply({pile}); return; }
   if(q.kind === "tutorHand"){ const c = [...BOT.library].sort((a, b) => (isLand(a) - isLand(b)) || ((b.cmc || 0) - (a.cmc || 0)))[0]; if(c){ BOT.library.splice(BOT.library.indexOf(c), 1); BOT.hand.push(c); } BOT.library = shuffle(BOT.library); botLog(c ? `sucht ${c.n} und nimmt sie auf die Hand` : "findet nichts"); botChanged(); reply({ok:!!c, card:c ? c.n : null}); return; }
   if(q.kind === "shuffleDraw"){ const n = Math.max(0, parseInt(q.n, 10) || 0); BOT.library = shuffle([...BOT.library, ...BOT.hand, ...BOT.gy]); BOT.hand = []; BOT.gy = []; if(n) botDraw(n); botLog(`mischt Hand und Friedhof in die Bibliothek und zieht ${n}`); botChanged(); reply({ok:true}); return; }
   if(q.kind === "wheel7"){ BOT.gy.push(...BOT.hand.splice(0)); botDraw(7); botLog("wirft die Hand ab und zieht sieben"); botChanged(); reply({ok:true}); return; }
@@ -11387,7 +11660,7 @@ function historyAdd(win){
 /* ---------- Automatische Updates ---------- */
 // Liegt die App im Web, prüft sie regelmässig version.json im selben Ordner und lädt sich bei einer neuen Version neu.
 // Alles Wichtige (Spielstand, Deck, Tisch) liegt im Browser-Speicher und ist nach dem Neuladen wieder da.
-const APP_VERSION = "2026.11.17-2";
+const APP_VERSION = "2026.11.18-1";
 const ONLINE = /^https?:$/.test(location.protocol);
 let updPending = null, updTimer = null, updSnoozeUntil = 0;
 function busyForUpdate(){ return botBusy || (!$("#modal").hidden && modalState && ["block","deck"].includes(modalState.kind)); }

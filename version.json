@@ -1,4 +1,4 @@
 {
-  "version": "2026.11.17-2",
-  "notes": "Archenemy: 28 weitere Komplotte laufen jetzt automatisch (u. a. Feed the Machine, The Fate of the Flammable, Mortal Flesh Is Weak, Plots That Span Centuries, Time Bends to My Will, Embrace My Diabolical Vision, Every Hope Shall Vanish, Your Mistake Is My Triumph, I Call on the Ancient Magics). Bei «self or others» wählt der Gegner im Dialog (die KI wählt selbst)."
+  "version": "2026.11.18-1",
+  "notes": "Archenemy: 18 weitere Komplotte laufen jetzt automatisch (u. a. Running Is Useless, Every Last Vestige Shall Rot, No Secret Is Hidden from Me, My Wish Is Your Command, Your Plans Mean Nothing, Choose Your Demise, The Dead Shall Serve, My Wings Enfold All, Chaos Is My Plaything, My Will Is Irresistible, You Live Only Because I Will It, Know Evil, Choose Your Champion). Die KI hält sich jetzt an Sperren «bis zu deinem nächsten Zug»."
 }
