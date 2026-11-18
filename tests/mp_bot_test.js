@@ -51,7 +51,7 @@ const pass = async w => { ev(w, 'passTurn()'); await wait(40); const b = [...w.d
   // KI beim Host, mit Counterspell auf der Hand
   ev(A, `META_DECKS.Test=[{n:'Blau',p:'',s:'',l:'14 Island\\n14 Counterspell\\n12 Grizzly Bears'}]`);
   $(A, '#bBot').click(); await wait(10);
-  $(A, '#bFmt').innerHTML = '<option value="Test">Test</option>'; $(A, '#bFmt').value = 'Test'; $(A, '#bDeckSel').innerHTML = '<option value="0">x</option>'; $(A, '#bRestart').checked = false;
+  $(A, '#bFmt').innerHTML = '<option value="Test">Test</option>'; $(A, '#bFmt').value = 'Test'; $(A, '#bFmt').onchange(); $(A, '#bRestart').checked = false;
   $(A, '#bGo').click(); await wait(1500);
   // Blockfenster der KI ggf. bestätigen, bis Ben oder Anna dran ist
   for(let i = 0; i < 4; i++){ for(const w of [A, B]){ const b = btnText(w, 'Blocker bestätigen'); if(b) b.click(); } await wait(800); }

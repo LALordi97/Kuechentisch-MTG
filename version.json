@@ -1,4 +1,4 @@
 {
-  "version": "2026.11.16-2",
-  "notes": "Mindslaver (Etappe 1, Testzweig): Wer den Zug eines Mitspielers steuert, sieht in einer Leiste dessen Hand und Fähigkeiten und klickt selbst: Karten ausspielen, Fähigkeiten aktivieren, Angreifer wählen, nächste Phase, Zug beenden. Ziele und Bezahlen fragt die App noch beim Gesteuerten."
+  "version": "2026.11.18-3",
+  "notes": "Testzweig Mindslaver (Etappe 1) auf den Stand von main gebracht: Wer den Zug eines Mitspielers steuert, sieht in einer Leiste dessen Hand und Fähigkeiten und klickt selbst: Karten ausspielen, Fähigkeiten aktivieren, Angreifer wählen, nächste Phase, Zug beenden."
 }

@@ -11,7 +11,7 @@ run(){ f="$1"; s=$(date +%s); o=$(timeout 120 node "$f" 2>&1); n="${f%_test.js}"
     else echo "$n: $(echo "$o" | grep -c '^OK') ok, $pr Probleme" > "regres/$n"; fi; fi
   echo "$d $n" >> regres/_times; }
 export -f run
-SERIAL='^(mp|mp_bot|mp_old|req|life|stackabil|slave)_test\.js$'
+SERIAL='^(mp|mp_bot|mp_old|req|life|stackabil|multibot|archenemy|slave)_test\.js$'
 ls *_test.js | grep -vE "$SERIAL" | xargs -P "$P" -I{} bash -c 'run {}'
 for f in $(ls *_test.js | grep -E "$SERIAL"); do run "$f"; done
 cat $(ls regres/* | grep -v _times) > reg.out; echo FERTIG >> reg.out

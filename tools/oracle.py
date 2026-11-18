@@ -6,6 +6,8 @@ Der Text wird so übernommen, wie die App ihn sieht (wie tpl() in index.html: Vo
 Dazu tests/oracle_parts.json: zugehörige Teile, die selbst in keinem Deck stehen (Meld-Partner und Meld-Ergebnis),
 im selben Format mit einem sechsten Eintrag: Name der Deck-Karte, zu der der Teil gehört.
 
+Schreibt ausserdem tests/oracle_schemes.json (alle Komplotte für Archenemy).
+
 Aufruf:  python3 tools/oracle.py            # lädt die aktuelle Datei von Scryfall
          python3 tools/oracle.py bulk.json  # nimmt eine schon geladene Datei (zum Testen)
 """
@@ -85,7 +87,7 @@ def main():
         cards = parse_cards(get(url))
     idx = {}
     for sc in cards:
-        if sc.get("layout") in ("token", "double_faced_token", "emblem", "art_series"):
+        if sc.get("layout") in ("token", "double_faced_token", "emblem", "art_series") or "Scheme" in (sc.get("type_line") or ""):
             continue
         keys = [sc.get("name", "")] + [f.get("name", "") for f in (sc.get("card_faces") or [])[:1]]
         for k in keys:
@@ -100,6 +102,10 @@ def main():
         found.append(sc)
         out.append(card_row(sc))
     out.sort(key=lambda c: c[0])
+    # Komplotte (Archenemy): alle Scheme-Karten, für die Komplott-Funktion der App
+    schemes = sorted({sc["name"]: [sc["name"], sc.get("type_line", ""), sc.get("oracle_text") or "", "", 0] for sc in cards if "Scheme" in (sc.get("type_line") or "")}.values())
+    (ROOT / "tests" / "oracle_schemes.json").write_text(json.dumps(schemes, ensure_ascii=False, indent=0) + "\n", encoding="utf8")
+    print(f"{len(schemes)} Komplotte geschrieben")
     (ROOT / "tests" / "oracle_decks.json").write_text(json.dumps(out, ensure_ascii=False, indent=0) + "\n", encoding="utf8")
     print(f"{len(out)} Karten geschrieben, {len(missing)} nicht gefunden" + (": " + ", ".join(missing) if missing else ""))
     # Zugehörige Teile (Meld): nur solche, die nicht schon als Deck-Karte dabei sind
