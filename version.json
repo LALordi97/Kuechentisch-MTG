@@ -1,4 +1,4 @@
 {
-  "version": "2026.11.18-2",
-  "notes": "Archenemy: 20 weitere Komplotte laufen jetzt automatisch, neu auch You Exist Only to Amuse (mit sechs Ländern beide Modi) und Nature Demands an Offering (der Gegner wählt im Dialog). Beastbind-Wirkungen («verliert alle Fähigkeiten bis zum nächsten Zug») enden jetzt wirklich, auch bei der KI."
+  "version": "2026.11.18-4",
+  "notes": "Archenemy: jetzt 77 von 81 einmaligen Komplotten automatisch, neu auch My Crushing Masterstroke (alle gegnerischen Nichtland-Karten bis Zugende, enttappt und mit Eile)."
 }

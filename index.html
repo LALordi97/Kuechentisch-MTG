@@ -5217,7 +5217,8 @@ function matchStep2(p, src, full, SELF){
       [/^You may redistribute any number of life totals\.?(?:\s*\([^)]*\))?$/i, () => ({t:"lifeRedist"})],
       [/^Until your next turn, up to one target opponent can't attack with creatures, up to one target opponent can't cast creature spells, and up to one target opponent can't cast noncreature spells\. You can't choose any player as a target more than once\.?$/i, () => ({t:"knowEvil"})],
       [/^Target opponent chooses a player\. Until your next turn, only you and the chosen player can cast spells and attack with creatures\.?$/i, () => ({t:"champion"})],
-      [/^Target opponent chooses a creature you don't control and puts it on top of its owner's library, then repeats this process for an artifact, an enchantment, and a land\. Then the owner of each permanent chosen this way shuffles\.?$/i, () => ({t:"natureOffer"})]];
+      [/^Target opponent chooses a creature you don't control and puts it on top of its owner's library, then repeats this process for an artifact, an enchantment, and a land\. Then the owner of each permanent chosen this way shuffles\.?$/i, () => ({t:"natureOffer"})],
+      [/^Gain control of all nonland permanents your opponents control until end of turn\. Untap those permanents\. They gain haste until end of turn\. Each of them attacks its owner this turn if able\.?$/i, () => ({t:"masterstroke"})]];
     for(const [re, mk] of WHOLE){ const mm = F.match(re); if(mm) return F.toLowerCase().startsWith(p.toLowerCase()) ? [mk(mm)] : [{t:"skip"}]; } }
   if(/^each opponent's life total becomes the lowest life total among your opponents$/i.test(p)) return [{t:"lifeLowest"}];
   if(/^you may play an additional land this turn$/i.test(p)) return [{t:"noteOnly", text:"Du darfst diesen Zug ein zusätzliches Land spielen."}];
@@ -7587,6 +7588,19 @@ async function runSteps(steps, src, ctx = {}){
         let k = 0; for(const o of liveOpps()) (Array.isArray((others[o.id] || {}).bf) ? others[o.id].bf : []).filter(c => c && !c.fd && /Creature/.test(c.type || "")).forEach(c => { hitOpponent(o.id, {kind:"beastbind", card:c.u, by:me.id, amount:1, src:src.n}); k++; });
         act(`${src.n}: ${k} gegnerische Kreatur(en) sind bis zu deinem nächsten Zug 1/1 ohne Fähigkeiten`);
         break;
+      }
+      case "masterstroke": {
+        const got = [];
+        for(const o of liveOpps()){
+          const us = (Array.isArray((others[o.id] || {}).bf) ? others[o.id].bf : []).filter(c => c && !c.fd && !c.phased && !/\bLand\b/.test(c.type || "")).map(c => c.u);
+          for(const u of us){ const before = S.bf.length; const r = await requestOpp(o.id, {kind:"giveMe", u, src:src.n}); await new Promise(z => setTimeout(z, 30));
+            if(r && r.ok && S.bf.length > before){ const c = S.bf[S.bf.length - 1]; c.threatKey = turnKey(); c.tap = false; c.tkw = [...(c.tkw || []), "Haste"]; got.push({c, owner:isBotId(o.id) ? botName(o.id) : o.name}); } }
+        }
+        if(!got.length){ act(`${src.n}: die Gegner haben keine bleibenden Nichtlandkarten`); break; }
+        act(`${src.n}: übernimmt bis Ende des Zuges ${got.map(x => x.c.n).join(", ")} – enttappt, mit Eile`);
+        const cr = got.filter(x => isCreature(x.c));
+        if(cr.length) toast(`<b>${esc(src.n)}:</b> ${esc(cr.map(x => `${x.c.n} → ${x.owner}`).join(", "))} greifen diesen Zug ihren Besitzer an, wenn möglich.`, 12000);
+        commit(); break;
       }
       case "natureOffer": {
         const opps = liveOpps(); if(!opps.length) break;
@@ -11693,7 +11707,7 @@ function historyAdd(win){
 /* ---------- Automatische Updates ---------- */
 // Liegt die App im Web, prüft sie regelmässig version.json im selben Ordner und lädt sich bei einer neuen Version neu.
 // Alles Wichtige (Spielstand, Deck, Tisch) liegt im Browser-Speicher und ist nach dem Neuladen wieder da.
-const APP_VERSION = "2026.11.18-2";
+const APP_VERSION = "2026.11.18-4";
 const ONLINE = /^https?:$/.test(location.protocol);
 let updPending = null, updTimer = null, updSnoozeUntil = 0;
 function busyForUpdate(){ return botBusy || (!$("#modal").hidden && modalState && ["block","deck"].includes(modalState.kind)); }
