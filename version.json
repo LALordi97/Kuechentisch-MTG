@@ -1,4 +1,4 @@
 {
-  "version": "2026.11.18-3",
-  "notes": "Testzweig Mindslaver (Etappe 2): Wer den Zug eines Mitspielers steuert, tappt dessen Länder einzeln für Mana und bekommt dessen Dialoge (Ziele, Bezahlen, Karten wählen, Zahlen) bei sich angezeigt – sein Klick wird beim Gesteuerten ausgeführt."
+  "version": "2026.11.18-5",
+  "notes": "Testzweig Mindslaver (Etappe 2): Wer den Zug eines Mitspielers steuert, tappt dessen Länder einzeln für Mana und bekommt dessen Dialoge (Ziele, Bezahlen, Karten wählen, Zahlen) bei sich angezeigt – sein Klick wird beim Gesteuerten ausgeführt. Dazu alles von main (77 von 81 Komplotten automatisch)."
 }

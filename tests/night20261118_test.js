@@ -34,7 +34,7 @@ const clickCard = async t => { const el = [...d.querySelectorAll('#modalBox .car
   };
   const cr = (n, cmc, x = {}) => N(n, 'Creature — Bear', '', {pw:2, tg:2, cmc, mc:`{${cmc}}`, ...x});
   const AUTO = ['A Premonition of Your Demise', 'Running Is Useless', 'Every Last Vestige Shall Rot', 'No Secret Is Hidden from Me', 'When Will You Learn?', 'My Wish Is Your Command', 'Your Plans Mean Nothing', 'Choose Your Demise', 'The Dead Shall Serve', 'My Wings Enfold All',
-    'Dance, Pathetic Marionette', 'Chaos Is My Plaything', 'My Will Is Irresistible', 'Only I Know What Awaits', 'Your Own Face Mocks You', 'You Live Only Because I Will It', 'Know Evil', 'Choose Your Champion', 'You Exist Only to Amuse', 'Nature Demands an Offering'];
+    'Dance, Pathetic Marionette', 'Chaos Is My Plaything', 'My Will Is Irresistible', 'Only I Know What Awaits', 'Your Own Face Mocks You', 'You Live Only Because I Will It', 'Know Evil', 'Choose Your Champion', 'You Exist Only to Amuse', 'Nature Demands an Offering', 'My Crushing Masterstroke'];
   for(const n of AUTO){ w.__sc = scheme(n); const st = ev('cardCheck(schemeAsSpell(window.__sc)).status'); check(st === 'auto', `${n}: automatisch (${st})`); }
 
   // A Premonition of Your Demise: zwei auf die Hand, Schaden = Manawert der Nichtlandkarten
@@ -193,6 +193,13 @@ const clickCard = async t => { const el = [...d.querySelectorAll('#modalBox .car
   check(S().bf[0].pw === 2 && S().bf[0].bbBy === 'bot', `Beastbind: 2/2, gemerkt wird die ID (${S().bf[0].bbBy})`);
   ev('TURN = {active:"bot", n:21, starter:me.id, phase:0}; remindTriggers("upkeep", false)'); await wait(30);
   check(S().bf[0].pw === 3 && S().bf[0].o === 'Flying', `Beastbind: im Zug der KI wieder 3/3 mit Flying (${S().bf[0].pw})`);
+
+  // My Crushing Masterstroke: alle Nichtland-Karten der KI bis Zugende, enttappt, mit Eile; danach zurück
+  await reset(); botSet('bf', [cr('Riese', 4, {tap:true, pw:4, tg:4}), N('Ring', 'Artifact', '', {cmc:2}), N('Island', 'Basic Land — Island', '')]);
+  await runScheme('My Crushing Masterstroke'); await wait(150);
+  { const r = S().bf.find(c => c.n === 'Riese'); check(r && !r.tap && (r.tkw || []).includes('Haste') && S().bf.some(c => c.n === 'Ring') && ev('BOTS.bot.bf.map(c => c.n).join()') === 'Island', `My Crushing Masterstroke: Riese (enttappt, Eile) und Ring übernommen, Island bleibt (${S().bf.map(c => c.n).join()})`); }
+  ev('TURN = {active:"bot", n:21, starter:me.id, phase:0}; expireCastable()'); await wait(150);
+  check(S().bf.length === 0 && ev('BOTS.bot.bf.length') === 3, `My Crushing Masterstroke: am Zugende zurück an die KI (${ev('BOTS.bot.bf.map(c => c.n).join()')})`);
 
   // Mitspieler: pickOne im Dialog
   { w.eval('window.__oldSend = sendTo; sendTo = (to, m) => { if(m && m.t === "resp") window.__resp = m.data; else window.__oldSend(to, m); }'); w.__resp = null;
