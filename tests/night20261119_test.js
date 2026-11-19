@@ -265,6 +265,11 @@ const clickCard = async t => { const el = [...d.querySelectorAll('#modalBox .car
   check(S().life === 36, `Nothing Can Stop: Mitspieler-Kampf 4 Schaden von 3 Quellen → 1 (${S().life})`);
   await phase('end', false); check(active() === 'Nothing Can Stop Me Now', `Nothing Can Stop: 4 Schaden im Zug → bleibt (${active()})`);
 
+  // Nebenbei: «They gain haste until end of turn» trifft die eben erschaffenen Token
+  await reset(); w.__sp = N('Goblin-Ruf', 'Sorcery', 'Create two 1/1 red Goblin creature tokens. They gain haste until end of turn.', {cmc:2, mc:'{1}{R}'});
+  await ev('(async () => { for(const ab of parseAbilities(window.__sp).filter(a => a.kind === "spell")) await runAbility(window.__sp, ab, {}); })()'); await wait(150); await drain();
+  check(S().bf.filter(c => c.tok).length === 2 && ev('S.bf.filter(c => c.tok).every(c => kwHas(c, "haste"))'), `Token erhalten Eile (${S().bf.filter(c => c.tok).length})`);
+
   // Neues Spiel: laufende Komplotte kommen zurück ins Deck
   await reset(); await setOngoing('Your Inescapable Doom'); const nd = ev('S.arch.deck.length');
   const rs = ev('(() => { restartBots(); return archActive().length + "|" + S.arch.deck.filter(x => x.n === "Your Inescapable Doom").length + "|" + S.arch.deck.length; })()'); await wait(300); await drain();
