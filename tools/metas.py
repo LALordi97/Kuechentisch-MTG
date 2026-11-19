@@ -25,7 +25,11 @@ def get(url, tries=3):
     for i in range(tries):
         try:
             with urllib.request.urlopen(urllib.request.Request(url, headers=HEAD), timeout=60) as r:
-                data = r.read().decode("utf-8", "replace")
+                raw = r.read()
+            try:
+                data = raw.decode("utf-8")
+            except UnicodeDecodeError:
+                data = raw.decode("cp1252", "replace")  # MTGTop8 liefert teils Latin-1
             time.sleep(0.6)
             return data
         except Exception as e:
@@ -102,7 +106,7 @@ def top8_best_deck(f, arch):
     src = ", ".join(x for x in [best["event"] or "MTGTop8", f"{rank}. Platz", when] if x)
     share = f"{arch['p']:g}%".replace(".", ",")
     body = "\n".join(main) + ("\n\nSideboard\n" + "\n".join(side) if side else "")
-    return f"### {arch['n']} | {share} | {src}\n{body}\n"
+    return f"### {arch['n'].replace('|', '/')} | {share} | {src.replace('|', '/')}\n{body}\n"
 
 
 def build_top8(key):
@@ -185,7 +189,7 @@ def build_bracket(key):
     total = sum(d["num"] for d in decks) or 1
     today = datetime.date.today().strftime("%d.%m.%y")
     lab = {"upgraded": "Bracket 3", "optimized": "Bracket 4"}[br]
-    return [f"### {d['name']} | {(100 * d['num'] / total):.1f}%".replace(".", ",") + f" | EDHREC Durchschnittsdeck {lab}, {d['num']} Decks, {today}\n{d['body']}\n" for d in decks]
+    return [f"### {d['name']} | " + f"{(100 * d['num'] / total):.1f}%".replace(".", ",") + f" | EDHREC Durchschnittsdeck {lab}, {d['num']} Decks, {today}\n{d['body']}\n" for d in decks]
 
 
 def debug():
