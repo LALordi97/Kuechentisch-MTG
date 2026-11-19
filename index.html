@@ -2279,7 +2279,11 @@ function removalOf(c){
 function etbRemoval(c){ return /when [^.]* enters[^.]*?(destroy|exile) (up to one )?target/i.test(c.o || "") ? removalOf(c) : null; }
 const isDiscard = c => /reveals? (their|his or her) hand[^.]*\. you choose/i.test(c.o || "") || /target (player|opponent) reveals[^.]*hand/i.test(c.o || "");
 const drawCount = c => { const m = (c.o || "").match(/draws? (a|one|two|three|four|\d+) cards?/i); if(!m) return 0; return ({a:1, one:1, two:2, three:3, four:4})[m[1].toLowerCase()] || parseInt(m[1], 10) || 1; };
-const burnFace = c => { const m = (c.o || "").match(/deals (\d+) damage to (any target|each opponent|target player|target opponent|target player or planeswalker)/i); return m ? +m[1] : 0; };
+const burnFace = c => { const m = (c.o || "").match(/deals (\d+) damage to (any target|each opponent|target player|target opponent|target player or planeswalker)/i); return m && (/^each opponent$/i.test(m[2]) || meTargetable()) ? +m[1] : 0; };
+/* Fluchsicher: ich (I Am Untouchable, «You have hexproof») und meine bleibenden Karten – die KI wählt sie nicht als Ziel */
+const UNTOUCH_RE = /^You and permanents you control have hexproof\.?$/im;
+function meTargetable(){ return !(typeof S !== "undefined" && S && ([...(S.bf || []).filter(x => !x.fd), ...archActive()].some(x => UNTOUCH_RE.test(x.o || "") || /^You have hexproof\b/im.test(x.o || "")))); }
+function myTargetable(x){ return !!x && !kwHas(x, "hexproof") && !kwHas(x, "shroud") && !archActive().some(y => UNTOUCH_RE.test(y.o || "")) && !S.bf.some(y => !y.fd && UNTOUCH_RE.test(y.o || "")); }
 function myCreatures(){ return S.bf.filter(c => isCreature(c) && !c.fd); }
 function threatScore(c){
   let s = (c.cmc || 0) * 0.6;
@@ -2290,7 +2294,7 @@ function threatScore(c){
 }
 function bestTarget(pool, fits){ return pool.filter(fits || (() => true)).sort((a, b) => threatScore(b) - threatScore(a))[0] || null; }
 function applyRemovalToMe(card, rem){
-  const pool = rem.any ? S.bf.filter(x => !isLand(x)) : myCreatures();
+  const pool = (rem.any ? S.bf.filter(x => !isLand(x)) : myCreatures()).filter(myTargetable);
   const fits = rem.kind === "damage" ? (x => isCreature(x) && tough(x) <= rem.amount) : null;
   const t = bestTarget(pool, fits);
   if(!t) return false;
@@ -2320,7 +2324,7 @@ function heurResolve(c){
   const rem = perm ? etbRemoval(c) : removalOf(c);
   if(!perm && isDiscard(c)) discardFromMe(c);
   if(rem && rem.kind === "edict"){ const t = myCreatures().sort((a, b) => threatScore(a) - threatScore(b))[0]; if(t){ botLog(`${c.n}: du opferst ${t.n}`); moveCard(t.u, "gy"); } }
-  else if(rem){ if(!applyRemovalToMe(c, rem) && rem.face){ S.life -= rem.amount; botLog(`${c.n}: ${rem.amount} Schaden an dich`); } }
+  else if(rem){ if(!applyRemovalToMe(c, rem) && rem.face && meTargetable()){ S.life -= rem.amount; botLog(`${c.n}: ${rem.amount} Schaden an dich`); } }
   else if(!perm && burnFace(c)){ S.life -= burnFace(c); botLog(`${c.n}: ${burnFace(c)} Schaden an dich (Leben ${S.life})`); }
   const d = perm ? 0 : drawCount(c); if(d && !/opponent draws|target player draws/i.test(c.o || "")) botDraw(d);
 }
@@ -2369,7 +2373,7 @@ function heurPrecombat(){
   // Removal auf Bedrohungen; Spontanzauber-Removal nur bei grosser Gefahr, sonst für deinen Zug aufheben
   BOT.hand.filter(c => removalOf(c) && !isPermanentType(c)).sort((a, b) => (a.cmc || 0) - (b.cmc || 0)).forEach(c => {
     const rem = removalOf(c);
-    const t = bestTarget(rem.any ? S.bf.filter(x => !isLand(x)) : myCreatures(), rem.kind === "damage" ? (x => isCreature(x) && tough(x) <= rem.amount) : null);
+    const t = bestTarget((rem.any ? S.bf.filter(x => !isLand(x)) : myCreatures()).filter(myTargetable), rem.kind === "damage" ? (x => isCreature(x) && tough(x) <= rem.amount) : null);
     if(!t) return;
     const urgent = threatScore(t) >= 5;
     if((!isInstant(c) && threatScore(t) >= 2.5) || urgent) botCastHeur(c, `gegen ${t.n}`);
@@ -2544,6 +2548,11 @@ function applyEffects(src, effects){
   (Array.isArray(effects) ? effects : []).forEach(e => {
     const amt = Math.max(0, Math.min(99, parseInt(e.amount, 10) || (["draw","create_token","mill_self"].includes(e.kind) ? 1 : 0)));
     const t = e.target === "opponent" || e.target === "self" ? null : findAny(e.target);
+    // Fluchsicher (Hexproof, I Am Untouchable): gezielte Effekte auf mich oder meine bleibenden Karten fallen weg
+    if(["damage","destroy","exile","bounce","tap"].includes(e.kind) && /\btarget\b/i.test(src.o || "")){
+      if(t && t.who === "me" && t.zone === "bf" && !myTargetable(t.c)){ botLog(`${src.n}: ${t.c.n} ist fluchsicher`); return; }
+      if(e.target === "opponent" && e.kind === "damage" && !meTargetable() && !/each opponent/i.test(src.o || "")){ botLog(`${src.n}: du bist fluchsicher`); return; }
+    }
     if(["damage","destroy","exile","bounce","tap","opponent_loses_life"].includes(e.kind)){
       if(e.target === "opponent" || e.kind === "opponent_loses_life") fxSend({kind:"arrow", style:"hit", from:{pid:BOT_ID}, to:{pid:me.id}});
       else if(t && t.who === "me" && t.zone === "bf") fxSend({kind:"arrow", style:"hit", from:{pid:BOT_ID}, to:{u:t.c.u}});
@@ -10045,7 +10054,7 @@ function trigMatches(ab, src, ev){
     if(m2) return ev.first && descMatch((m2[1] + " creature").trim(), ev.c);
     return false;
   }
-  if(ev.kind === "combatDamageToYou") return /^(a creature|one or more creatures|a source) deals? (combat )?damage to you$/i.test(cond);
+  if(ev.kind === "combatDamageToYou") return /^(a creature|one or more creatures|a source) deals? (combat )?damage to you$/i.test(cond) || /^combat damage is dealt to you$/i.test(cond);
   if(ev.kind === "cast" && / during your turn$/i.test(cond) && TURN.active !== me.id) return false;
   if(ev.kind === "castSelf") return /^you cast this spell$/i.test(cond) && ev.c === src;
   if(ev.kind === "noncombatOpp") return /^a source you control deals noncombat damage to an opponent$/i.test(cond);
@@ -10834,7 +10843,7 @@ const HANDLED_STATIC = [
   /^You may pay \{0\} rather than pay the mana cost for Zombie creature spells you cast/i, /^Once each turn, you may cast a spell with mana value less than or equal to the number of Elves and Faeries you control from among cards exiled with/i,
   /^Players can't search libraries\. Any player may pay/i, /^As (?:this creature|[^,]+?) enters, choose a number/i, /^Noncreature spells with mana value equal to the chosen number can't be cast/i,
   /^Each player can't draw more than one card each turn/i, /^Artifacts and creatures entering the battlefield don't cause abilities to trigger/i, /^Each opponent can't draw more than one card each turn/i, /^If an opponent would search a library, that player searches the top four cards/i, /^Artifacts and creatures your opponents control enter tapped/i,
-  /^Other creatures you control get \+\d+\/\+\d+\.?$/i, KW_ANTHEM_RE, /^As you set this scheme in motion, choose an opponent\.?$/i, /^Creatures the chosen player controls can't attack you or planeswalkers you control\.?$/i, /^Permanents the chosen player controls don't untap during their untap step\.?$/i, /^Each opponent can't cast more than one spell each turn\.?$/i, /^Creatures your opponents control get -\d+\/-\d+\.?$/i, /^If a permanent entering(?: the battlefield)? causes a triggered ability/i, /^Permanents entering(?: the battlefield)? don't cause abilities/i,
+  /^Other creatures you control get \+\d+\/\+\d+\.?$/i, KW_ANTHEM_RE, UNTOUCH_RE, /^As you set this scheme in motion, choose an opponent\.?$/i, /^Creatures the chosen player controls can't attack you or planeswalkers you control\.?$/i, /^Permanents the chosen player controls don't untap during their untap step\.?$/i, /^Each opponent can't cast more than one spell each turn\.?$/i, /^Creatures your opponents control get -\d+\/-\d+\.?$/i, /^If a permanent entering(?: the battlefield)? causes a triggered ability/i, /^Permanents entering(?: the battlefield)? don't cause abilities/i,
   /^Activated abilities of creatures your opponents control can't be activated/i, /^As long as this card is in your graveyard, lands you control have/i, /^You and creatures you control have protection from the chosen card type/i,
   /^Enchanted permanent is a Vehicle artifact with crew \d+ and it loses all other card types/i, /^Noncreature spells cost \{\d+\} more to cast/i, /^Players can't pay life or sacrifice nonland permanents/i, /^Overload\b/i,
   /^You may spend mana as though it were mana of any colou?r\.?$/i, /^You may cast colorless spells and artifact spells as though they had flash/i,
@@ -11856,7 +11865,7 @@ function historyAdd(win){
 /* ---------- Automatische Updates ---------- */
 // Liegt die App im Web, prüft sie regelmässig version.json im selben Ordner und lädt sich bei einer neuen Version neu.
 // Alles Wichtige (Spielstand, Deck, Tisch) liegt im Browser-Speicher und ist nach dem Neuladen wieder da.
-const APP_VERSION = "2026.11.19-2";
+const APP_VERSION = "2026.11.19-3";
 const ONLINE = /^https?:$/.test(location.protocol);
 let updPending = null, updTimer = null, updSnoozeUntil = 0;
 function busyForUpdate(){ return botBusy || (!$("#modal").hidden && modalState && ["block","deck"].includes(modalState.kind)); }

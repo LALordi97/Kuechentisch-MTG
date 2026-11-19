@@ -28,7 +28,7 @@ const clickCard = async t => { const el = [...d.querySelectorAll('#modalBox .car
   const AUTO = ['My Tendrils Run Deep', 'Your Inescapable Doom', 'Because I Have Willed It', 'Dark Wings Bring Your Downfall', 'Mine Is the Only Truth', 'The Very Soil Shall Shake',
     'Fear My Authority', 'I Am Duskmourn', 'My Forces Are Innumerable', 'You Cannot Hide from Me',
     'My Undead Horde Awakens', 'I Know All, I See All', 'Reality Is Mine to Control', 'My Laughter Echoes',
-    'Bow to My Command', 'I Bask in Your Silent Awe', 'Imprison This Insolent Wretch'];
+    'Bow to My Command', 'I Bask in Your Silent Awe', 'Imprison This Insolent Wretch', 'I Am Untouchable'];
   for(const n of AUTO){ w.__sc = scheme(n); const st = ev('cardCheck(schemeAsSpell(window.__sc)).status'); check(st === 'auto', `${n}: automatisch (${st})`); }
 
   // Grundgerüst: laufendes Komplott bleibt liegen, kommt nicht sofort unter das Deck
@@ -211,6 +211,19 @@ const clickCard = async t => { const el = [...d.querySelectorAll('#modalBox .car
   check(active() === '', `Imprison: KI wird Ziel → aufgegeben (${active()})`);
   await reset(); await setOngoing('Imprison This Insolent Wretch'); ev('abilEvent({kind:"playerAttacked", pid:"bot"})'); await wait(200); await drain();
   check(active() === '', `Imprison: KI wird angegriffen → aufgegeben (${active()})`);
+
+  // I Am Untouchable: KI wählt weder mich noch meine bleibenden Karten als Ziel; Kampfschaden an mich → Vogelscheuche, aufgeben
+  await reset(); ev('S.bf.push(newCard({n:"Bär", type:"Creature — Bear", o:"", pw:2, tg:2})); commit()');
+  w.__bolt = N('Blitz', 'Instant', 'Lightning Bolt deals 3 damage to any target.', {cmc:1, mc:'{R}'});
+  check(ev('withBot("bot", () => applyRemovalToMe(window.__bolt, removalOf(window.__bolt)))') === true && S().bf.length === 0, 'ohne Komplott: KI-Blitz trifft den Bär');
+  await reset(); ev('S.bf.push(newCard({n:"Bär", type:"Creature — Bear", o:"", pw:2, tg:2})); commit()'); await setOngoing('I Am Untouchable');
+  check(ev('withBot("bot", () => applyRemovalToMe(window.__bolt, removalOf(window.__bolt)))') === false && S().bf.length === 1, 'Untouchable: KI-Blitz findet kein Ziel');
+  check(ev('burnFace(window.__bolt)') === 0 && ev('burnFace(newCard({n:"Brand", type:"Sorcery", o:"Brand deals 2 damage to each opponent."}))') === 2, 'Untouchable: «any target» nicht auf mich, «each opponent» schon');
+  ev('withBot("bot", () => heurResolve(window.__bolt))'); check(S().life === 40 && S().bf.length === 1, `Untouchable: KI-Blitz verpufft (Leben ${S().life})`);
+  ev('withBot("bot", () => applyEffects(window.__bolt, [{kind:"damage", amount:3, target:S.bf[0].u}]))'); check(S().bf.length === 1, 'Untouchable: auch Claude-KI trifft den Bär nicht');
+  ev('abilEvent({kind:"combatDamageToYou", much:3, pid:"bot"})'); await wait(300); await drain();
+  { const sc = S().bf.find(c => /Scarecrow/.test(c.type || '')); check(!!sc && ev('kwHas(S.bf.find(c => /Scarecrow/.test(c.type || "")), "vigilance")') && active() === '', `Untouchable: Kampfschaden → 4/4-Vogelscheuche mit Wachsamkeit, aufgegeben (${S().bf.map(c => c.n).join()}, ${active()})`); }
+  ev('withBot("bot", () => applyRemovalToMe(window.__bolt, removalOf(window.__bolt)))'); check(S().bf.length === 1, `Untouchable aufgegeben: Blitz trifft wieder (${S().bf.map(c => c.n).join()})`);
 
   // Neues Spiel: laufende Komplotte kommen zurück ins Deck
   await reset(); await setOngoing('Your Inescapable Doom'); const nd = ev('S.arch.deck.length');

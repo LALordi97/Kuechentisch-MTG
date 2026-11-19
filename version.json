@@ -1,4 +1,4 @@
 {
-  "version": "2026.11.19-2",
-  "notes": "Archenemy: jetzt 17 von 21 laufenden Komplotten automatisch. Neu: My Undead Horde Awakens, I Know All, I See All, Reality Is Mine to Control, My Laughter Echoes, Bow to My Command, I Bask in Your Silent Awe, Imprison This Insolent Wretch (gewählter Gegner wird beim In-Gang-Setzen gefragt). KI-Zauber zählen jetzt pro KI (z. B. «zweiter Zauber pro Zug»)."
+  "version": "2026.11.19-3",
+  "notes": "Archenemy: I Am Untouchable automatisch (18 von 21 laufenden Komplotten). Die KI wählt fluchsichere Ziele nicht mehr: deine Kreaturen mit Hexproof/Shroud und dich selbst bei «You have hexproof»."
 }
