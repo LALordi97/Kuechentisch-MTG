@@ -2337,8 +2337,8 @@ function heurResolve(c){
   const rem = perm ? etbRemoval(c) : removalOf(c);
   if(!perm && isDiscard(c)) discardFromMe(c);
   if(rem && rem.kind === "edict"){ const t = myCreatures().sort((a, b) => threatScore(a) - threatScore(b))[0]; if(t){ botLog(`${c.n}: du opferst ${t.n}`); moveCard(t.u, "gy"); } }
-  else if(rem){ if(!applyRemovalToMe(c, rem) && rem.face && meTargetable()){ S.life -= rem.amount; botLog(`${c.n}: ${rem.amount} Schaden an dich`); } }
-  else if(!perm && burnFace(c)){ S.life -= burnFace(c); botLog(`${c.n}: ${burnFace(c)} Schaden an dich (Leben ${S.life})`); }
+  else if(rem){ if(!applyRemovalToMe(c, rem) && rem.face && meTargetable()){ const v = oppDmgToMe(rem.amount, c.n); S.life -= v; botLog(`${c.n}: ${v} Schaden an dich`); } }
+  else if(!perm && burnFace(c)){ const v = oppDmgToMe(burnFace(c), c.n); S.life -= v; botLog(`${c.n}: ${v} Schaden an dich (Leben ${S.life})`); }
   const d = perm ? 0 : drawCount(c); if(d && !/opponent draws|target player draws/i.test(c.o || "")) botDraw(d);
 }
 function botCastHeur(c, why){
@@ -2573,7 +2573,7 @@ function applyEffects(src, effects){
     }
     switch(e.kind){
       case "damage":
-        if(e.target === "opponent"){ S.life -= amt; botLog(`${src.n}: ${amt} Schaden an dich (Leben ${S.life})`); }
+        if(e.target === "opponent"){ const v = oppDmgToMe(amt, src.n); S.life -= v; botLog(`${src.n}: ${v} Schaden an dich (Leben ${S.life})`); }
         else if(e.target === "self"){ BOT.life -= amt; }
         else if(t && t.zone === "bf" && isCreature(t.c)){ if(amt >= tough(t.c) && !kwHas(t.c, "indestructible")){ botLog(`${src.n}: ${amt} Schaden an ${t.c.n}, sie stirbt`); t.who === "me" ? moveCard(t.c.u, "gy") : botToZone(t.c, "gy"); } else botLog(`${src.n}: ${amt} Schaden an ${t.c.n}`); }
         break;
@@ -2714,6 +2714,8 @@ function combatHitEvents(hits, pid){
 function resolveCombat(attackers, blocks, attackerIsBot){
   const r = computeCombat(attackers, blocks);
   if(attackerIsBot){
+    if(archActive().some(x => NCSMN_RE.test(x.o || ""))){ r.dmg = (r.hits || []).reduce((t, h) => t + oppDmgToMe(h.amount, h.a && h.a.n), 0); r.cmdDmg = (r.hits || []).filter(h => h.a && h.a.cmdr).reduce((t, h) => t + oppDmgPrevent(h.amount), 0); }
+    else noteDmgToMe(r.dmg);
     S.life -= r.dmg; BOT.life += r.gain;
     if(r.dmg > 0) abilEvent({kind:"combatDamageToYou", much:r.dmg, pid:BOT_ID});
     if(r.cmdDmg){ S.cmd[BOT_ID] = (S.cmd[BOT_ID] || 0) + r.cmdDmg; }
@@ -2786,7 +2788,9 @@ function nextBlock(){
     }
     closeModal(); blockOpen = false;
     if(job.keepIf) attackers.splice(0, attackers.length, ...attackers.filter(job.keepIf));
+    const shield = natureShields(attackers, blocks);
     job.resolve(blocks);
+    if(shield && attackers.length >= 4) setTimeout(() => { if(schemeAbandon(shield)) commit(); }, 0);
     setTimeout(nextBlock, 0);
   }, "primary"), err);
 }
@@ -2886,14 +2890,16 @@ function receiveBlocks(m){
   r.deadA.forEach(c => moveCard(c.u, "gy"));
   const who = displayName(P.target);
   act(`Kampf gegen ${who}: ${r.lines.join("; ") || "keine Angreifer mehr"}${r.gain ? `. Lebensverknüpfung +${r.gain}` : ""}`);
-  sendTo(P.target, {t:"cres", cid:m.cid, dmg:r.dmg, cmdDmg:r.cmdDmg, dead:r.deadB.map(b => b.u)});
+  sendTo(P.target, {t:"cres", cid:m.cid, dmg:r.dmg, cmdDmg:r.cmdDmg, hn:(r.hits || []).filter(h => h.amount > 0).length, dead:r.deadB.map(b => b.u)});
   commit();
 }
 function receiveCombatResult(m){
   const dmg = Math.max(0, Math.min(999, parseInt(m.dmg, 10) || 0));
   (Array.isArray(m.dead) ? m.dead : []).forEach(u => { if(S.bf.some(c => c.u === u)) moveCard(u, "gy"); });
   if(emissaryType() === "Creature" && dmg > 0){ act(`${dmg} Kampfschaden verhindert (Serra's Emissary: Schutz vor Kreaturen)`); m.dmg = 0; }
-  const dmg2 = emissaryType() === "Creature" ? 0 : dmg;
+  let dmg2 = emissaryType() === "Creature" ? 0 : dmg;
+  if(dmg2 > 0 && archActive().some(x => NCSMN_RE.test(x.o || ""))){ const hn = Math.max(1, parseInt(m.hn, 10) || 1); const v = Math.max(0, dmg2 - hn * (dmg2 - oppDmgPrevent(dmg2))); act(`Nothing Can Stop Me Now: ${dmg2 - v} Kampfschaden verhindert`); dmg2 = v; }
+  noteDmgToMe(dmg2);
   S.life -= dmg2; graceFloor();
   if(dmg2 > 0) abilEvent({kind:"combatDamageToYou", much:dmg2, pid:m.from});
   const cd = Math.max(0, parseInt(m.cmdDmg, 10) || 0);
@@ -3235,7 +3241,7 @@ function receiveHit(m){
   if(!m || typeof m !== "object") return;
   if(m.card && !m._rs){ const c0 = S.bf.find(x => x.u === m.card); if(c0 && /Whenever this creature becomes the target of a spell an opponent controls, counter that spell unless its controller discards a card/i.test(c0.o || "") && /\b(Instant|Sorcery)\b/.test(m.srcType || "") && m.from && m.from !== me.id){
     queued(async () => { const r = await requestOpp(m.from, {kind:"discardOrCounter", src:c0.n}); if(r && r.discarded){ receiveHit({...m, _rs:true}); } else { act(`${c0.n}: ${m.src || "der Zauber"} wird gekontert (keine Karte abgeworfen)`); commit(); } }); return; } }
-  const amt = Math.max(0, Math.min(99, parseInt(m.amount, 10) || 0));
+  let amt = Math.max(0, Math.min(99, parseInt(m.amount, 10) || 0));
   let txt;
   if(m.card){
     const c = S.bf.find(x => x.u === m.card); if(!c) return;
@@ -3245,7 +3251,7 @@ function receiveHit(m){
   else if(m.kind === "poison"){ S.poison += amt; txt = `${amt} Giftmarke${amt > 1 ? "n" : ""} an ${me.name || "dich"} (jetzt ${S.poison})`; }
   else if(m.kind === "heal"){ S.life += amt; txt = `${me.name || "du"} erhält ${amt} Leben (jetzt ${S.life})`; }
   else if(m.kind === "loss"){ S.life -= amt; txt = `${me.name || "du"} verliert ${amt} Leben (jetzt ${S.life})`; }
-  else { const pro = emissaryType(); if(pro && m.srcType && new RegExp(`\\b${pro}\\b`, "i").test(m.srcType)){ txt = `${amt} Schaden verhindert (Schutz vor ${pro})`; } else { S.life -= amt; graceFloor(); txt = `${amt} Schaden an ${me.name || "dich"} (Leben ${S.life})`; } }
+  else { const pro = emissaryType(); if(pro && m.srcType && new RegExp(`\\b${pro}\\b`, "i").test(m.srcType)){ txt = `${amt} Schaden verhindert (Schutz vor ${pro})`; } else { const amt0 = amt; amt = m.from && m.from !== me.id ? oppDmgToMe(amt0, m.src) : amt0; S.life -= amt; graceFloor(); txt = `${amt} Schaden an ${me.name || "dich"} (Leben ${S.life})`; } }
   if(txt) sendLog({from:"", text: hitText(m, txt), sys:true});
   if(!/^(heal|loseInit|untap)$/.test(m.kind || "")) noteCrime();
   mycoSync();
@@ -3552,6 +3558,21 @@ function gyTrack(){
   const seen = new Set(Array.isArray(S._gySeen) ? S._gySeen : []);
   S.gyN += S.gy.filter(c => c && !seen.has(c.u)).length; S._gySeen = S.gy.map(c => c && c.u);
 }
+/* Nature Shields Its Own: jeder ungeblockte Angreifer wird von einem neuen 0/1-Pflanzen-Token geblockt */
+function natureShields(attackers, blocks){
+  const sh = archActive().find(x => /^Whenever a creature attacks and isn't blocked, if you're the defending player, create a 0\/1 green Plant creature token that's blocking that creature/im.test(x.o || ""));
+  if(!sh) return null;
+  const free = attackers.filter(a => !blocks.has(a.u));
+  free.forEach(a => { const t = newCard({n:"Plant", type:"Token Creature — Plant", o:"", pw:0, tg:1, mc:"{G}", cmc:0, tok:true}); S.bf.push(t); blocks.set(a.u, t); });
+  if(free.length){ act(`${sh.n}: ${free.length} Pflanze(n) 0/1 blocken ${free.map(a => a.n).join(", ")}`); commit(); }
+  if(attackers.length >= 4) act(`${sh.n}: vier oder mehr Angreifer – das Komplott wird am Ende des Kampfes aufgegeben`);
+  return sh;
+}
+/* Schaden von Gegnern an mich: Nothing Can Stop Me Now verhindert 1 pro Quelle; Schaden pro Zug wird gezählt */
+const NCSMN_RE = /^If a source an opponent controls would deal damage to you, prevent 1 of that damage\.?$/im;
+function oppDmgPrevent(n){ const k = archActive().filter(x => NCSMN_RE.test(x.o || "")).length; return Math.max(0, (+n || 0) - k); }
+function noteDmgToMe(n){ if(!(n > 0) || !S) return; const k = turnKey(); if(S.dmgTK !== k){ S.dmgTK = k; S.dmgN = 0; } S.dmgN += n; }
+function oppDmgToMe(n, srcN){ const v = oppDmgPrevent(n); if(v < n) act(`Nothing Can Stop Me Now: ${n - v} Schaden${srcN ? ` von ${srcN}` : ""} verhindert`); noteDmgToMe(v); return v; }
 function schemeAbandon(src){
   const list = archActive(), i = list.indexOf(src); if(i < 0) return false;
   list.splice(i, 1); S.arch.deck.push(src.sc || {n:src.n, o:src.o, img:src.img, ongoing:true});
@@ -5294,6 +5315,9 @@ function matchStep2(p, src, full, SELF){
   if(/^choose an opponent$/i.test(p) && /^When you set this scheme in motion, choose an opponent\.?$/im.test((src && src.o) || full || "")) return [{t:"skip"}];
   if((m = p.match(/^they may tap any number of untapped creatures they control with total power (\d+) or greater$/i)) && /if they do, abandon this scheme/i.test(full || "")) return [{t:"oppMayTapAbandon", power:+m[1]}];
   if(/^if they do, abandon this scheme$/i.test(p) && /they may tap any number of untapped creatures/i.test(full || "")) return [{t:"skip"}];
+  // Nature Shields Its Own (Kampf: natureShields beim Bestätigen der Blocker)
+  if(/^create a 0\/1 green Plant creature token that's blocking that creature$/i.test(p) && /Whenever a creature attacks and isn't blocked, if you're the defending player/i.test(full || (src && src.o) || "")) return [{t:"skip"}];
+  if(/^abandon this scheme at end of combat$/i.test(p)) return [{t:"skip"}];
   // Fear My Authority
   if((m = p.match(/^abandon this scheme unless you discard a card or pay (\d+) life$/i))) return [{t:"schemeKeep", life:+m[1]}];
   // I Am Duskmourn
@@ -10139,6 +10163,7 @@ function interveningIf(text, src, opts){
   else if((k = c.match(/^(\w+) or more creatures died under your control this turn$/))) ok = (S.diedTK === turnKey() ? (S.diedN || 0) : 0) >= (nWord(k[1]) || +k[1] || 0);
   else if((k = c.match(/^(\w+) or more cards were put into your graveyard this turn from anywhere$/))){ gyTrack(); ok = (S.gyTK === turnKey() ? (S.gyN || 0) : 0) >= (nWord(k[1]) || +k[1] || 0); }
   else if(/^no opponent cast a spell since your last turn ended$/.test(c)) ok = !S.oppCastSince;
+  else if((k = c.match(/^you've been dealt (\w+) or more damage this turn$/))) ok = (S.dmgTK === turnKey() ? (S.dmgN || 0) : 0) >= (nWord(k[1]) || +k[1] || 0);
   else if(/^you drew a card last turn$/.test(c)) ok = !!(S.prevTK && S.drawsBy && S.drawsBy[S.prevTK] > 0);
   else if(/^that player has less than half their starting life total$/.test(c)){ const pid = TURN.active; ok = pid && pid !== me.id ? oppLifeOf(pid) * 2 < oppStartLife(pid) : false; }
   else if((k = c.match(/^they cast (\w+) or more spells this turn$/))) ok = TURN.active && TURN.active !== me.id ? (OPP_COUNT[`oppCast|${TURN.active}|${turnKey()}`] || 0) >= (nWord(k[1]) || +k[1] || 0) : false;
@@ -10859,7 +10884,7 @@ const HANDLED_STATIC = [
   /^You may pay \{0\} rather than pay the mana cost for Zombie creature spells you cast/i, /^Once each turn, you may cast a spell with mana value less than or equal to the number of Elves and Faeries you control from among cards exiled with/i,
   /^Players can't search libraries\. Any player may pay/i, /^As (?:this creature|[^,]+?) enters, choose a number/i, /^Noncreature spells with mana value equal to the chosen number can't be cast/i,
   /^Each player can't draw more than one card each turn/i, /^Artifacts and creatures entering the battlefield don't cause abilities to trigger/i, /^Each opponent can't draw more than one card each turn/i, /^If an opponent would search a library, that player searches the top four cards/i, /^Artifacts and creatures your opponents control enter tapped/i,
-  /^Other creatures you control get \+\d+\/\+\d+\.?$/i, KW_ANTHEM_RE, UNTOUCH_RE, /^Your commander has ward \{\d+\}\.?$/i, /^As you set this scheme in motion, choose an opponent\.?$/i, /^Creatures the chosen player controls can't attack you or planeswalkers you control\.?$/i, /^Permanents the chosen player controls don't untap during their untap step\.?$/i, /^Each opponent can't cast more than one spell each turn\.?$/i, /^Creatures your opponents control get -\d+\/-\d+\.?$/i, /^If a permanent entering(?: the battlefield)? causes a triggered ability/i, /^Permanents entering(?: the battlefield)? don't cause abilities/i,
+  /^Other creatures you control get \+\d+\/\+\d+\.?$/i, KW_ANTHEM_RE, UNTOUCH_RE, NCSMN_RE, /^Whenever a creature attacks and isn't blocked, if you're the defending player, create a 0\/1 green Plant creature token that's blocking that creature\.?$/i, /^When four or more creatures attack you, abandon this scheme at end of combat\.?$/i, /^Your commander has ward \{\d+\}\.?$/i, /^As you set this scheme in motion, choose an opponent\.?$/i, /^Creatures the chosen player controls can't attack you or planeswalkers you control\.?$/i, /^Permanents the chosen player controls don't untap during their untap step\.?$/i, /^Each opponent can't cast more than one spell each turn\.?$/i, /^Creatures your opponents control get -\d+\/-\d+\.?$/i, /^If a permanent entering(?: the battlefield)? causes a triggered ability/i, /^Permanents entering(?: the battlefield)? don't cause abilities/i,
   /^Activated abilities of creatures your opponents control can't be activated/i, /^As long as this card is in your graveyard, lands you control have/i, /^You and creatures you control have protection from the chosen card type/i,
   /^Enchanted permanent is a Vehicle artifact with crew \d+ and it loses all other card types/i, /^Noncreature spells cost \{\d+\} more to cast/i, /^Players can't pay life or sacrifice nonland permanents/i, /^Overload\b/i,
   /^You may spend mana as though it were mana of any colou?r\.?$/i, /^You may cast colorless spells and artifact spells as though they had flash/i,
@@ -11881,7 +11906,7 @@ function historyAdd(win){
 /* ---------- Automatische Updates ---------- */
 // Liegt die App im Web, prüft sie regelmässig version.json im selben Ordner und lädt sich bei einer neuen Version neu.
 // Alles Wichtige (Spielstand, Deck, Tisch) liegt im Browser-Speicher und ist nach dem Neuladen wieder da.
-const APP_VERSION = "2026.11.19-4";
+const APP_VERSION = "2026.11.19-5";
 const ONLINE = /^https?:$/.test(location.protocol);
 let updPending = null, updTimer = null, updSnoozeUntil = 0;
 function busyForUpdate(){ return botBusy || (!$("#modal").hidden && modalState && ["block","deck"].includes(modalState.kind)); }

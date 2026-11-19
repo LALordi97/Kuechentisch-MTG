@@ -28,7 +28,7 @@ const clickCard = async t => { const el = [...d.querySelectorAll('#modalBox .car
   const AUTO = ['My Tendrils Run Deep', 'Your Inescapable Doom', 'Because I Have Willed It', 'Dark Wings Bring Your Downfall', 'Mine Is the Only Truth', 'The Very Soil Shall Shake',
     'Fear My Authority', 'I Am Duskmourn', 'My Forces Are Innumerable', 'You Cannot Hide from Me',
     'My Undead Horde Awakens', 'I Know All, I See All', 'Reality Is Mine to Control', 'My Laughter Echoes',
-    'Bow to My Command', 'I Bask in Your Silent Awe', 'Imprison This Insolent Wretch', 'I Am Untouchable', 'My Champion Stands Supreme'];
+    'Bow to My Command', 'I Bask in Your Silent Awe', 'Imprison This Insolent Wretch', 'I Am Untouchable', 'My Champion Stands Supreme', 'Nature Shields Its Own', 'Nothing Can Stop Me Now'];
   for(const n of AUTO){ w.__sc = scheme(n); const st = ev('cardCheck(schemeAsSpell(window.__sc)).status'); check(st === 'auto', `${n}: automatisch (${st})`); }
 
   // Grundgerüst: laufendes Komplott bleibt liegen, kommt nicht sofort unter das Deck
@@ -238,6 +238,32 @@ const clickCard = async t => { const el = [...d.querySelectorAll('#modalBox .car
   ev('withBot("bot", () => { BOT.bf = [1, 2].map(() => newCard({n:"Island", type:"Basic Land — Island", o:""})); botChanged(); })');
   ev('withBot("bot", () => applyRemovalToMe(window.__kill, removalOf(window.__kill)))'); await wait(300); await drain();
   check(!S().bf.some(c => c.n === 'Held') && ev('BOTS.bot.bf.every(c => c.tap)') && active() === '', `Champion: KI zahlt Ward {2}, Held stirbt → aufgegeben (${active()})`);
+
+  // Nature Shields Its Own: ungeblockte Angreifer werden von 0/1-Pflanzen geblockt; vier Angreifer → aufgeben
+  await reset(); ev('S.bf.push(newCard({n:"Wächter", type:"Creature — Bear", o:"", pw:2, tg:2})); commit()'); await setOngoing('Nature Shields Its Own'); ev('blockOpen = false; BLOCKQ.length = 0; closeModal()'); // Blockdialog aus dem KI-Zug oben
+  w.__atk = [1, 2, 3].map(i => N('Angreifer ' + i, 'Creature — Orc', '', {pw:3, tg:3}));
+  ev('window.__bp = blockDialog(window.__atk, "Test"); window.__bp.then(b => { window.__bl = b; })'); await wait(150);
+  { const sel = d.querySelector(`#modalBox select[data-a="${w.__atk[0].u}"]`); sel.value = S().bf[0].u; } await click('Blocker bestätigen'); await wait(150);
+  check(w.__bl && w.__bl.size === 3 && w.__bl.get(w.__atk[0].u).n === 'Wächter' && w.__bl.get(w.__atk[1].u).n === 'Plant' && S().bf.filter(c => c.n === 'Plant').length === 2 && active() === 'Nature Shields Its Own', `Nature Shields: zwei Pflanzen blocken die ungeblockten Angreifer (${S().bf.map(c => c.n).join()})`);
+  w.__atk = [1, 2, 3, 4].map(i => N('Angreifer ' + i, 'Creature — Orc', '', {pw:3, tg:3})); w.__bl = null;
+  ev('window.__bp = blockDialog(window.__atk, "Test"); window.__bp.then(b => { window.__bl = b; })'); await wait(150); await click('Blocker bestätigen'); await wait(150);
+  check(w.__bl && w.__bl.size === 4 && active() === '', `Nature Shields: vier Angreifer → vier Pflanzen, dann aufgegeben (${w.__bl && w.__bl.size}, ${active()})`);
+
+  // Nothing Can Stop Me Now: 1 Schaden pro gegnerischer Quelle verhindert; 5 oder mehr Schaden in einem Zug → aufgeben
+  await reset(); await setOngoing('Nothing Can Stop Me Now'); ev('TURN = {active:"bot", n:26, starter:me.id, phase:3}');
+  w.__bolt = N('Blitz', 'Instant', 'Lightning Bolt deals 3 damage to any target.', {cmc:1, mc:'{R}'});
+  ev('withBot("bot", () => heurResolve(window.__bolt))'); check(S().life === 38, `Nothing Can Stop: KI-Blitz macht nur 2 (${S().life})`);
+  w.__atk = [1, 2].map(i => N('Orc ' + i, 'Creature — Orc', '', {pw:3, tg:3}));
+  ev('withBot("bot", () => resolveCombat(window.__atk, new Map(), true))'); await wait(150); await drain();
+  check(S().life === 34 && active() === 'Nothing Can Stop Me Now', `Nothing Can Stop: zwei 3/3-Angreifer machen 2 + 2 (${S().life})`);
+  await phase('end', false); check(active() === '', `Nothing Can Stop: 6 Schaden im Zug → aufgegeben (${active()})`);
+  ev('withBot("bot", () => heurResolve(window.__bolt))'); check(S().life === 31, `Nothing Can Stop aufgegeben: Blitz wieder 3 (${S().life})`);
+  await reset(); await setOngoing('Nothing Can Stop Me Now'); ev('TURN = {active:"bot", n:27, starter:me.id, phase:3}');
+  ev('receiveHit({from:"anna", kind:"damage", amount:4, src:"Feuerball"})'); await wait(100);
+  check(S().life === 37, `Nothing Can Stop: Mitspieler-Schaden 4 → 3 (${S().life})`);
+  ev('receiveCombatResult({from:"anna", cid:"x", dmg:4, cmdDmg:0, hn:3, dead:[]})'); await wait(100);
+  check(S().life === 36, `Nothing Can Stop: Mitspieler-Kampf 4 Schaden von 3 Quellen → 1 (${S().life})`);
+  await phase('end', false); check(active() === 'Nothing Can Stop Me Now', `Nothing Can Stop: 4 Schaden im Zug → bleibt (${active()})`);
 
   // Neues Spiel: laufende Komplotte kommen zurück ins Deck
   await reset(); await setOngoing('Your Inescapable Doom'); const nd = ev('S.arch.deck.length');
