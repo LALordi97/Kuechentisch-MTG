@@ -1,0 +1,1508 @@
+### Y'shtola, Night's Blessed | 9,9% | EDHREC Durchschnittsdeck Bracket 4, 4573 Decks, 19.11.26
+Commander
+Y'shtola, Night's Blessed
+
+Deck
+1 Arcane Signet
+1 Bolas's Citadel
+1 Decanter of Endless Water
+1 Fellwar Stone
+1 Mindcrank
+1 Relic of Legends
+1 Sol Ring
+1 Talisman of Dominance
+1 Talisman of Hierarchy
+1 Talisman of Progress
+1 The One Ring
+1 Thought Vessel
+1 Adarkar Wastes
+1 Arcane Sanctum
+1 Caves of Koilos
+1 Command Tower
+1 Drowned Catacomb
+1 Exotic Orchard
+1 Flooded Strand
+1 Glacial Fortress
+1 Godless Shrine
+1 Hallowed Fountain
+3 Island
+1 Isolated Chapel
+1 Marsh Flats
+1 Morphic Pool
+1 Otawara, Soaring City
+3 Plains
+1 Polluted Delta
+1 Prairie Stream
+1 Raffine's Tower
+1 Reliquary Tower
+1 Sea of Clouds
+1 Sunken Hollow
+1 Sunken Ruins
+3 Swamp
+1 Underground River
+1 Vault of Champions
+1 Watery Grave
+1 Archmage Emeritus
+1 Delney, Streetwise Lookout
+1 Emet-Selch of the Third Seat
+1 Enduring Tenacity
+1 Esper Sentinel
+1 Kambal, Consul of Allocation
+1 Lotho, Corrupt Shirriff
+1 Lyse Hext
+1 Orcish Bowmasters
+1 Papalymo Totolymo
+1 Sheoldred, the Apocalypse
+1 Talion, the Kindly Lord
+1 Tataru Taru
+1 Vito, Thorn of the Dusk Rose
+1 Authority of the Consuls
+1 Black Market Connections
+1 Bloodchief Ascension
+1 Curiosity
+1 Ghostly Prison
+1 Helm of the Ghastlord
+1 Mystic Remora
+1 Ophidian Eye
+1 Propaganda
+1 Rhystic Study
+1 Smothering Tithe
+1 Anguished Unmaking
+1 Counterspell
+1 Cyclonic Rift
+1 Dark Ritual
+1 Deadly Rollick
+1 Dismember
+1 Enlightened Tutor
+1 Fierce Guardianship
+1 Flawless Maneuver
+1 Force of Negation
+1 Force of Will
+1 Frantic Search
+1 Rewind
+1 Sink into Stupor
+1 Snuff Out
+1 Swords to Plowshares
+1 Teferi's Protection
+1 Unwind
+1 Vampiric Tutor
+1 Void Rend
+1 Teferi, Time Raveler
+1 Demonic Tutor
+1 Exsanguinate
+1 Farewell
+1 Irenicus's Vile Duplication
+1 Quantum Misalignment
+1 Risky Shortcut
+1 Toxic Deluge
+1 Vindicate
+
+### Edgar Markov | 9,3% | EDHREC Durchschnittsdeck Bracket 4, 4303 Decks, 19.11.26
+Commander
+Edgar Markov
+
+Deck
+1 Arcane Signet
+1 Blade of the Bloodchief
+1 Bolas's Citadel
+1 Herald's Horn
+1 Phyrexian Altar
+1 Skullclamp
+1 Sol Ring
+1 Talisman of Hierarchy
+1 Vanquisher's Banner
+1 Arid Mesa
+1 Blood Crypt
+1 Bloodstained Mire
+1 Bojuka Bog
+1 Cavern of Souls
+1 Caves of Koilos
+1 Command Tower
+1 Dragonskull Summit
+1 Godless Shrine
+1 Isolated Chapel
+1 Luxury Suite
+1 Marsh Flats
+3 Mountain
+1 Path of Ancestry
+1 Phyrexian Tower
+4 Plains
+1 Sacred Foundry
+1 Savai Triome
+1 Secluded Courtyard
+6 Swamp
+1 Three Tree City
+1 Unclaimed Territory
+1 Urborg, Tomb of Yawgmoth
+1 Vault of Champions
+1 Voldaren Estate
+1 Blood Artist
+1 Bloodletter of Aclazotz
+1 Bloodline Keeper
+1 Bloodthirsty Conqueror
+1 Captivating Vampire
+1 Champion of Dusk
+1 Charismatic Conqueror
+1 Clavileño, First of the Blessed
+1 Cordial Vampire
+1 Cruel Celebrant
+1 Drana, Liberator of Malakir
+1 Edgar, Charmed Groom
+1 Elenda, the Dusk Rose
+1 Emeritus of Woe
+1 Forerunner of the Legion
+1 Indulgent Aristocrat
+1 Knight of the Ebon Legion
+1 Legion Lieutenant
+1 Malakir Bloodwitch
+1 Marauding Blight-Priest
+1 Markov Baron
+1 Master of Dark Rites
+1 Mavren Fein, Dusk Apostle
+1 Sanctum Seeker
+1 Stromkirk Captain
+1 Twilight Prophet
+1 Vampire Socialite
+1 Vampire of the Dire Moon
+1 Vengeful Bloodwitch
+1 Viscera Seer
+1 Vito, Thorn of the Dusk Rose
+1 Welcoming Vampire
+1 Yahenni, Undying Partisan
+1 Anointed Procession
+1 Black Market Connections
+1 Exquisite Blood
+1 Phyrexian Arena
+1 Sanguine Bond
+1 Shared Animosity
+1 Smothering Tithe
+1 Anguished Unmaking
+1 Boros Charm
+1 Dark Ritual
+1 Path to Exile
+1 Swords to Plowshares
+1 Teferi's Protection
+1 Vampiric Tutor
+1 Village Rites
+1 Sorin, Imperious Bloodlord
+1 Damn
+1 Demonic Tutor
+1 Diabolic Intent
+1 New Blood
+1 Olivia's Wrath
+1 Ruinous Ultimatum
+
+### The Ur-Dragon | 8,2% | EDHREC Durchschnittsdeck Bracket 4, 3810 Decks, 19.11.26
+Commander
+The Ur-Dragon
+
+Deck
+1 Arcane Signet
+1 Chromatic Lantern
+1 Dragon's Hoard
+1 Fellwar Stone
+1 Herald's Horn
+1 Lightning Greaves
+1 Mox Jasper
+1 Sol Ring
+1 Urza's Incubator
+1 Arid Mesa
+1 Blood Crypt
+1 Bloodstained Mire
+1 Breeding Pool
+1 Cavern of Souls
+1 Command Tower
+1 Exotic Orchard
+1 Flooded Strand
+2 Forest
+1 Godless Shrine
+1 Hallowed Fountain
+1 Haven of the Spirit Dragon
+1 Island
+1 Ketria Triome
+1 Maelstrom of the Spirit Dragon
+1 Marsh Flats
+1 Misty Rainforest
+2 Mountain
+1 Overgrown Tomb
+1 Path of Ancestry
+1 Plains
+1 Polluted Delta
+1 Reflecting Pool
+1 Sacred Foundry
+1 Scalding Tarn
+1 Steam Vents
+1 Stomping Ground
+1 Swamp
+1 Temple Garden
+1 Verdant Catacombs
+1 Watery Grave
+1 Windswept Heath
+1 Wooded Foothills
+1 Ancient Brass Dragon
+1 Ancient Copper Dragon
+1 Ancient Gold Dragon
+1 Ancient Silver Dragon
+1 Atarka, World Render
+1 Balefire Dragon
+1 Birds of Paradise
+1 Bloom Tender
+1 Dragonlord Dromoka
+1 Dragonlord's Servant
+1 Dragonspeaker Shaman
+1 Goldspan Dragon
+1 Hellkite Courser
+1 Klauth, Unrivaled Ancient
+1 Lathliss, Dragon Queen
+1 Miirym, Sentinel Wyrm
+1 Morophon, the Boundless
+1 Old Gnawbone
+1 Rith, Liberated Primeval
+1 Rivaz of the Claw
+1 Roaming Throne
+1 Sarkhan, Soul Aflame
+1 Scion of Draco
+1 Scion of the Ur-Dragon
+1 Scourge of Valkas
+1 Terror of the Peaks
+1 Tiamat
+1 Twinflame Tyrant
+1 Two-Headed Hellkite
+1 Ureni of the Unwritten
+1 Utvara Hellkite
+1 Call the Spirit Dragons
+1 Dracogenesis
+1 Dragon Tempest
+1 Garruk's Uprising
+1 Rhystic Study
+1 Rhythm of the Wild
+1 Smothering Tithe
+1 Temur Ascendancy
+1 Cyclonic Rift
+1 Heroic Intervention
+1 Mana Drain
+1 Path to Exile
+1 Swords to Plowshares
+1 Teferi's Protection
+1 Vampiric Tutor
+1 Worldly Tutor
+1 Sarkhan Unbroken
+1 Crux of Fate
+1 Cultivate
+1 Demonic Tutor
+1 Farseek
+1 Kodama's Reach
+1 Nature's Lore
+1 Three Visits
+
+### Vivi Ornitier | 7,9% | EDHREC Durchschnittsdeck Bracket 4, 3678 Decks, 19.11.26
+Commander
+Vivi Ornitier
+
+Deck
+1 Arcane Signet
+1 Fellwar Stone
+1 Izzet Signet
+1 Lotus Petal
+1 Mox Amber
+1 Sol Ring
+1 Swiftfoot Boots
+1 Talisman of Creativity
+1 Thought Vessel
+1 Wizard's Staff
+1 Cascade Bluffs
+1 Command Tower
+1 Exotic Orchard
+1 Fiery Islet
+1 Frostboil Snarl
+9 Island
+1 Mistrise Village
+8 Mountain
+1 Otawara, Soaring City
+1 Reliquary Tower
+1 Riverpyre Verge
+1 Scalding Tarn
+1 Shivan Reef
+1 Steam Vents
+1 Stormcarved Coast
+1 Sulfur Falls
+1 Thundering Falls
+1 Training Center
+1 Archmage Emeritus
+1 Birgi, God of Storytelling
+1 Coruscation Mage
+1 Guttersnipe
+1 Harmonic Prodigy
+1 Hexing Squelcher
+1 Hullbreaker Horror
+1 Niv-Mizzet, Parun
+1 Niv-Mizzet, Visionary
+1 Quicksilver Elemental
+1 Simian Spirit Guide
+1 Storm-Kiln Artist
+1 Tandem Lookout
+1 Veyran, Voice of Duality
+1 Curiosity
+1 Mystic Remora
+1 Ophidian Eye
+1 Rhystic Study
+1 Sigil of Sleep
+1 Underworld Breach
+1 An Offer You Can't Refuse
+1 Arcane Denial
+1 Brain Freeze
+1 Brainstorm
+1 Consider
+1 Counterspell
+1 Cyclonic Rift
+1 Deflecting Swat
+1 Fierce Guardianship
+1 Flashback
+1 Flusterstorm
+1 Force of Negation
+1 Force of Will
+1 Frantic Search
+1 Lightning Bolt
+1 Mana Drain
+1 Mystical Tutor
+1 Opt
+1 Pongify
+1 Seething Song
+1 Sink into Stupor
+1 Snap
+1 Swan Song
+1 Blasphemous Act
+1 Expressive Iteration
+1 Faithless Looting
+1 Gamble
+1 Gitaxian Probe
+1 Grapeshot
+1 Jeska's Will
+1 Ponder
+1 Preordain
+1 Serum Visions
+1 Strike It Rich
+1 Vandalblast
+1 Windfall
+
+### Krenko, Mob Boss | 7,8% | EDHREC Durchschnittsdeck Bracket 4, 3591 Decks, 19.11.26
+Commander
+Krenko, Mob Boss
+
+Deck
+1 Arcane Signet
+1 Ashnod's Altar
+1 Coat of Arms
+1 Lightning Greaves
+1 Patriar's Seal
+1 Ruby Medallion
+1 Skullclamp
+1 Sol Ring
+1 Staff of Domination
+1 Sting, the Glinting Dagger
+1 Swiftfoot Boots
+1 Thornbite Staff
+1 Thousand-Year Elixir
+1 Umbral Mantle
+1 Arena of Glory
+1 Castle Embereth
+1 Cavern of Souls
+1 Den of the Bugbear
+27 Mountain
+1 Nykthos, Shrine to Nyx
+1 Three Tree City
+1 Conspicuous Snoop
+1 General Kreat, the Boltbringer
+1 Goblin Chieftain
+1 Goblin Chirurgeon
+1 Goblin Instigator
+1 Goblin King
+1 Goblin Lackey
+1 Goblin Matron
+1 Goblin Piledriver
+1 Goblin Recruiter
+1 Goblin Ringleader
+1 Goblin Sharpshooter
+1 Goblin Trashmaster
+1 Goblin Warchief
+1 Grenzo, Havoc Raiser
+1 Hexing Squelcher
+1 Hobgoblin Bandit Lord
+1 Howlsquad Heavy
+1 Kiki-Jiki, Mirror Breaker
+1 Krenko, Tin Street Kingpin
+1 Legion Warboss
+1 Marvin, Murderous Mimic
+1 Muxus, Goblin Grandee
+1 Pashalik Mons
+1 Purphoros, God of the Forge
+1 Rundvelt Hordemaster
+1 Siege-Gang Commander
+1 Skirk Prospector
+1 Treasure Nabber
+1 Warren Instigator
+1 Blood Moon
+1 Boggart Shenanigans
+1 Fervor
+1 Goblin Bombardment
+1 Impact Tremors
+1 Mana Echoes
+1 Shared Animosity
+1 Abrade
+1 Battle Hymn
+1 Brightstone Ritual
+1 Chaos Warp
+1 Deflecting Swat
+1 Lightning Bolt
+1 Massive Raid
+1 Blasphemous Act
+1 Dragon Fodder
+1 Faithless Looting
+1 Gamble
+1 Goblin War Strike
+1 Jeska's Will
+1 Krenko's Command
+1 Vandalblast
+
+### Kaalia of the Vast | 6,7% | EDHREC Durchschnittsdeck Bracket 4, 3108 Decks, 19.11.26
+Commander
+Kaalia of the Vast
+
+Deck
+1 Arcane Signet
+1 Boros Signet
+1 Fellwar Stone
+1 Lightning Greaves
+1 Orzhov Signet
+1 Rakdos Signet
+1 Sol Ring
+1 Swiftfoot Boots
+1 Talisman of Conviction
+1 Talisman of Hierarchy
+1 Talisman of Indulgence
+1 Ancient Tomb
+1 Arena of Glory
+1 Arid Mesa
+1 Battlefield Forge
+1 Blood Crypt
+1 Bloodstained Mire
+1 Caves of Koilos
+1 City of Brass
+1 Clifftop Retreat
+1 Command Tower
+1 Dragonskull Summit
+1 Exotic Orchard
+1 Godless Shrine
+1 Isolated Chapel
+1 Luxury Suite
+1 Marsh Flats
+4 Mountain
+1 Nomad Outpost
+5 Plains
+1 Rogue's Passage
+1 Sacred Foundry
+1 Savai Triome
+1 Spectator Seating
+1 Sulfurous Springs
+4 Swamp
+1 Vault of Champions
+1 Ancient Copper Dragon
+1 Angel of Despair
+1 Archfiend of Depravity
+1 Archfiend of Despair
+1 Aurelia, the Warleader
+1 Avacyn, Angel of Hope
+1 Avacyn, Angel of Horror
+1 Balefire Dragon
+1 Drana and Linvala
+1 Esper Sentinel
+1 Gisela, Blade of Goldnight
+1 Grand Abolisher
+1 Hellkite Tyrant
+1 Isshin, Two Heavens as One
+1 Kaalia, Zenith Seeker
+1 Liesa, Forgotten Archangel
+1 Lord of the Void
+1 Master of Cruelties
+1 Mother of Runes
+1 Rakdos, Patron of Chaos
+1 Razaketh, the Foulblooded
+1 Reya Dawnbringer
+1 Rune-Scarred Demon
+1 Sephara, Sky's Blade
+1 Serra's Emissary
+1 Terror of the Peaks
+1 Twinflame Tyrant
+1 Valgavoth, Terror Eater
+1 Vilis, Broker of Blood
+1 Animate Dead
+1 Dragon Tempest
+1 Necropotence
+1 Phyrexian Arena
+1 Reconnaissance
+1 Smothering Tithe
+1 Anguished Unmaking
+1 Boros Charm
+1 Dark Ritual
+1 Deadly Rollick
+1 Deflecting Swat
+1 Flawless Maneuver
+1 Path to Exile
+1 Swords to Plowshares
+1 Teferi's Protection
+1 Vampiric Tutor
+1 Blasphemous Act
+1 Damn
+1 Demonic Counsel
+1 Demonic Tutor
+1 Farewell
+1 Reanimate
+1 Ruinous Ultimatum
+
+### Nekusar, the Mindrazer | 5,8% | EDHREC Durchschnittsdeck Bracket 4, 2694 Decks, 19.11.26
+Commander
+Nekusar, the Mindrazer
+
+Deck
+1 Arcane Signet
+1 Dimir Signet
+1 Fellwar Stone
+1 Font of Mythos
+1 Howling Mine
+1 Lightning Greaves
+1 Sol Ring
+1 Talisman of Creativity
+1 Talisman of Dominance
+1 Talisman of Indulgence
+1 Teferi's Puzzle Box
+1 Thought Vessel
+1 Ancient Tomb
+1 Blood Crypt
+1 Bloodstained Mire
+1 Bojuka Bog
+1 Command Tower
+1 Crumbling Necropolis
+1 Dragonskull Summit
+1 Drowned Catacomb
+1 Exotic Orchard
+1 Geier Reach Sanitarium
+4 Island
+1 Luxury Suite
+1 Morphic Pool
+3 Mountain
+1 Polluted Delta
+1 Reliquary Tower
+1 Scalding Tarn
+1 Shipwreck Marsh
+1 Shivan Reef
+1 Steam Vents
+1 Stormcarved Coast
+1 Sulfur Falls
+4 Swamp
+1 Training Center
+1 Watery Grave
+1 Xander's Lounge
+1 Faerie Mastermind
+1 Fate Unraveler
+1 Ghyrson Starn, Kelermorph
+1 Harmonic Prodigy
+1 Jace's Archivist
+1 Kami of the Crescent Moon
+1 Kederekt Parasite
+1 Magus of the Wheel
+1 Nightscape Familiar
+1 Orcish Bowmasters
+1 Psychosis Crawler
+1 Razorkin Needlehead
+1 Scrawling Crawler
+1 Sheoldred, the Apocalypse
+1 Solphim, Mayhem Dominus
+1 Stormfist Crusader
+1 Tergrid, God of Fright
+1 Bloodchief Ascension
+1 Forced Fruition
+1 Liliana's Caress
+1 Megrim
+1 Propaganda
+1 Rhystic Study
+1 Spiteful Visions
+1 Underworld Dreams
+1 Waste Not
+1 An Offer You Can't Refuse
+1 Arcane Denial
+1 Counterspell
+1 Cyclonic Rift
+1 Dark Ritual
+1 Deflecting Swat
+1 Fierce Guardianship
+1 Force of Will
+1 Mana Drain
+1 Mystical Tutor
+1 Swan Song
+1 Vampiric Tutor
+1 Wheel and Deal
+1 Ob Nixilis, the Hate-Twisted
+1 Blasphemous Act
+1 Dark Deal
+1 Demonic Tutor
+1 Echo of Eons
+1 Jeska's Will
+1 Molten Psyche
+1 Peer into the Abyss
+1 Reforge the Soul
+1 Toxic Deluge
+1 Wheel of Fortune
+1 Whispering Madness
+1 Windfall
+1 Winds of Change
+
+### Yuriko, the Tiger's Shadow | 5,8% | EDHREC Durchschnittsdeck Bracket 4, 2676 Decks, 19.11.26
+Commander
+Yuriko, the Tiger's Shadow
+
+Deck
+1 Arcane Signet
+1 Dimir Signet
+1 Lotus Petal
+1 Scroll Rack
+1 Sensei's Divining Top
+1 Sol Ring
+1 Talisman of Dominance
+1 Choked Estuary
+1 Clearwater Pathway
+1 Command Tower
+1 Drowned Catacomb
+1 Exotic Orchard
+1 Flooded Strand
+7 Island
+1 Misty Rainforest
+1 Morphic Pool
+1 Otawara, Soaring City
+1 Polluted Delta
+1 Reliquary Tower
+1 Rogue's Passage
+1 Shipwreck Marsh
+1 Shizo, Death's Storehouse
+1 Sunken Hollow
+6 Swamp
+1 Underground River
+1 Watery Grave
+1 Baleful Strix
+1 Changeling Outcast
+1 Dauthi Voidwalker
+1 Faerie Seer
+1 Fallen Shinobi
+1 Gingerbrute
+1 Higure, the Still Wind
+1 Hydroelectric Specimen
+1 Ingenious Infiltrator
+1 Mist-Cloaked Herald
+1 Mist-Syndicate Naga
+1 Mistblade Shinobi
+1 Mockingbird
+1 Moon-Circuit Hacker
+1 Mothdust Changeling
+1 Nashi, Moon Sage's Scion
+1 Ninja of the Deep Hours
+1 Ornithopter
+1 Prosperous Thief
+1 Sakashima's Student
+1 Satoru, the Infiltrator
+1 Shadow of Mortality
+1 Silent-Blade Oni
+1 Silver-Fur Master
+1 Skullsnatcher
+1 Slither Blade
+1 Spectral Sailor
+1 Tetsuko Umezawa, Fugitive
+1 Thousand-Faced Shadow
+1 Triton Shorestalker
+1 Wingcrafter
+1 Cover of Darkness
+1 Mystic Remora
+1 Rhystic Study
+1 An Offer You Can't Refuse
+1 Brainstorm
+1 Commandeer
+1 Counterspell
+1 Cyclonic Rift
+1 Dark Ritual
+1 Deadly Rollick
+1 Dig Through Time
+1 Fell the Profane
+1 Fierce Guardianship
+1 Flare of Denial
+1 Force of Will
+1 Lim-Dûl's Vault
+1 Misdirection
+1 Mystical Tutor
+1 Sink into Stupor
+1 Snuff Out
+1 Vampiric Tutor
+1 Kaito, Bane of Nightmares
+1 Agadeem's Awakening
+1 Demonic Tutor
+1 Imperial Seal
+1 Ponder
+1 Scheming Symmetry
+1 Sea Gate Restoration
+1 Temporal Mastery
+1 Temporal Trespass
+1 Treasure Cruise
+
+### Sephiroth, Fabled SOLDIER | 5,7% | EDHREC Durchschnittsdeck Bracket 4, 2633 Decks, 19.11.26
+Commander
+Sephiroth, Fabled SOLDIER
+
+Deck
+1 Arcane Signet
+1 Ashnod's Altar
+1 Bolas's Citadel
+1 Bontu's Monument
+1 Jet Medallion
+1 Phyrexian Altar
+1 Skullclamp
+1 Sol Ring
+1 The Masamune
+1 The Soul Stone
+1 Ancient Tomb
+1 Bojuka Bog
+1 Cabal Coffers
+1 Cabal Stronghold
+1 High Market
+1 Midgar, City of Mako
+1 Nykthos, Shrine to Nyx
+1 Phyrexian Tower
+23 Swamp
+1 Takenuma, Abandoned Mire
+1 Urborg, Tomb of Yawgmoth
+1 Accursed Marauder
+1 Ayara, First of Locthwain
+1 Bitterbloom Bearer
+1 Blood Artist
+1 Bloodghast
+1 Braids, Arisen Nightmare
+1 Carrion Feeder
+1 Crypt Ghast
+1 Drivnod, Carnage Dominus
+1 Fleshbag Marauder
+1 Forsaken Miner
+1 Gravecrawler
+1 Gray Merchant of Asphodel
+1 Jadar, Ghoulcaller of Nephalia
+1 Marionette Apprentice
+1 Merciless Executioner
+1 Morbid Opportunist
+1 Nether Traitor
+1 Nine-Lives Familiar
+1 Ophiomancer
+1 Orcish Bowmasters
+1 Pawn of Ulamog
+1 Pitiless Plunderer
+1 Plaguecrafter
+1 Reassembling Skeleton
+1 Viscera Seer
+1 Warren Soultrader
+1 Yawgmoth, Thran Physician
+1 Zulaport Cutthroat
+1 Bastion of Remembrance
+1 Bitterblossom
+1 Black Market Connections
+1 Dictate of Erebos
+1 Grave Pact
+1 Necropotence
+1 The Meathook Massacre
+1 Culling the Weak
+1 Dark Ritual
+1 Deadly Dispute
+1 Deadly Rollick
+1 Flare of Malice
+1 Malakir Rebirth
+1 Sheoldred's Edict
+1 Vampiric Tutor
+1 Village Rites
+1 Withering Torment
+1 Liliana, Dreadhorde General
+1 Blasphemous Edict
+1 Demonic Tutor
+1 Diabolic Intent
+1 Feed the Swarm
+1 Innocent Blood
+1 Reanimate
+1 Toxic Deluge
+1 Unearth
+1 Victimize
+
+### Atraxa, Praetors' Voice | 5,6% | EDHREC Durchschnittsdeck Bracket 4, 2613 Decks, 19.11.26
+Commander
+Atraxa, Praetors' Voice
+
+Deck
+1 Arcane Signet
+1 Astral Cornucopia
+1 Chromatic Lantern
+1 Contagion Engine
+1 Everflowing Chalice
+1 Fellwar Stone
+1 Ichormoon Gauntlet
+1 Lightning Greaves
+1 Sol Ring
+1 Bountiful Promenade
+1 Breeding Pool
+1 City of Brass
+1 Command Tower
+1 Exotic Orchard
+1 Flooded Strand
+3 Forest
+1 Godless Shrine
+1 Hallowed Fountain
+1 Indatha Triome
+3 Island
+1 Karn's Bastion
+1 Mana Confluence
+1 Marsh Flats
+1 Misty Rainforest
+1 Overgrown Tomb
+2 Plains
+1 Polluted Delta
+1 Raffine's Tower
+1 Reflecting Pool
+1 Rejuvenating Springs
+1 Sea of Clouds
+1 Spara's Headquarters
+2 Swamp
+1 Temple Garden
+1 Undergrowth Stadium
+1 Verdant Catacombs
+1 Watery Grave
+1 Windswept Heath
+1 Zagoth Triome
+1 Birds of Paradise
+1 Blighted Agent
+1 Bloated Contaminator
+1 Bloom Tender
+1 Cankerbloom
+1 Contaminant Grafter
+1 Deepglow Skate
+1 Delighted Halfling
+1 Dreamtide Whale
+1 Esper Sentinel
+1 Evolution Sage
+1 Ezuri, Stalker of Spheres
+1 Flux Channeler
+1 Ichor Rats
+1 Ixhel, Scion of Atraxa
+1 Skithiryx, the Blight Dragon
+1 Skrelv, Defector Mite
+1 Tekuthal, Inquiry Dominus
+1 Thrummingbird
+1 Venerated Rotpriest
+1 Vorinclex, Monstrous Raider
+1 Brokers Ascendancy
+1 Doubling Season
+1 Inexorable Tide
+1 Norn's Decree
+1 Oath of Teferi
+1 Rhystic Study
+1 Smothering Tithe
+1 Counterspell
+1 Cyclonic Rift
+1 Fierce Guardianship
+1 Infectious Bite
+1 Mana Drain
+1 Path to Exile
+1 Prologue to Phyresis
+1 Swords to Plowshares
+1 Teferi's Protection
+1 Vampiric Tutor
+1 Vraska's Fall
+1 Narset, Parter of Veils
+1 Oko, Thief of Crowns
+1 Tamiyo, Field Researcher
+1 Teferi, Hero of Dominaria
+1 Teferi, Master of Time
+1 Ugin, the Spirit Dragon
+1 Vraska, Betrayal's Sting
+1 Demonic Tutor
+1 Farewell
+1 Farseek
+1 Infectious Inquiry
+1 Nature's Lore
+1 Phyresis Outbreak
+1 Tezzeret's Gambit
+1 Three Visits
+
+### Kefka, Court Mage | 5,4% | EDHREC Durchschnittsdeck Bracket 4, 2483 Decks, 19.11.26
+Commander
+Kefka, Court Mage
+
+Deck
+1 Arcane Signet
+1 Fellwar Stone
+1 Geth's Grimoire
+1 Lightning Greaves
+1 Lotus Petal
+1 Monument to Endurance
+1 Sol Ring
+1 Talisman of Creativity
+1 Talisman of Dominance
+1 Talisman of Indulgence
+1 Thought Vessel
+1 Ancient Tomb
+1 Blood Crypt
+1 Bloodstained Mire
+1 City of Brass
+1 Command Tower
+1 Dragonskull Summit
+1 Drowned Catacomb
+1 Exotic Orchard
+4 Island
+1 Luxury Suite
+1 Morphic Pool
+3 Mountain
+1 Otawara, Soaring City
+1 Polluted Delta
+1 Reliquary Tower
+1 Scalding Tarn
+1 Shivan Reef
+1 Steam Vents
+1 Sulfur Falls
+1 Sulfurous Springs
+1 Sunken Hollow
+4 Swamp
+1 Training Center
+1 Underground River
+1 Watery Grave
+1 Xander's Lounge
+1 Bone Miser
+1 Dauthi Voidwalker
+1 Displacer Kitten
+1 Dualcaster Mage
+1 Harmonic Prodigy
+1 Hexing Squelcher
+1 Kuja, Genome Sorcerer
+1 Laboratory Maniac
+1 Nightscape Familiar
+1 Niv-Mizzet, Parun
+1 Orcish Bowmasters
+1 Psychosis Crawler
+1 Ragavan, Nimble Pilferer
+1 Sheoldred, the Apocalypse
+1 Simian Spirit Guide
+1 Tergrid, God of Fright
+1 Thassa's Oracle
+1 Tinybones, Bauble Burglar
+1 Vivi Ornitier
+1 Animate Dead
+1 Liliana's Caress
+1 Mystic Remora
+1 Rhystic Study
+1 Underworld Breach
+1 Waste Not
+1 An Offer You Can't Refuse
+1 Arcane Denial
+1 Cabal Ritual
+1 Counterspell
+1 Cyclonic Rift
+1 Dark Ritual
+1 Deadly Rollick
+1 Deflecting Swat
+1 Essence Flux
+1 Fierce Guardianship
+1 Force of Negation
+1 Force of Will
+1 Ghostly Flicker
+1 Mana Drain
+1 Mystical Tutor
+1 Saw in Half
+1 Swan Song
+1 Vampiric Tutor
+1 Narset, Parter of Veils
+1 Blasphemous Act
+1 Demonic Tutor
+1 Faithless Looting
+1 Gamble
+1 Jeska's Will
+1 Reanimate
+1 Rite of Flame
+1 Toxic Deluge
+1 Vandalblast
+1 Windfall
+
+### Chatterfang, Squirrel General | 5,1% | EDHREC Durchschnittsdeck Bracket 4, 2380 Decks, 19.11.26
+Commander
+Chatterfang, Squirrel General
+
+Deck
+1 Arcane Signet
+1 Ashnod's Altar
+1 Cauldron of Essence
+1 Chitterspitter
+1 Nuka-Cola Vending Machine
+1 Phyrexian Altar
+1 Skullclamp
+1 Sol Ring
+1 Talisman of Resilience
+1 Bojuka Bog
+1 Command Tower
+1 Deathcap Glade
+1 Exotic Orchard
+8 Forest
+1 Golgari Rot Farm
+1 Llanowar Wastes
+1 Necroblossom Snarl
+1 Overgrown Tomb
+1 Phyrexian Tower
+6 Swamp
+1 Swarmyard
+1 Tainted Wood
+1 Temple of Malady
+1 The Shire
+1 Three Tree City
+1 Twilight Mire
+1 Undergrowth Stadium
+1 Urborg, Tomb of Yawgmoth
+1 Verdant Catacombs
+1 Woodland Cemetery
+1 Yavimaya, Cradle of Growth
+1 Academy Manufactor
+1 Birds of Paradise
+1 Blood Artist
+1 Camellia, the Seedmiser
+1 Craterhoof Behemoth
+1 Deep Forest Hermit
+1 Gilded Goose
+1 Hazel of the Rootbloom
+1 Hazel's Brewmaster
+1 Ivy Lane Denizen
+1 Marionette Apprentice
+1 Mirkwood Bats
+1 Nadier's Nightblade
+1 Peregrin Took
+1 Pitiless Plunderer
+1 Prosperous Innkeeper
+1 Ravenous Squirrel
+1 Scurry Oak
+1 Scurry of Squirrels
+1 Squirrel Sovereign
+1 The Odd Acorn Gang
+1 The Unbeatable Squirrel Girl
+1 Thornvault Forager
+1 Tireless Provisioner
+1 Toski, Bearer of Secrets
+1 Valley Rotcaller
+1 Warren Soultrader
+1 Zulaport Cutthroat
+1 Bastion of Remembrance
+1 Beastmaster Ascension
+1 Black Market Connections
+1 Doubling Season
+1 Moldervine Reclamation
+1 Parallel Lives
+1 Squirrel Nest
+1 The Meathook Massacre
+1 Assassin's Trophy
+1 Dark Ritual
+1 Deadly Dispute
+1 Deadly Rollick
+1 Heroic Intervention
+1 Saw in Half
+1 Second Harvest
+1 Vampiric Tutor
+1 Verdant Command
+1 Worldly Tutor
+1 Garruk, Cursed Huntsman
+1 Chatter of the Squirrel
+1 Chatterstorm
+1 Culling Ritual
+1 Cultivate
+1 Demonic Tutor
+1 Diabolic Intent
+1 Nature's Lore
+1 Reanimate
+1 Swarmyard Massacre
+
+### Fire Lord Azula | 4,6% | EDHREC Durchschnittsdeck Bracket 4, 2112 Decks, 19.11.26
+Commander
+Fire Lord Azula
+
+Deck
+1 Arcane Signet
+1 Fellwar Stone
+1 Izzet Signet
+1 Lightning Greaves
+1 Sol Ring
+1 Swiftfoot Boots
+1 Talisman of Creativity
+1 Talisman of Dominance
+1 Talisman of Indulgence
+1 Twinning Staff
+1 Blood Crypt
+1 Bloodstained Mire
+1 Command Tower
+1 Dragonskull Summit
+1 Drowned Catacomb
+1 Emergence Zone
+1 Exotic Orchard
+1 Fire Nation Palace
+4 Island
+1 Luxury Suite
+1 Morphic Pool
+4 Mountain
+1 Polluted Delta
+1 Reliquary Tower
+1 Scalding Tarn
+1 Shivan Reef
+1 Steam Vents
+1 Stormcarved Coast
+1 Sulfur Falls
+1 Sulfurous Springs
+3 Swamp
+1 Training Center
+1 Underground River
+1 Watery Grave
+1 Xander's Lounge
+1 Archmage Emeritus
+1 Ashling, Flame Dancer
+1 Birgi, God of Storytelling
+1 Dualcaster Mage
+1 Electro, Assaulting Battery
+1 Faerie Mastermind
+1 High Fae Trickster
+1 Nightscape Familiar
+1 Orcish Bowmasters
+1 Ozai, the Phoenix King
+1 Snapcaster Mage
+1 Storm-Kiln Artist
+1 Valley Floodcaller
+1 Veyran, Voice of Duality
+1 Vivi Ornitier
+1 Leyline of Anticipation
+1 Mystic Remora
+1 Rhystic Study
+1 Underworld Breach
+1 An Offer You Can't Refuse
+1 Big Score
+1 Borne Upon a Wind
+1 Brainstorm
+1 Counterspell
+1 Cyclonic Rift
+1 Dark Ritual
+1 Deadly Rollick
+1 Deflecting Swat
+1 Demand Answers
+1 Desperate Ritual
+1 Electrodominance
+1 Fierce Guardianship
+1 Flashback
+1 Frantic Search
+1 Invoke Calamity
+1 Lightning Bolt
+1 Mystical Tutor
+1 Narset's Reversal
+1 Pyretic Ritual
+1 Redirect Lightning
+1 Reiterate
+1 Seething Song
+1 Snap
+1 Swan Song
+1 The Last Agni Kai
+1 Thrill of Possibility
+1 Unexpected Windfall
+1 Vampiric Tutor
+1 Waterlogged Teachings
+1 Blasphemous Act
+1 Crackle with Power
+1 Demonic Tutor
+1 Gamble
+1 Jeska's Will
+1 Mana Geyser
+1 Sozin's Comet
+
+### Sauron, the Dark Lord | 4,4% | EDHREC Durchschnittsdeck Bracket 4, 2031 Decks, 19.11.26
+Commander
+Sauron, the Dark Lord
+
+Deck
+1 Arcane Signet
+1 Dimir Signet
+1 Fellwar Stone
+1 Palantír of Orthanc
+1 Relic of Sauron
+1 Shadowspear
+1 Sol Ring
+1 Talisman of Creativity
+1 Talisman of Dominance
+1 Talisman of Indulgence
+1 The One Ring
+1 The Ozolith
+1 Ancient Tomb
+1 Barad-dûr
+1 Blood Crypt
+1 Bloodstained Mire
+1 Command Tower
+1 Crumbling Necropolis
+1 Dragonskull Summit
+1 Drowned Catacomb
+1 Exotic Orchard
+4 Island
+1 Luxury Suite
+1 Minas Morgul, Dark Fortress
+1 Morphic Pool
+1 Mount Doom
+4 Mountain
+1 Polluted Delta
+1 Scalding Tarn
+1 Steam Vents
+1 Sulfur Falls
+1 Sulfurous Springs
+4 Swamp
+1 The Black Gate
+1 Training Center
+1 Underground River
+1 Urborg, Tomb of Yawgmoth
+1 Watery Grave
+1 Xander's Lounge
+1 Anger
+1 Archfiend of Ifnir
+1 Corsairs of Umbar
+1 Lord of the Nazgûl
+1 Mauhúr, Uruk-hai Captain
+7 Nazgûl
+1 Notion Thief
+1 Orcish Bowmasters
+1 Orcish Siegemaster
+1 Saruman, the White Hand
+1 Sauron, Lord of the Rings
+1 Sheoldred, the Apocalypse
+1 The Great Goblin
+1 Warg Rider
+1 Witch-king of Angmar
+1 Wonder
+1 Animate Dead
+1 Call of the Ring
+1 In the Darkness Bind Them
+1 Mystic Remora
+1 One Ring to Rule Them All
+1 Rhystic Study
+1 An Offer You Can't Refuse
+1 Arcane Denial
+1 Counterspell
+1 Cyclonic Rift
+1 Dark Ritual
+1 Deadly Rollick
+1 Deflecting Swat
+1 Fierce Guardianship
+1 Mana Drain
+1 Saruman's Trickery
+1 Swan Song
+1 Vampiric Tutor
+1 Blasphemous Act
+1 Demonic Tutor
+1 Faithless Looting
+1 Feed the Swarm
+1 Jeska's Will
+1 Living Death
+1 Reanimate
+1 Ringsight
+1 Toxic Deluge
+1 Victimize
+1 Windfall
+
+### Teval, the Balanced Scale | 3,9% | EDHREC Durchschnittsdeck Bracket 4, 1819 Decks, 19.11.26
+Commander
+Teval, the Balanced Scale
+
+Deck
+1 Altar of Dementia
+1 Arcane Signet
+1 Cauldron of Essence
+1 Conduit of Worlds
+1 Hedge Shredder
+1 Phyrexian Altar
+1 Sol Ring
+1 Boseiju, Who Endures
+1 Breeding Pool
+1 Command Beacon
+1 Command Tower
+1 Dreamroot Cascade
+1 Exotic Orchard
+1 Field of the Dead
+3 Forest
+1 Hedge Maze
+1 Hinterland Harbor
+3 Island
+1 Llanowar Wastes
+1 Misty Rainforest
+1 Opulent Palace
+1 Overgrown Tomb
+1 Polluted Delta
+1 Rejuvenating Springs
+1 Shifting Woodland
+1 Sunken Hollow
+3 Swamp
+1 Takenuma, Abandoned Mire
+1 Undercity Sewers
+1 Underground Mortuary
+1 Undergrowth Stadium
+1 Urborg, Tomb of Yawgmoth
+1 Verdant Catacombs
+1 Watery Grave
+1 Woodland Cemetery
+1 Yavimaya, Cradle of Growth
+1 Zagoth Triome
+1 Aftermath Analyst
+1 Avenger of Zendikar
+1 Birds of Paradise
+1 Colossal Grave-Reaver
+1 Craterhoof Behemoth
+1 Deathrite Shaman
+1 Eternal Witness
+1 Gravecrawler
+1 Hedron Crab
+1 Icetill Explorer
+1 Kheru Goldkeeper
+1 Kishla Skimmer
+1 Meren of Clan Nel Toth
+1 Muldrotha, the Gravetide
+1 Ramunap Excavator
+1 Sakura-Tribe Elder
+1 Sidisi, Brood Tyrant
+1 Six
+1 Skull Prophet
+1 Stitcher's Supplier
+1 Sylvan Safekeeper
+1 Syr Konrad, the Grim
+1 Tatyova, Benthic Druid
+1 The Gitrog Monster
+1 The Scarab God
+1 Timeless Witness
+1 Wight of the Reliquary
+1 Wonder
+1 Animate Dead
+1 Insidious Roots
+1 Phyrexian Reclamation
+1 Rhystic Study
+1 Ripples of Undeath
+1 Teval's Judgment
+1 Tortured Existence
+1 An Offer You Can't Refuse
+1 Assassin's Trophy
+1 Counterspell
+1 Crop Rotation
+1 Cyclonic Rift
+1 Deadly Rollick
+1 Entomb
+1 Fierce Guardianship
+1 Swan Song
+1 Tear Asunder
+1 Vampiric Tutor
+1 Demonic Tutor
+1 Dread Return
+1 Farseek
+1 Life from the Loam
+1 Living Death
+1 Nature's Lore
+1 Reanimate
+1 Toxic Deluge
+1 Victimize
+1 Will of the Sultai
+
+### Hashaton, Scarab's Fist | 3,9% | EDHREC Durchschnittsdeck Bracket 4, 1799 Decks, 19.11.26
+Commander
+Hashaton, Scarab's Fist
+
+Deck
+1 Arcane Signet
+1 Fellwar Stone
+1 Monument to Endurance
+1 Mox Amber
+1 Sol Ring
+1 Talisman of Dominance
+1 Talisman of Hierarchy
+1 Talisman of Progress
+1 The One Ring
+1 The Underworld Cookbook
+1 Adarkar Wastes
+1 Ancient Tomb
+1 Bloodstained Mire
+1 Caves of Koilos
+1 City of Brass
+1 Command Tower
+1 Drowned Catacomb
+1 Exotic Orchard
+1 Flooded Strand
+1 Glacial Fortress
+1 Godless Shrine
+1 Hallowed Fountain
+3 Island
+1 Isolated Chapel
+1 Mana Confluence
+1 Marsh Flats
+1 Morphic Pool
+1 Otawara, Soaring City
+3 Plains
+1 Polluted Delta
+1 Raffine's Tower
+1 Sea of Clouds
+3 Swamp
+1 Undercity Sewers
+1 Underground River
+1 Vault of Champions
+1 Watery Grave
+1 Angel of the Ruins
+1 Archfiend of Ifnir
+1 Archon of Cruelty
+1 Avacyn, Angel of Hope
+1 Consecrated Sphinx
+1 Elesh Norn, Grand Cenobite
+1 Esper Sentinel
+1 Ghostly Pilferer
+1 Grand Abolisher
+1 Hullbreaker Horror
+1 Jin-Gitaxias, Core Augur
+1 Kitsa, Otterball Elite
+1 Ledger Shredder
+1 Likeness Looter
+1 Lotho, Corrupt Shirriff
+1 Metamorphosis Fanatic
+1 Nezahal, Primal Tide
+1 Peregrine Drake
+1 Pollywog Prodigy
+1 Psychic Frog
+1 Putrid Imp
+1 Razaketh, the Foulblooded
+1 Rhet-Tomb Mystic
+1 Rona, Herald of Invasion
+1 Sheoldred, Whispering One
+1 Skirge Familiar
+1 The Scarab God
+1 Tireless Tribe
+1 Valgavoth, Terror Eater
+1 Vohar, Vodalian Desecrator
+1 Animate Dead
+1 Mystic Remora
+1 Renewed Solidarity
+1 Rhystic Study
+1 Smothering Tithe
+1 Tortured Existence
+1 An Offer You Can't Refuse
+1 Counterspell
+1 Cyclonic Rift
+1 Dark Ritual
+1 Deadly Rollick
+1 Enlightened Tutor
+1 Fierce Guardianship
+1 Force of Will
+1 Frantic Search
+1 Mana Drain
+1 Path to Exile
+1 Swan Song
+1 Swords to Plowshares
+1 Vampiric Tutor
+1 Damn
+1 Demonic Tutor
+1 Reanimate
+1 Toxic Deluge
+1 Victimize
+1 Windfall

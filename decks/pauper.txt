@@ -1,4 +1,40 @@
-### Affinity | 48% | 1^ Tappa Lega Treviso, 1. Platz, 15.11.26
+### Dimir Control | 12% | MTGO Challenge 16, 1. Platz, 17.11.26
+4 Baleful Strix
+4 Spellstutter Sprite
+3 Faerie Seer
+2 Ninja of the Deep Hours
+2 Thorn of the Black Rose
+3 Brainstorm
+1 Dispel
+4 Counterspell
+4 Lorien Revealed
+4 Snuff Out
+2 Cast Down
+1 Extract a Confession
+1 Dimir Aqueduct
+1 Bojuka Bog
+1 Swamp
+4 Contaminated Aquifer
+10 Island
+2 Augur of Bolas
+1 Seething Landscape
+1 Plunder the Trollshaws
+1 Suffocating Fumes
+1 Gurmag Angler
+1 Murmuring Mystic
+2 Cut Down
+
+Sideboard
+1 Extract a Confession
+1 Okiba-Gang Shinobi
+3 Annul
+4 Blue Elemental Blast
+1 Arms of Hadar
+2 Relic of Progenitus
+2 Campfire
+1 Stormbound Geist
+
+### Affinity | 10% | 1^ Tappa Lega Treviso, 1. Platz, 15.11.26
 4 Myr Enforcer
 4 Refurbished Familiar
 4 Utrom Monitor
@@ -25,7 +61,7 @@ Sideboard
 2 Breath Weapon
 1 Vandalblast
 
-### Burn | 48% | Mont Weekly Event, 1. Platz, 18.11.26
+### Burn | 10% | Mont Weekly Event, 1. Platz, 18.11.26
 4 Guttersnipe
 4 Sneaky Snacker
 4 Voldaren Epicure
@@ -46,7 +82,39 @@ Sideboard
 3 Smash to Smithereens
 2 End the Festivities
 
-### Boros Aggro | 48% | MTGO League, 1. Platz, 17.11.26
+### Balustrade Spy | 8% | Common Ground: Tuesday Clash #001 - Nardini, 1. Platz, 18.11.26
+4 Balustrade Spy
+3 Gatecreeper Vine
+4 Generous Ent
+2 Jaspera Sentinel
+2 Lotleth Giant
+4 Masked Vandal
+3 Mesmeric Fiend
+2 Nyxborn Hydra
+4 Overgrown Battlement
+3 Quirion Ranger
+4 Sagu Wildling
+4 Saruli Caretaker
+3 Wall of Roots
+2 Dread Return
+4 Land Grant
+4 Lead the Stampede
+4 Winding Way
+3 Forest
+1 Swamp
+
+Sideboard
+1 Mesmeric Fiend
+1 Swamp
+3 Accursed Marauder
+2 Avenging Hunter
+2 Faerie Macabre
+1 Flaring Pain
+2 Scattershot Archer
+1 Undergrowth Leopard
+2 Vitu-Ghazi Inspector
+
+### Boros Aggro | 5% | MTGO League, 1. Platz, 17.11.26
 4 Rustvale Bridge
 3 Ancient Den
 3 Great Furnace
@@ -83,7 +151,46 @@ Sideboard
 1 Dawnbringer Cleric
 1 Red Elemental Blast
 
-### Aura Aggro | 48% | Tsp Series ! 3�event - Tonio Spinelli TA, 1. Platz, 15.11.26
+### Urzatron | 5% | Lega Prato - Season II - Tappa I, 1. Platz, 16.11.26
+1 Stonehorn Dignitary
+3 Mnemonic Wall
+4 Expedition Map
+4 Giant's Boulder
+1 Energy Refractor
+3 Prophetic Prism
+2 Bonder's Ornament
+1 Crop Rotation
+1 Ephemerate
+2 Moment's Peace
+3 Plunder the Trollshaws
+1 Prohibit
+1 Weather the Storm
+1 Breath Weapon
+2 Ghostly Flicker
+1 Pulse of Murasa
+1 Unwind
+2 Mystical Teachings
+3 Lorien Revealed
+4 Visionary's Dance
+1 Rolling Thunder
+1 Conduit Pylons
+1 Bojuka Bog
+4 Island
+4 Urza's Mine
+4 Urza's Power Plant
+4 Urza's Tower
+
+Sideboard
+1 Stonehorn Dignitary
+1 Weather the Storm
+4 Hydroblast
+1 Blue Elemental Blast
+4 Pyroblast
+2 Bramble Wurm
+1 Ancient Grudge
+1 Envelop
+
+### Aura Aggro | 4% | Tsp Series ! 3�event - Tonio Spinelli TA, 1. Platz, 15.11.26
 4 Gladecover Scout
 4 Silhana Ledgewalker
 4 Slippery Bogle
@@ -109,7 +216,7 @@ Sideboard
 2 Ram Through
 3 Soul-Guide Lantern
 
-### Red Deck Wins | 48% | SREZ series #1 - pipa-popa, 1. Platz, 16.11.26
+### Red Deck Wins | 4% | SREZ series #1 - pipa-popa, 1. Platz, 16.11.26
 4 Clockwork Percussionist
 4 Voldaren Epicure
 4 Goblin Bushwhacker
@@ -134,7 +241,7 @@ Sideboard
 1 Flash of Defiance
 2 Relic of Progenitus
 
-### Gruul Aggro | 48% | Monday night Event - Zipzinger, 1. Platz, 17.11.26
+### Gruul Aggro | 4% | Monday night Event - Zipzinger, 1. Platz, 17.11.26
 4 Avenging Hunter
 4 Boarding Party
 4 Writhing Chrysalis
@@ -165,7 +272,7 @@ Sideboard
 1 Pulse of Murasa
 1 Faerie Macabre
 
-### Elves | 48% | League Playoffs, 1. Platz, 15.11.26
+### Elves | 4% | League Playoffs, 1. Platz, 15.11.26
 2 Fyndhorn Elves
 4 Llanowar Elves
 4 Nyxborn Hydra
@@ -192,7 +299,38 @@ Sideboard
 3 Vitu-Ghazi Inspector
 3 Monstrous Emergence
 
-### Mono Blue Aggro | 48% | St. Paupi 1, 1. Platz, 15.11.26
+### RG Ruby Storm | 4% | Liga Oto�al Bilbao Posavasos 2026 // Jornada 6, 1. Platz, 15.11.26
+4 Goblin Anarchomancer
+4 Thornscape Familiar
+4 Manamorphose
+4 Seething Song
+4 Desperate Ritual
+4 Twinned Vision
+2 Big Score
+3 Crossover Collaboration
+2 First Day of Class
+4 Glimpse the Impossible
+2 Seize the Storm
+2 Wrenn's Resolve
+3 Reckless Impulse
+1 Bitter Reunion
+5 Mountain
+4 Hickory Woodlot
+4 Sandstone Needle
+4 Geothermal Crevice
+
+Sideboard
+1 Abandon Attachments
+1 Origin of Metalbending
+2 Weather the Storm
+2 Gruul Turf
+4 Pyroblast
+1 Flaring Pain
+2 Red Elemental Blast
+1 Fling
+1 Scattershot
+
+### Mono Blue Aggro | 3% | St. Paupi 1, 1. Platz, 15.11.26
 4 Cryptic Serpent
 4 Delver of Secrets
 4 Tolarian Terror
@@ -216,7 +354,7 @@ Sideboard
 2 Murmuring Mystic
 2 Relic of Progenitus
 
-### Weenie White | 48% | MTGO League, 1. Platz, 15.11.26
+### Weenie White | 3% | MTGO League, 1. Platz, 15.11.26
 3 Leonardo, Big Brother
 4 Lunarch Veteran
 4 Novice Inspector
@@ -246,204 +384,101 @@ Sideboard
 1 Dawnbringer Cleric
 1 Standard Bearer
 
-### Mono Black Aggro | 48% | 2� Jornada Liga Blanes, 2. Platz, 15.11.26
-4 Bloodthrone Vampire
-4 Carrion Feeder
-4 Infestation Sage
-4 Mortician Beetle
-4 Nested Shambler
-4 Nezumi Linkbreaker
-4 Perigee Beckoner
-2 Scarblade's Malice
-4 Supernatural Stamina
-4 Village Rites
-2 Rite of Consumption
-4 Unearth
-16 Swamp
+### Mono Blue Terror | 3% | MTGO Challenge 16, 2. Platz, 17.11.26
+1 Deep Analysis
+2 Sleep of the Dead
+3 Deem Inferior
+3 Ponder
+3 Dispel
+4 Thought Scour
+4 Lorien Revealed
+4 Brainstorm
+4 Counterspell
+4 Mental Note
+1 Murmuring Mystic
+3 Delver of Secrets
+4 Cryptic Serpent
+4 Tolarian Terror
+16 Island
 
 Sideboard
-3 Accursed Marauder
-2 Duress
-2 Mesmeric Fiend
-2 Rotten Reunion
-2 Suffocating Fumes
-4 Tragic Slip
+3 Gut Shot
+4 Blue Elemental Blast
+4 Annul
+4 Hydroblast
 
-### Rakdos Aggro | 48% | Event, 2. Platz, 14.11.26
-3 Voldaren Epicure
-3 Refurbished Familiar
-4 Galvanic Blast
-4 Fiery Temper
-4 Faithless Looting
-3 Highway Robbery
-4 Vampire's Kiss
-4 Grab the Prize
-4 Alms of the Vein
-3 Vault of Whispers
-4 Jagged Barrens
-4 Great Furnace
-2 Mountain
-4 Sneaky Snacker
-4 Kitchen Imp
-2 Bojuka Bog
-4 Drossforge Bridge
-
-Sideboard
-3 Toxin Analysis
-2 Pyroblast
-2 Nihil Spellbomb
-3 Krark-Clan Shaman
-3 Extract a Confession
-2 Faerie Macabre
-
-### Jund | 48% | Common Enemies: Tournament, 3.–4. Platz, 14.11.26
-3 Krark-Clan Shaman
-1 Nyxborn Hydra
-4 Refurbished Familiar
-4 Writhing Chrysalis
-4 Ichor Wellspring
-2 Lembas
-3 Nihil Spellbomb
-4 Cast Down
-2 Eviscerator's Insight
-4 Fanatical Offering
-1 Pulse of Murasa
-2 Toxin Analysis
-4 Cleansing Wildfire
-1 Makeshift Munitions
-1 Bojuka Bog
-4 Drossforge Bridge
-2 Forest
-1 Mountain
-4 Slagwoods Bridge
-3 Swamp
-4 Twisted Landscape
-2 Vault of Whispers
-
-Sideboard
-1 Nihil Spellbomb
+### Ephemerate | 3% | Srez Series #2 - Pipa-popa, 1. Platz, 17.11.26
+1 Spell Pierce
+1 Lightning Bolt
+1 Bonder's Ornament
+1 Late to Dinner
+1 Union of the Third Path
+1 Thraben Charm
 2 Breath Weapon
-3 Duress
-3 Pyroblast
-1 Terminate
-2 Troublemaker Ouphe
-3 Weather the Storm
+2 Campfire
+2 Brainstorm
+3 Ponder
+3 Ephemerate
+4 Counterspell
+4 Dispatch
+4 Thoughtcast
+4 Cleansing Wildfire
+1 Goliath Paladin
+1 Stonehorn Dignitary
+1 Ardent Elementalist
+1 Archaeomancer
+2 Murmuring Mystic
+2 Mulldrifter
+1 Snow-Covered Mountain
+1 Ancient Den
+1 Snow-Covered Plains
+3 Seat of the Synod
+4 Silverbluff Bridge
+4 Snow-Covered Island
+4 Rustvale Bridge
 
-### Zoo | 48% | SREZ series #1 - pipa-popa, 2. Platz, 16.11.26
-1 Pulse of Murasa
-1 Ragged Short Spear
-1 Rally the Peasants
-3 Thraben Charm
-3 Journey to Nowhere
-4 Pursue the Past
-4 Melded Moxite
+Sideboard
+1 Swirling Sandstorm
+3 Pyroblast
+4 Hydroblast
+2 Envelop
+1 Blue Elemental Blast
+2 Cast into the Fire
+1 Union of the Third Path
+1 Thraben Charm
+
+### Gates | 2% | My Monday Event, 1. Platz, 16.11.26
+1 Blessed Ghoul
+4 Sacred Cat
+3 Outlaw Medic
+1 Shattered Acolyte
+4 Sneaky Snacker
+1 Guardian of the Guildpact
+4 Writhing Chrysalis
+3 Melded Moxite
 4 Lightning Bolt
-4 Cleansing Wildfire
-2 Nyxborn Hydra
-4 Sneaky Snacker
-4 Lunarch Veteran
-4 Writhing Chrysalis
-2 Forest
-3 Sheltering Landscape
-4 Rustvale Bridge
-4 Slagwoods Bridge
-4 Plains
-4 Mountain
-
-Sideboard
-3 Ancient Grudge
-2 Breath Weapon
-3 Pyroblast
-2 Vandalblast
-4 Weather the Storm
-1 Thraben Charm
-
-### Orzhov Aggro | 48% | Koncekhod # 10 - mbabaev, 2. Platz, 14.11.26
-4 Glint Hawk
-4 Thraben Inspector
-4 Kor Skyfisher
-4 Refurbished Familiar
-2 Mukotai Ambusher
-2 Oroku Saki, Shredder Rising
-4 Lembas
-2 Tithing Blade
-2 Grim Bauble
-2 Soul-Guide Lantern
-1 Thraben Charm
-4 Dispatch
-4 Pattern Buffer Preservation
-1 Omen of the Dead
-1 Scoured Barrens
-4 Ancient Den
-1 Bojuka Bog
-4 Goldmire Bridge
-1 Plains
-1 Kabira Crossroads
-4 Orzhov Basilica
-3 Vault of Whispers
-1 Swamp
-
-Sideboard
-1 Tithing Blade
-1 Grim Bauble
 2 Thraben Charm
-1 Thorn of the Black Rose
-4 Duress
-2 Arms of Hadar
-3 Dust to Dust
-1 Faerie Macabre
-
-### Mardu Aggro | 48% | Lega Myrandola tappa 4, 2. Platz, 12.11.26
-1 Omen of the Dead
-1 Tithing Blade
-1 Twinned Vision
-2 Navigator's Compass
-2 Pursue the Past
-3 Thraben Charm
-4 Galvanic Blast
-4 Dispatch
-4 Melded Moxite
-4 Ragged Short Spear
-4 Glint Hawk
-4 Kor Skyfisher
-4 Refurbished Familiar
-4 Sneaky Snacker
-1 Goldmire Bridge
-2 Vault of Whispers
-3 Great Furnace
-4 Drossforge Bridge
-4 Rustvale Bridge
-4 Ancient Den
+2 Prismatic Strands
+1 Call Damage Control
+3 Malevolent Rumble
+4 Pursue the Past
+1 Bitter Reunion
+2 Journey to Nowhere
+4 Basilisk Gate
+4 Citadel Gate
+4 Cliffgate
+1 Heap Gate
+2 Manor Gate
+2 Mountain
+3 Plains
 
 Sideboard
-4 Pyroblast
-3 Dust to Dust
-4 Cleansing Wildfire
+1 Shattered Acolyte
+1 Guardian of the Guildpact
+2 Thraben Charm
+1 Prismatic Strands
+3 Pyroblast
+2 Tamiyo's Safekeeping
+1 Vandalblast
+2 Ancient Grudge
 2 Breath Weapon
-2 Navigator's Compass
-
-### Hot Dogs | 48% | 10� Open MPL, 1. Platz, 14.11.26
-4 Festival Crasher
-4 Kiln Fiend
-2 Dwarven Forge-Chanter
-2 Ghitu Amplifier
-4 Apostle's Blessing
-4 Lava Dart
-4 Manamorphose
-4 Mutagenic Growth
-2 Brute Force
-2 Temur Battle Rage
-4 Ancestral Anger
-4 Assault Strobe
-4 Rite of Flame
-1 Highway Robbery
-16 Mountain
-
-Sideboard
-2 Brute Force
-4 Pyroblast
-2 Artifact Blast
-2 Flaring Pain
-2 Immolating Souleater
-2 Tormod's Crypt
-1 Singe
