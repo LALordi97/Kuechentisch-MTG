@@ -2307,7 +2307,7 @@ function threatScore(c){
 function bestTarget(pool, fits){ return pool.filter(fits || (() => true)).sort((a, b) => threatScore(b) - threatScore(a))[0] || null; }
 function applyRemovalToMe(card, rem){
   const pool = (rem.any ? S.bf.filter(x => !isLand(x)) : myCreatures()).filter(myTargetable);
-  const fits = rem.kind === "damage" ? (x => isCreature(x) && tough(x) <= rem.amount) : null;
+  const fits = rem.kind === "damage" ? (x => isCreature(x) && !myCreaturesShielded() && tough(x) <= archDmg(rem.amount, false)) : null;
   const t = bestTarget(pool, fits);
   if(!t) return false;
   if(!botPayWard(t, card.n)) return true;
@@ -2386,7 +2386,7 @@ function heurPrecombat(){
   // Removal auf Bedrohungen; Spontanzauber-Removal nur bei grosser Gefahr, sonst für deinen Zug aufheben
   BOT.hand.filter(c => removalOf(c) && !isPermanentType(c)).sort((a, b) => (a.cmc || 0) - (b.cmc || 0)).forEach(c => {
     const rem = removalOf(c);
-    const t = bestTarget((rem.any ? S.bf.filter(x => !isLand(x)) : myCreatures()).filter(x => myTargetable(x) && (!myWard(x) || !!castPlan(c, myWard(x)))), rem.kind === "damage" ? (x => isCreature(x) && tough(x) <= rem.amount) : null);
+    const t = bestTarget((rem.any ? S.bf.filter(x => !isLand(x)) : myCreatures()).filter(x => myTargetable(x) && (!myWard(x) || !!castPlan(c, myWard(x)))), rem.kind === "damage" ? (x => isCreature(x) && !myCreaturesShielded() && tough(x) <= archDmg(rem.amount, false)) : null);
     if(!t) return;
     const urgent = threatScore(t) >= 5;
     if((!isInstant(c) && threatScore(t) >= 2.5) || urgent) botCastHeur(c, `gegen ${t.n}`);
@@ -2559,12 +2559,14 @@ function findAny(id){
 }
 function applyEffects(src, effects){
   (Array.isArray(effects) ? effects : []).forEach(e => {
-    const amt = Math.max(0, Math.min(99, parseInt(e.amount, 10) || (["draw","create_token","mill_self"].includes(e.kind) ? 1 : 0)));
+    let amt = Math.max(0, Math.min(99, parseInt(e.amount, 10) || (["draw","create_token","mill_self"].includes(e.kind) ? 1 : 0)));
+    if(e.kind === "damage" && e.target !== "opponent" && e.target !== "self") amt = archDmg(amt, false);
     const t = e.target === "opponent" || e.target === "self" ? null : findAny(e.target);
     // Fluchsicher (Hexproof, I Am Untouchable): gezielte Effekte auf mich oder meine bleibenden Karten fallen weg
     if(["damage","destroy","exile","bounce","tap"].includes(e.kind) && /\btarget\b/i.test(src.o || "")){
       if(t && t.who === "me" && t.zone === "bf" && !myTargetable(t.c)){ botLog(`${src.n}: ${t.c.n} ist fluchsicher`); return; }
       if(t && t.who === "me" && t.zone === "bf" && !botPayWard(t.c, src.n)) return;
+      if(e.kind === "damage" && t && t.who === "me" && t.zone === "bf" && isCreature(t.c) && myCreaturesShielded()){ botLog(`${src.n}: Schaden an ${t.c.n} wird verhindert (Delight in the Hunt)`); return; }
       if(e.target === "opponent" && e.kind === "damage" && !meTargetable() && !/each opponent/i.test(src.o || "")){ botLog(`${src.n}: du bist fluchsicher`); return; }
     }
     if(["damage","destroy","exile","bounce","tap","opponent_loses_life"].includes(e.kind)){
@@ -2691,12 +2693,12 @@ function computeCombat(attackers, blocks){
   attackers.forEach(a => {
     if(a.mazeKey === turnKey()){ lines.push(`${a.n}: Kampfschaden verhindert (Maze of Ith)`); return; }
     const b = blocks.get(a.u);
-    const ap = power(a) * (kwHas(a, "double strike") ? 2 : 1);
+    const ap = archDmg(power(a), S.bf.includes(a)) * (kwHas(a, "double strike") ? 2 : 1);
     if(kwHas(a, "lifelink")) gain += ap;
     if(!b){ dmg += ap; if(a.cmdr) cmdDmg += ap; if(ap > 0) hits.push({a, amount:ap}); lines.push(`${a.n} trifft für ${ap}`); return; }
-    const bp = power(b);
+    const bp = archDmg(power(b), S.bf.includes(b));
     const aFirst = kwHas(a, "first strike") || kwHas(a, "double strike"), bFirst = kwHas(b, "first strike") || kwHas(b, "double strike");
-    const lethalTo = (src, d, tgt) => d > 0 && !kwHas(tgt, "indestructible") && (d >= tough(tgt) || kwHas(src, "deathtouch"));
+    const lethalTo = (src, d, tgt) => d > 0 && !kwHas(tgt, "indestructible") && !(isCreature(tgt) && S.bf.includes(tgt) && myCreaturesShielded()) && (d >= tough(tgt) || kwHas(src, "deathtouch"));
     let bDies = false, aDies = false;
     if(aFirst && !bFirst){ bDies = lethalTo(a, ap, b); if(!bDies) aDies = lethalTo(b, bp, a); }
     else if(bFirst && !aFirst){ aDies = lethalTo(b, bp, a); if(!aDies) bDies = lethalTo(a, ap, b); }
@@ -2714,7 +2716,7 @@ function combatHitEvents(hits, pid){
 function resolveCombat(attackers, blocks, attackerIsBot){
   const r = computeCombat(attackers, blocks);
   if(attackerIsBot){
-    if(archActive().some(x => NCSMN_RE.test(x.o || ""))){ r.dmg = (r.hits || []).reduce((t, h) => t + oppDmgToMe(h.amount, h.a && h.a.n), 0); r.cmdDmg = (r.hits || []).filter(h => h.a && h.a.cmdr).reduce((t, h) => t + oppDmgPrevent(h.amount), 0); }
+    if(archActive().some(x => NCSMN_RE.test(x.o || ""))){ r.dmg = (r.hits || []).reduce((t, h) => t + oppDmgToMe(h.amount, h.a && h.a.n, false), 0); r.cmdDmg = (r.hits || []).filter(h => h.a && h.a.cmdr).reduce((t, h) => t + oppDmgPrevent(h.amount), 0); }
     else noteDmgToMe(r.dmg);
     S.life -= r.dmg; BOT.life += r.gain;
     if(r.dmg > 0) abilEvent({kind:"combatDamageToYou", much:r.dmg, pid:BOT_ID});
@@ -2898,6 +2900,7 @@ function receiveCombatResult(m){
   (Array.isArray(m.dead) ? m.dead : []).forEach(u => { if(S.bf.some(c => c.u === u)) moveCard(u, "gy"); });
   if(emissaryType() === "Creature" && dmg > 0){ act(`${dmg} Kampfschaden verhindert (Serra's Emissary: Schutz vor Kreaturen)`); m.dmg = 0; }
   let dmg2 = emissaryType() === "Creature" ? 0 : dmg;
+  if(dmg2 > 0 && S.molten){ act(`Approach My Molten Realm: Kampfschaden verdoppelt (${dmg2} → ${dmg2 * 2})`); dmg2 *= 2; }
   if(dmg2 > 0 && archActive().some(x => NCSMN_RE.test(x.o || ""))){ const hn = Math.max(1, parseInt(m.hn, 10) || 1); const v = Math.max(0, dmg2 - hn * (dmg2 - oppDmgPrevent(dmg2))); act(`Nothing Can Stop Me Now: ${dmg2 - v} Kampfschaden verhindert`); dmg2 = v; }
   noteDmgToMe(dmg2);
   S.life -= dmg2; graceFloor();
@@ -3182,6 +3185,7 @@ function hitOpponent(pid, hdef){
     const dbl = S.bf.filter(x => !x.fd && /^If a source you control would deal damage to a permanent or player, it deals double that damage/im.test(x.o || "")).length;
     if(dbl){ hdef = {...hdef, amount:(parseInt(hdef.amount, 10) || 0) * Math.pow(2, dbl)}; act(`Angrath's Marauders: doppelter Schaden (${hdef.amount})`); }
     if(plus){ hdef = {...hdef, amount:(parseInt(hdef.amount, 10) || 0) + plus}; act(`${S.bf.filter(x => /that much damage plus \d+ instead/i.test(x.o || "")).map(x => x.n).join(", ")}: +${plus} Schaden`); }
+    { const a0 = parseInt(hdef.amount, 10) || 0, a1 = archDmg(a0, true); if(a1 !== a0){ hdef = {...hdef, amount:a1}; act(`Komplott: ${a0} → ${a1} Schaden`); } }
   }
   if((hdef.kind || "damage") === "damage" && !hdef.card && (parseInt(hdef.amount, 10) || 0) > 0 && typeof abilEvent === "function") { const sc = hdef.src && S.bf.find(c => c.n === hdef.src); setTimeout(() => abilEvent({kind:"noncombatOpp", much:parseInt(hdef.amount, 10), pid, c:sc || null}), 0); }
   const srcCard = hdef.src && S.bf.find(c => c.n === hdef.src);
@@ -3245,6 +3249,10 @@ function receiveHit(m){
   let txt;
   if(m.card){
     const c = S.bf.find(x => x.u === m.card); if(!c) return;
+    if((m.kind || "damage") === "damage" && amt > 0){
+      if(isCreature(c) && myCreaturesShielded()){ sendLog({from:"", text:hitText(m, `${amt} Schaden an ${c.n} verhindert (Delight in the Hunt)`), sys:true}); commit(); return; }
+      const a1 = archDmg(amt, false); if(a1 !== amt){ m = {...m, amount:a1}; amt = a1; }
+    }
     txt = applyHitToCard(c, m, false);
   } else if(m.kind === "loseMonarch"){ if(!S.monarch) return; S.monarch = false; txt = `${me.name || "du"} ist nicht mehr Monarch`; }
   else if(m.kind === "loseInit"){ if(!S.initiative){ return; } S.initiative = false; txt = `${me.name || "du"} verliert die Initiative`; }
@@ -3404,6 +3412,7 @@ function passTurn(){
   advanceTurn();
 }
 function onMyTurnStart(){
+  if(S.molten){ S.molten = false; act("Approach My Molten Realm endet: kein doppelter Schaden mehr"); }
   if(S.extraAfterNext){ S.extraAfterNext = false; S.extraTurns = (S.extraTurns || 0) + 1; act("Nach diesem Zug folgt dein Zusatzzug (Emrakul)"); }
   S.turn = (S.turn || 0) + 1;
   if(S.turn === 1) pregameFirstTurnReminder();
@@ -3572,7 +3581,11 @@ function natureShields(attackers, blocks){
 const NCSMN_RE = /^If a source an opponent controls would deal damage to you, prevent 1 of that damage\.?$/im;
 function oppDmgPrevent(n){ const k = archActive().filter(x => NCSMN_RE.test(x.o || "")).length; return Math.max(0, (+n || 0) - k); }
 function noteDmgToMe(n){ if(!(n > 0) || !S) return; const k = turnKey(); if(S.dmgTK !== k){ S.dmgTK = k; S.dmgN = 0; } S.dmgN += n; }
-function oppDmgToMe(n, srcN){ const v = oppDmgPrevent(n); if(v < n) act(`Nothing Can Stop Me Now: ${n - v} Schaden${srcN ? ` von ${srcN}` : ""} verhindert`); noteDmgToMe(v); return v; }
+/* Komplott-Schadensänderungen: I Call for Slaughter (+1 für meine Quellen diesen Zug), Approach My Molten Realm (doppelt bis zu meinem nächsten Zug) */
+function archDmg(n, mine){ let v = +n || 0; if(v <= 0 || !S) return v; if(mine && S.slaughterKey === turnKey()) v += 1; if(S.molten) v *= 2; return v; }
+// Delight in the Hunt: Schaden an meinen Kreaturen wird diesen Zug verhindert
+function myCreaturesShielded(){ return !!S && S.shieldKey === turnKey(); }
+function oppDmgToMe(n, srcN, raw = true){ if(raw) n = archDmg(n, false); const v = oppDmgPrevent(n); if(v < n) act(`Nothing Can Stop Me Now: ${n - v} Schaden${srcN ? ` von ${srcN}` : ""} verhindert`); noteDmgToMe(v); return v; }
 function schemeAbandon(src){
   const list = archActive(), i = list.indexOf(src); if(i < 0) return false;
   list.splice(i, 1); S.arch.deck.push(src.sc || {n:src.n, o:src.o, img:src.img, ongoing:true});
@@ -5328,6 +5341,10 @@ function matchStep2(p, src, full, SELF){
   // You Cannot Hide from Me
   if((m = p.match(/^up to one target creature gets ([+-]\d+)\/([+-]\d+)(?: and gains ([a-z ,]+?))? until end of turn$/i))) return [{t:"pump", who:"target creature", p:m[1], tg:m[2], kw:m[3] || "", upTo:true}];
   if(/^it can't be blocked this turn$/i.test(p) && /target creature gets [^.]+ until end of turn\. It can't be blocked this turn/i.test(full || "")) return [{t:"pump", who:"it", p:"+0", tg:"+0", kw:"unblockable"}];
+  // Approach My Molten Realm, I Call for Slaughter, Delight in the Hunt
+  if(/^until your next turn, if a source would deal damage, it deals double that damage instead$/i.test(p)) return [{t:"archMolten"}];
+  if(/^if a source you control would deal damage this turn, it deals that much damage plus 1 instead$/i.test(p)) return [{t:"archSlaughter"}];
+  if((m = p.match(/^(create .+? tokens?) and prevent all damage that would be dealt to creatures you control this turn$/i))) return [...matchStep2(m[1], src, full, SELF), {t:"archShield"}];
   // Your Inescapable Doom
   if((m = p.match(/^put an? (\w+) counter on this scheme$/i))) return [{t:"schemeCounter", kind:m[1].toLowerCase()}];
   if(/^this scheme deals damage equal to the number of doom counters on it to the opponent with the highest life total among your opponents$/i.test(p)) return [{t:"pickHighOpp"}, {t:"doomDmg"}];
@@ -7747,6 +7764,9 @@ async function runSteps(steps, src, ctx = {}){
       case "noteOnly": act(`${src.n}: ${st.text}`); toast(`<b>${esc(src.n)}:</b> ${esc(st.text)}`); break;
       case "costLessTurn": S.costLessTurn = [...(Array.isArray(S.costLessTurn) ? S.costLessTurn : []).filter(x => x.key === turnKey()), {key:turnKey(), desc:st.desc, n:st.n, src:src.n}]; act(`${src.n}: ${st.desc}-Zauber kosten diesen Zug {${st.n}} weniger`); break;
       case "abandonScheme": schemeAbandon(src); break;
+      case "archMolten": S.molten = true; act(`${src.n}: bis zu deinem nächsten Zug verursacht jede Quelle doppelten Schaden`); break;
+      case "archSlaughter": S.slaughterKey = turnKey(); act(`${src.n}: deine Quellen verursachen diesen Zug 1 Schaden mehr`); break;
+      case "archShield": S.shieldKey = turnKey(); act(`${src.n}: Schaden an deinen Kreaturen wird diesen Zug verhindert`); break;
       case "schemeAgain": { const sc = ctx.ev && ctx.ev.sc; if(!sc || sc.ongoing) break; act(`${src.n}: «${sc.n}» wird nochmals in Gang gesetzt`); const card = newCard(schemeAsSpell(sc)); for(const ab of parseAbilities(card).filter(a => a.kind === "spell")) await runAbility(card, ab, {}); commit(); break; }
       case "schemeKeep": {
         if(!archActive().includes(src)) break;
@@ -7863,7 +7883,7 @@ async function runSteps(steps, src, ctx = {}){
         act(`${src.n}: Manifest dread – eine verdeckte 2/2-Kreatur${top.length > 1 ? ", eine Karte in den Friedhof" : ""}`);
         ctx.last = pick; break;
       }
-      case "token": await makeTokens(st, src, ctx); break;
+      case "token": { const before = new Set(S.bf); await makeTokens(st, src, ctx); const made = S.bf.filter(x => !before.has(x) && x.tok); if(made.length) ctx.lastTok = made; break; }
       case "amass": {
         const n = await needX();
         let army = S.bf.find(c => /\bArmy\b/.test(c.type || ""));
@@ -8914,7 +8934,7 @@ async function runSteps(steps, src, ctx = {}){
       }
       case "tokenGains": {
         const kws = st.kw.split(/,\s*(?:and\s+)?|\s+and\s+/).map(k => k.trim()).filter(Boolean).map(k => k[0].toUpperCase() + k.slice(1));
-        (ctx.lastMany || (ctx.last ? [ctx.last] : [])).forEach(c => { if(S.bf.includes(c)) c.kw = [...new Set([...(c.kw || []), ...kws])]; });
+        (ctx.lastTok || ctx.lastMany || (ctx.last ? [ctx.last] : [])).forEach(c => { if(S.bf.includes(c)) c.kw = [...new Set([...(c.kw || []), ...kws])]; });
         break;
       }
       case "plusIfCreature": { const c = ctx.last; if(c && S.bf.includes(c) && isCreature(c)){ c.c = (c.c || 0) + 1; act(`${c.n}: kommt mit einer zusätzlichen +1/+1-Marke`); } break; }
@@ -11906,7 +11926,7 @@ function historyAdd(win){
 /* ---------- Automatische Updates ---------- */
 // Liegt die App im Web, prüft sie regelmässig version.json im selben Ordner und lädt sich bei einer neuen Version neu.
 // Alles Wichtige (Spielstand, Deck, Tisch) liegt im Browser-Speicher und ist nach dem Neuladen wieder da.
-const APP_VERSION = "2026.11.19-5";
+const APP_VERSION = "2026.11.19-6";
 const ONLINE = /^https?:$/.test(location.protocol);
 let updPending = null, updTimer = null, updSnoozeUntil = 0;
 function busyForUpdate(){ return botBusy || (!$("#modal").hidden && modalState && ["block","deck"].includes(modalState.kind)); }

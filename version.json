@@ -1,4 +1,4 @@
 {
-  "version": "2026.11.19-5",
-  "notes": "Archenemy: alle 21 laufenden Komplotte automatisch – neu Nature Shields Its Own (0/1-Pflanzen blocken ungeblockte Angreifer) und Nothing Can Stop Me Now (1 Schaden pro gegnerischer Quelle verhindert)."
+  "version": "2026.11.19-6",
+  "notes": "Zweig nacht/2026-11-19: Archenemy-Komplotte mit Schaden – Approach My Molten Realm (doppelter Schaden bis zu deinem nächsten Zug), I Call for Slaughter (+1 Schaden für deine Quellen), Delight in the Hunt (Schaden an deinen Kreaturen verhindert), auch im Kampf. «They gain haste» gilt jetzt für eben erschaffene Token."
 }
