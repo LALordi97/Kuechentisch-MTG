@@ -16,10 +16,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Decks aus MTGTop8 und EDHREC holen
-        run: python3 tools/metas.py
+        run: python3 tools/metas.py --debug && python3 tools/metas.py
       - name: Auf den Arbeitszweig committen
         run: |
-          git add decks/standard.txt decks/pauper.txt decks/bracket3.txt decks/bracket4.txt 2>/dev/null || true
+          for f in standard pauper bracket3 bracket4; do [ -f decks/$f.txt ] && git add decks/$f.txt; done; true
           if git diff --cached --quiet; then echo "unverändert"; exit 0; fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"

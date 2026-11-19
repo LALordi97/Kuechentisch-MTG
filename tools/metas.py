@@ -184,7 +184,22 @@ def build_bracket(key):
     return [f"### {d['name']} | {(100 * d['num'] / total):.1f}%".replace(".", ",") + f" | EDHREC Durchschnittsdeck {lab}, {d['num']} Decks, {today}\n{d['body']}\n" for d in decks]
 
 
+def debug():
+    page = get("https://www.mtgtop8.com/format?f=PAU") or ""
+    i = page.find("archetype?a=")
+    print("FORMAT-HTML:", repr(page[max(0, i - 700):i + 900]))
+    page = get("https://www.mtgtop8.com/archetype?a=512&f=PAU") or ""
+    i = page.find("&d=")
+    print("ARCH-HTML:", repr(page[max(0, i - 900):i + 900]))
+    j = ejson("average-decks/atraxa-praetors-voice/upgraded.json") or {}
+    for k in ("creature", "land", "basic", "nonbasic", "bracket_counts"):
+        v = j.get(k)
+        print("EDH", k, type(v).__name__, json.dumps(v)[:500])
+
+
 def main():
+    if "--debug" in sys.argv:
+        debug(); return
     want = [a for a in sys.argv[1:]] or ["standard", "pauper", "bracket3", "bracket4"]
     bad = 0
     for key in want:
