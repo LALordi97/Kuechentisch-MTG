@@ -48,7 +48,7 @@ def top8_archetypes(f):
     if not page:
         return []
     out = []
-    for m in re.finditer(r"archetype\?a=(\d+)&(?:amp;)?meta=(\d+)&(?:amp;)?f=" + f + r"[^>]*>(.*?)</a>(.{0,400}?)(\d+(?:\.\d+)?)\s*%", page, re.S):
+    for m in re.finditer(r"archetype\?a=(\d+)&(?:amp;)?meta=(\d+)&(?:amp;)?f=" + f + r"[^>]*>(.*?)</a>(.{0,400}?)>\s*(\d+(?:\.\d+)?)\s*%\s*<", page, re.S):
         name = strip(m.group(3))
         if not name or name.lower().startswith("other"):
             continue
@@ -192,15 +192,17 @@ def debug():
     i = page.find("&d=")
     print("ARCH-HTML:", repr(page[max(0, i - 900):i + 900]))
     j = ejson("average-decks/atraxa-praetors-voice/upgraded.json") or {}
-    for k in ("creature", "land", "basic", "nonbasic", "bracket_counts"):
-        v = j.get(k)
-        print("EDH", k, type(v).__name__, json.dumps(v)[:500])
+    print("EDH-KEYS", list(j.keys()))
+    for k, v in j.items():
+        if k in ("creature", "instant", "sorcery", "artifact", "enchantment", "battle", "planeswalker", "land", "basic", "nonbasic", "bracket_counts", "budget_counts", "tag_counts", "savedate_counts"):
+            continue
+        print("EDH", k, type(v).__name__, json.dumps(v)[:1500])
 
 
 def main():
     if "--debug" in sys.argv:
         debug(); return
-    want = [a for a in sys.argv[1:]] or ["standard", "pauper", "bracket3", "bracket4"]
+    want = [a for a in sys.argv[1:] if not a.startswith("-")] or ["standard", "pauper", "bracket3", "bracket4"]
     bad = 0
     for key in want:
         print(f"== {key}")
