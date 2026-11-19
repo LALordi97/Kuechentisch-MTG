@@ -190,7 +190,7 @@ Sideboard
 1 Ancient Grudge
 1 Envelop
 
-### Aura Aggro | 4% | Tsp Series ! 3�event - Tonio Spinelli TA, 1. Platz, 15.11.26
+### Aura Aggro | 4% | Tsp Series ! 3°event - Tonio Spinelli TA, 1. Platz, 15.11.26
 4 Gladecover Scout
 4 Silhana Ledgewalker
 4 Slippery Bogle
@@ -299,7 +299,7 @@ Sideboard
 3 Vitu-Ghazi Inspector
 3 Monstrous Emergence
 
-### RG Ruby Storm | 4% | Liga Oto�al Bilbao Posavasos 2026 // Jornada 6, 1. Platz, 15.11.26
+### RG Ruby Storm | 4% | Liga Otoñal Bilbao Posavasos 2026 // Jornada 6, 1. Platz, 15.11.26
 4 Goblin Anarchomancer
 4 Thornscape Familiar
 4 Manamorphose
