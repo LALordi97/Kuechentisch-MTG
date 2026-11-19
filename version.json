@@ -1,4 +1,4 @@
 {
-  "version": "2026.11.19-1",
-  "notes": "Archenemy: laufende Komplotte (Ongoing) bleiben offen liegen, bis sie aufgegeben werden. Neu automatisch: My Tendrils Run Deep, Your Inescapable Doom, Because I Have Willed It, Dark Wings Bring Your Downfall, Mine Is the Only Truth, The Very Soil Shall Shake, Fear My Authority, I Am Duskmourn, My Forces Are Innumerable, You Cannot Hide from Me. Dazu: Furcht (Fear) beim Blocken, «that's tapped and attacking»-Token greifen mit an."
+  "version": "2026.11.19-2",
+  "notes": "Archenemy: jetzt 17 von 21 laufenden Komplotten automatisch. Neu: My Undead Horde Awakens, I Know All, I See All, Reality Is Mine to Control, My Laughter Echoes, Bow to My Command, I Bask in Your Silent Awe, Imprison This Insolent Wretch (gewählter Gegner wird beim In-Gang-Setzen gefragt). KI-Zauber zählen jetzt pro KI (z. B. «zweiter Zauber pro Zug»)."
 }

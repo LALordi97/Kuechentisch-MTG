@@ -26,7 +26,9 @@ const clickCard = async t => { const el = [...d.querySelectorAll('#modalBox .car
   const phase = async (phase, mine) => { w.__ph = {kind:'phase', phase, mine}; ev('abilEvent(window.__ph)'); await wait(250); await drain(); await wait(100); };
   const cr = (n, x = {}) => N(n, 'Creature — Bear', '', {pw:2, tg:2, cmc:2, mc:'{1}{G}', ...x});
   const AUTO = ['My Tendrils Run Deep', 'Your Inescapable Doom', 'Because I Have Willed It', 'Dark Wings Bring Your Downfall', 'Mine Is the Only Truth', 'The Very Soil Shall Shake',
-    'Fear My Authority', 'I Am Duskmourn', 'My Forces Are Innumerable', 'You Cannot Hide from Me'];
+    'Fear My Authority', 'I Am Duskmourn', 'My Forces Are Innumerable', 'You Cannot Hide from Me',
+    'My Undead Horde Awakens', 'I Know All, I See All', 'Reality Is Mine to Control', 'My Laughter Echoes',
+    'Bow to My Command', 'I Bask in Your Silent Awe', 'Imprison This Insolent Wretch'];
   for(const n of AUTO){ w.__sc = scheme(n); const st = ev('cardCheck(schemeAsSpell(window.__sc)).status'); check(st === 'auto', `${n}: automatisch (${st})`); }
 
   // Grundgerüst: laufendes Komplott bleibt liegen, kommt nicht sofort unter das Deck
@@ -134,6 +136,81 @@ const clickCard = async t => { const el = [...d.querySelectorAll('#modalBox .car
   await phase('end', false); check(active() === 'You Cannot Hide from Me', 'Cannot Hide: KI mit 10 von 20 Leben → bleibt');
   ev('withBot("bot", () => { BOT.life = 9; botChanged(); })'); await phase('end', false);
   check(active() === '', `Cannot Hide: KI mit 9 Leben → aufgegeben (${active()})`);
+
+  // My Undead Horde Awakens: Kreatur aus dem Friedhof der KI; stirbt sie → aufgeben
+  await reset(); ev('S.gy = [newCard({n:"Mein Toter", type:"Creature — Zombie", o:"", pw:2, tg:2})]; withBot("bot", () => { BOT.gy = [newCard({n:"Toter Riese", type:"Creature — Giant", o:"", pw:6, tg:6})]; botChanged(); }); injectBot(); commit()');
+  await setOngoing('My Undead Horde Awakens');
+  w.__ph = {kind:'phase', phase:'end', mine:true}; ev('abilEvent(window.__ph)'); await wait(250);
+  check(!(await clickCard('Mein Toter')), 'Undead Horde: eigener Friedhof wird nicht angeboten');
+  await clickCard('Toter Riese'); await wait(300); await drain(); await wait(100);
+  { const g = S().bf.find(c => c.n === 'Toter Riese'); check(!!g && !!g.withSrc && ev('BOTS.bot.gy.length') === 0, `Undead Horde: Toter Riese kommt zu mir (${S().bf.map(c => c.n).join()})`); }
+  ev('S.bf.push(newCard({n:"Anderer", type:"Creature — Bear", o:"", pw:2, tg:2})); commit(); moveCard(S.bf.find(c => c.n === "Anderer").u, "gy")'); await wait(250); await drain();
+  check(active() === 'My Undead Horde Awakens', 'Undead Horde: andere Kreatur stirbt → bleibt');
+  ev('moveCard(S.bf.find(c => c.n === "Toter Riese").u, "gy")'); await wait(300); await drain();
+  check(active() === '', `Undead Horde: geholte Kreatur stirbt → aufgegeben (${active()})`);
+
+  // I Know All, I See All: im Enttappsegment eines Gegners enttappen; drei Karten in meinen Friedhof → aufgeben
+  await reset(); ev('S.bf.push(newCard({n:"Swamp", type:"Basic Land — Swamp", o:"", tap:true}), newCard({n:"Bär", type:"Creature — Bear", o:"", pw:2, tg:2, tap:true})); commit()');
+  await setOngoing('I Know All, I See All');
+  ev('TURN = {active:"bot", n:6, starter:me.id, phase:0}; remindTriggers("upkeep", false)'); await wait(200); await drain();
+  check(S().bf.every(c => !c.tap), `I Know All: im Zug der KI enttappt (${S().bf.map(c => c.n + ':' + c.tap).join()})`);
+  ev('S.gy.push(newCard({n:"A", type:"Instant", o:""}), newCard({n:"B", type:"Instant", o:""})); commit()'); await phase('end', false);
+  check(active() === 'I Know All, I See All', 'I Know All: zwei Karten in den Friedhof → bleibt');
+  ev('S.gy.push(newCard({n:"C", type:"Instant", o:""})); commit()'); await phase('end', false);
+  check(active() === '', `I Know All: drei Karten in den Friedhof → aufgegeben (${active()})`);
+  await reset(); ev('S.gy = [1, 2, 3, 4].map(i => newCard({n:"Alt" + i, type:"Instant", o:""})); commit()'); await setOngoing('I Know All, I See All');
+  ev('TURN = {active:"bot", n:7, starter:me.id, phase:5}; commit()'); await phase('end', false);
+  check(active() === 'I Know All, I See All', 'I Know All: Karten aus früheren Zügen zählen nicht');
+
+  // Reality Is Mine to Control: beim Wirken aufgeben und den Zauber kopieren
+  await reset(); await setOngoing('Reality Is Mine to Control');
+  w.__sp = N('Weisheit', 'Sorcery', 'Draw two cards.', {cmc:3, mc:'{2}{U}'});
+  ev('abilEvent({kind:"cast", c:window.__sp})'); await wait(200); await click('Nein'); await wait(200); await drain();
+  check(S().hand.length === 0 && active() === 'Reality Is Mine to Control', 'Reality: nicht aufgegeben → keine Kopie');
+  ev('abilEvent({kind:"cast", c:window.__sp})'); await wait(200); await click('Ja'); await wait(300); await drain();
+  check(S().hand.length === 2 && active() === '', `Reality: aufgegeben, Kopie zieht zwei (Hand ${S().hand.length}, ${active()})`);
+
+  // My Laughter Echoes: einmaliges Komplott nochmals in Gang setzen
+  await reset(); await setOngoing('My Laughter Echoes');
+  w.__sc = scheme('Roots of All Evil'); ev('S.arch.deck.unshift(window.__sc); window.__done = false; schemeMotionOne().then(() => { window.__done = true; })');
+  for(let i = 0; i < 40 && !w.__done; i++){ await wait(40); if(open()) await click('In Gang setzen'); } await wait(250);
+  await click('Ja'); await wait(400); await drain();
+  check(S().bf.filter(c => c.tok).length === 10 && active() === '', `Laughter Echoes: Roots of All Evil zweimal → 10 Saprolinge (${S().bf.filter(c => c.tok).length}, ${active()})`);
+
+  // Bow to My Command: gewählter Gegner greift nicht an; tappt er Kreaturen mit Stärke 8 → aufgeben
+  await reset(); await setOngoing('Bow to My Command');
+  check(ev('archActive()[0] && archActive()[0].chosenPid') === 'bot' && !!ev('withBot("bot", () => botAttackLocked())'), 'Bow: KI gewählt, darf nicht angreifen');
+  ev('withBot("bot", () => { BOT.bf = [newCard({n:"Riese", type:"Creature — Giant", o:"", pw:5, tg:5}), newCard({n:"Bär", type:"Creature — Bear", o:"", pw:2, tg:2})]; botChanged(); }); TURN = {active:"bot", n:6, starter:me.id, phase:5}');
+  await phase('end', false); check(active() === 'Bow to My Command' && ev('BOTS.bot.bf.every(c => !c.tap)'), 'Bow: nur Stärke 7 → nichts getappt, bleibt');
+  ev('withBot("bot", () => { BOT.bf.push(newCard({n:"Oger", type:"Creature — Ogre", o:"", pw:3, tg:3})); botChanged(); })');
+  await phase('end', false); check(active() === '' && ev('BOTS.bot.bf.filter(c => c.tap).map(c => c.n).sort().join()') === 'Oger,Riese' && !ev('withBot("bot", () => botAttackLocked())'), `Bow: Riese und Oger getappt (8) → aufgegeben (${ev('BOTS.bot.bf.filter(c => c.tap).map(c => c.n).join()')})`);
+  { w.eval('window.__oldSend = sendTo; sendTo = (to, m) => { if(m && m.t === "resp") window.__resp = m.data; else window.__oldSend(to, m); }'); w.__resp = null;
+    ev('S.bf = [newCard({n:"Eins", type:"Creature — Bear", o:"", pw:5, tg:5}), newCard({n:"Zwei", type:"Creature — Bear", o:"", pw:4, tg:4})]; commit()');
+    ev('receiveReq({from:"x", by:"Anna", id:"r11", req:{kind:"mayTapPower", power:8, src:"Bow to My Command"}})'); await wait(150);
+    await clickCard('Eins'); await clickCard('Zwei'); if(open()) await click('Fertig'); await wait(150);
+    check(w.__resp && w.__resp.cards.length === 2 && S().bf.every(c => c.tap), `Bow, Mitspieler: tappt Eins und Zwei (${JSON.stringify(w.__resp)})`); ev('sendTo = window.__oldSend'); }
+
+  // I Bask in Your Silent Awe: Gegner höchstens ein Zauber pro Zug; kein Zauber seit meinem Zug → aufgeben
+  await reset(); await setOngoing('I Bask in Your Silent Awe'); ev('TURN = {active:"bot", n:16, starter:me.id, phase:2}');
+  check(!ev('withBot("bot", () => botCastLocked({type:"Instant"}))'), 'Bask: erster Zauber der KI erlaubt');
+  ev('abilEvent({kind:"oppCast", c:{n:"X", type:"Instant", mc:"{U}", cmc:1}, opp:true, pid:"bot"})'); await wait(100); await drain();
+  check(!!ev('withBot("bot", () => botCastLocked({type:"Instant"}))'), 'Bask: zweiter Zauber der KI gesperrt');
+  ev('TURN = {active:me.id, n:7, starter:me.id, phase:0}'); await phase('upkeep', true);
+  check(active() === 'I Bask in Your Silent Awe', 'Bask: Gegner hat gezaubert → bleibt');
+  ev('TURN = {active:me.id, n:7, starter:me.id, phase:5}; setTurn({active:"bot", n:8, starter:me.id, phase:0}); setTurn({active:me.id, n:9, starter:me.id, phase:0})'); await wait(200); await drain();
+  if(active()) await phase('upkeep', true);
+  check(active() === '', `Bask: kein Zauber seit meinem letzten Zug → aufgegeben (${active()})`);
+
+  // Imprison This Insolent Wretch: Bleibende Karten der KI enttappen nicht; angegriffen → aufgeben
+  await reset(); ev('withBot("bot", () => { BOT.bf = [newCard({n:"Gefangener", type:"Creature — Bear", o:"", pw:2, tg:2, tap:true})]; botChanged(); })');
+  await setOngoing('Imprison This Insolent Wretch');
+  check(ev('archActive()[0] && archActive()[0].chosenPid') === 'bot', 'Imprison: KI gewählt');
+  ev('TURN = {active:"bot", n:6, starter:me.id, phase:0}; withBot("bot", () => botTurn())'); await wait(600); await drain();
+  check(ev('BOTS.bot.bf.find(c => c.n === "Gefangener").tap') === true, 'Imprison: Gefangener bleibt getappt');
+  ev('TURN = {active:me.id, n:7, starter:me.id, phase:3}; abilEvent({kind:"playerTargeted", pid:"bot"})'); await wait(200); await drain();
+  check(active() === '', `Imprison: KI wird Ziel → aufgegeben (${active()})`);
+  await reset(); await setOngoing('Imprison This Insolent Wretch'); ev('abilEvent({kind:"playerAttacked", pid:"bot"})'); await wait(200); await drain();
+  check(active() === '', `Imprison: KI wird angegriffen → aufgegeben (${active()})`);
 
   // Neues Spiel: laufende Komplotte kommen zurück ins Deck
   await reset(); await setOngoing('Your Inescapable Doom'); const nd = ev('S.arch.deck.length');
