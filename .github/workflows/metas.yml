@@ -1,0 +1,25 @@
+name: Top-Decks holen (Standard, Pauper, Bracket 3 und 4)
+# Nur von Hand oder bei Änderung von tools/metas.py. Schreibt nichts ins Repository:
+# die Decklisten stehen im Protokoll und als Artefakt «decks» zum Übernehmen.
+on:
+  workflow_dispatch:
+  push:
+    paths: ["tools/metas.py", ".github/workflows/metas.yml"]
+permissions:
+  contents: read
+jobs:
+  metas:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Decks aus MTGTop8 und EDHREC holen
+        run: python3 tools/metas.py
+      - name: Decklisten ausgeben
+        run: |
+          for f in standard pauper bracket3 bracket4; do
+            if [ -f decks/$f.txt ]; then echo "=====BEGIN $f====="; cat decks/$f.txt; echo "=====END $f====="; fi
+          done
+      - uses: actions/upload-artifact@v4
+        with:
+          name: decks
+          path: decks/
