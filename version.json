@@ -1,4 +1,4 @@
 {
-  "version": "2026.11.19-5",
-  "notes": "Archenemy: alle 21 laufenden Komplotte automatisch – neu Nature Shields Its Own (0/1-Pflanzen blocken ungeblockte Angreifer) und Nothing Can Stop Me Now (1 Schaden pro gegnerischer Quelle verhindert)."
+  "version": "2026.11.19-7",
+  "notes": "«They gain haste until end of turn» gilt jetzt für eben erschaffene Token. Archenemy: alle 21 laufenden Komplotte automatisch."
 }
