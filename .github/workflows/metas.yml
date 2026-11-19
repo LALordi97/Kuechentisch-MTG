@@ -16,7 +16,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Decks aus MTGTop8 und EDHREC holen
-        run: python3 tools/metas.py --debug
+        run: python3 tools/metas.py
       - name: Auf den Arbeitszweig committen
         run: |
           for f in standard pauper bracket3 bracket4; do [ -f decks/$f.txt ] && git add decks/$f.txt; done; true

@@ -155,22 +155,26 @@ def edhrec_avg(cmd, bracket):
     j = ejson(f"average-decks/{cmd['sanitized']}/{bracket}.json")
     if not j:
         return None
-    deck = j.get("deck") or (j.get("container") or {}).get("json_dict", {}).get("deck")
-    if not isinstance(deck, list):
-        print(f"  {cmd['name']}: keine Liste, Schlüssel {list(j.keys())[:15]}"); return None
-    lines = [str(x).strip() for x in deck if str(x).strip()]
-    lines = [l if re.match(r"^\d+\s", l) else "1 " + l for l in lines]
-    name = cmd["name"]
-    rest = [l for l in lines if re.sub(r"^\d+\s+", "", l) != name]
-    if count(rest) + 1 != 100:
-        print(f"  {name}: {count(rest) + 1} Karten – übersprungen"); return None
-    num = j.get("num_decks_avg") or j.get("num_decks") or cmd.get("num_decks") or 0
-    return {"name": name, "num": int(num) if str(num).isdigit() else 0, "body": "Commander\n" + name + "\n\nDeck\n" + "\n".join(rest)}
+    deck = j.get("deck")
+    if not isinstance(deck, dict) or not isinstance(deck.get("cards"), dict):
+        print(f"  {cmd['name']}: keine Liste"); return None
+    cmdrs = [str(x) for x in (deck.get("commander") or [cmd["name"]])]
+    lines = []
+    for group in deck["cards"].values():
+        for e in group:
+            if isinstance(e, list) and len(e) >= 2 and str(e[0]) not in cmdrs:
+                lines.append(f"{int(e[1])} {e[0]}")
+    n = count(lines) + len(cmdrs)
+    if n != 100:
+        print(f"  {cmd['name']}: {n} Karten – übersprungen"); return None
+    b = {"upgraded": "3", "optimized": "4"}[bracket]
+    num = int((j.get("bracket_counts") or {}).get(b) or 0)
+    return {"name": " / ".join(cmdrs), "num": num, "body": "Commander\n" + "\n".join(cmdrs) + "\n\nDeck\n" + "\n".join(lines)}
 
 
 def build_bracket(key):
     br = BRACKETS[key]
-    cands = [c for c in edhrec_commanders() if " + " not in c["name"] and " // " not in c["name"]][:40]
+    cands = edhrec_commanders()[:60]
     decks = []
     for c in cands:
         d = edhrec_avg(c, br)
