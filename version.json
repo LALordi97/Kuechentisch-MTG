@@ -1,4 +1,4 @@
 {
-  "version": "2026.11.18-4",
-  "notes": "Archenemy: jetzt 77 von 81 einmaligen Komplotten automatisch, neu auch My Crushing Masterstroke (alle gegnerischen Nichtland-Karten bis Zugende, enttappt und mit Eile)."
+  "version": "2026.11.19-1",
+  "notes": "Archenemy: laufende Komplotte (Ongoing) bleiben offen liegen, bis sie aufgegeben werden. Neu automatisch: My Tendrils Run Deep, Your Inescapable Doom, Because I Have Willed It, Dark Wings Bring Your Downfall, Mine Is the Only Truth, The Very Soil Shall Shake, Fear My Authority, I Am Duskmourn, My Forces Are Innumerable, You Cannot Hide from Me. Dazu: Furcht (Fear) beim Blocken, «that's tapped and attacking»-Token greifen mit an."
 }
