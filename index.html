@@ -549,7 +549,7 @@ function moveCard(u, to, where){
   const f = findCard(u); if(!f) return;
   const c = f.c, from = f.z, wasFd = c.fd;
   if(jailerBlocks(c, from, to)){ toast(`<b>Soulless Jailer:</b> ${esc(c.n)} kann nicht aus dem Friedhof ins Spiel kommen.`); act(`${c.n} bleibt im Friedhof (Soulless Jailer)`); return; }
-  if(from === "bf" && to !== "bf"){ S.leftKey = turnKey(); if(!c.tok && /leaves the battlefield/i.test(c.o || "") && typeof abilEvent === "function") setTimeout(() => abilEvent({kind:"leaveBf", c}, [c]), 0); }
+  if(from === "bf" && to !== "bf"){ S.leftKey = turnKey(); if(!c.tok && (/leaves the battlefield/i.test(c.o || "") || (c.cmdr && typeof archActive === "function" && archActive().some(x => /^When your commander leaves the battlefield/im.test(x.o || "")))) && typeof abilEvent === "function") setTimeout(() => abilEvent({kind:"leaveBf", c}, [c]), 0); }
   if(from === "gy" && to !== "gy" && typeof abilEvent === "function") setTimeout(() => abilEvent({kind:"leaveGy", c}), 0);
   if(from === "bf" && to !== "bf" && c.earth){
     const e = c.earth; Object.assign(c, {type:e.type, pw:e.pw, tg:e.tg, kw:e.kw}); delete c.earth;
@@ -2283,6 +2283,18 @@ const burnFace = c => { const m = (c.o || "").match(/deals (\d+) damage to (any 
 /* Fluchsicher: ich (I Am Untouchable, «You have hexproof») und meine bleibenden Karten – die KI wählt sie nicht als Ziel */
 const UNTOUCH_RE = /^You and permanents you control have hexproof\.?$/im;
 function meTargetable(){ return !(typeof S !== "undefined" && S && ([...(S.bf || []).filter(x => !x.fd), ...archActive()].some(x => UNTOUCH_RE.test(x.o || "") || /^You have hexproof\b/im.test(x.o || "")))); }
+/* Ward {N} meiner bleibenden Karten (auch «Your commander has ward {2}» von My Champion Stands Supreme): die KI zahlt oder wird gekontert */
+function myWard(c){
+  if(!c) return 0; let n = 0;
+  const m = [...(c.kw || []), ...(c.tkw || []), ...String(c.o || "").split("\n")].map(x => String(x).match(/^Ward\s*\{(\d+)\}/i)).find(Boolean); if(m) n += +m[1];
+  if(c.cmdr) archActive().forEach(x => { const w = String(x.o || "").match(/^Your commander has ward \{(\d+)\}/im); if(w) n += +w[1]; });
+  return n;
+}
+function botPayWard(t, srcN){
+  const n = myWard(t); if(!n) return true;
+  const p = planPayment("", n); if(p){ payPlan(p); botLog(`${srcN}: zahlt Ward {${n}} für ${t.n}`); return true; }
+  botLog(`${srcN}: kann Ward {${n}} von ${t.n} nicht zahlen – gekontert`); return false;
+}
 function myTargetable(x){ return !!x && !kwHas(x, "hexproof") && !kwHas(x, "shroud") && !archActive().some(y => UNTOUCH_RE.test(y.o || "")) && !S.bf.some(y => !y.fd && UNTOUCH_RE.test(y.o || "")); }
 function myCreatures(){ return S.bf.filter(c => isCreature(c) && !c.fd); }
 function threatScore(c){
@@ -2298,6 +2310,7 @@ function applyRemovalToMe(card, rem){
   const fits = rem.kind === "damage" ? (x => isCreature(x) && tough(x) <= rem.amount) : null;
   const t = bestTarget(pool, fits);
   if(!t) return false;
+  if(!botPayWard(t, card.n)) return true;
   const zone = rem.kind === "exile" ? "ex" : rem.kind === "bounce" ? "hand" : "gy";
   botLog(`${card.n} trifft ${t.fd ? "eine verdeckte Karte" : t.n}`);
   fxSend({kind:"arrow", style:"hit", from:{pid:BOT_ID}, to:{u:t.u}});
@@ -2373,7 +2386,7 @@ function heurPrecombat(){
   // Removal auf Bedrohungen; Spontanzauber-Removal nur bei grosser Gefahr, sonst für deinen Zug aufheben
   BOT.hand.filter(c => removalOf(c) && !isPermanentType(c)).sort((a, b) => (a.cmc || 0) - (b.cmc || 0)).forEach(c => {
     const rem = removalOf(c);
-    const t = bestTarget((rem.any ? S.bf.filter(x => !isLand(x)) : myCreatures()).filter(myTargetable), rem.kind === "damage" ? (x => isCreature(x) && tough(x) <= rem.amount) : null);
+    const t = bestTarget((rem.any ? S.bf.filter(x => !isLand(x)) : myCreatures()).filter(x => myTargetable(x) && (!myWard(x) || !!castPlan(c, myWard(x)))), rem.kind === "damage" ? (x => isCreature(x) && tough(x) <= rem.amount) : null);
     if(!t) return;
     const urgent = threatScore(t) >= 5;
     if((!isInstant(c) && threatScore(t) >= 2.5) || urgent) botCastHeur(c, `gegen ${t.n}`);
@@ -2551,6 +2564,7 @@ function applyEffects(src, effects){
     // Fluchsicher (Hexproof, I Am Untouchable): gezielte Effekte auf mich oder meine bleibenden Karten fallen weg
     if(["damage","destroy","exile","bounce","tap"].includes(e.kind) && /\btarget\b/i.test(src.o || "")){
       if(t && t.who === "me" && t.zone === "bf" && !myTargetable(t.c)){ botLog(`${src.n}: ${t.c.n} ist fluchsicher`); return; }
+      if(t && t.who === "me" && t.zone === "bf" && !botPayWard(t.c, src.n)) return;
       if(e.target === "opponent" && e.kind === "damage" && !meTargetable() && !/each opponent/i.test(src.o || "")){ botLog(`${src.n}: du bist fluchsicher`); return; }
     }
     if(["damage","destroy","exile","bounce","tap","opponent_loses_life"].includes(e.kind)){
@@ -7326,7 +7340,7 @@ async function runSteps(steps, src, ctx = {}){
         break;
       }
       case "selfCounter": { const n = await needX(); if(S.bf.includes(src)){ src.c = (src.c || 0) + n; act(`${src.n}: +${n} Marke (jetzt ${src.c})`); if(n > 0) abilEvent({kind:"countersOn", c:src}); } break; }
-      case "itCounter": { const n = await needX(); const c = ctx.last || (ctx.target && ctx.target.mine && ctx.target.card); if(c && S.bf.includes(c)){ c.c = (c.c || 0) + n; act(`${c.n}: +${n} Marke`); if(n > 0) abilEvent({kind:"countersOn", c}); } break; }
+      case "itCounter": { const n = await needX(); const c = ctx.last || (ctx.target && ctx.target.mine && ctx.target.card) || (src.scheme && ctx.ev && ctx.ev.c) || null; if(c && S.bf.includes(c)){ c.c = (c.c || 0) + n; act(`${c.n}: +${n} Marke`); if(n > 0) abilEvent({kind:"countersOn", c}); } break; }
       case "allCounter": { const n = await needX(); S.bf.filter(isCreature).forEach(c => { c.c = (c.c || 0) + n; if(n > 0) abilEvent({kind:"countersOn", c}); }); act(`${src.n}: +${n} Marke auf jede deiner Kreaturen`); break; }
       case "targetCounter": {
         const n = await needX();
@@ -10002,6 +10016,8 @@ function trigMatches(ab, src, ev){
   const cond = ab.cond; let m0;
   if(ev.kind === "crime") return /^an opponent commits a crime$/i.test(cond);
   if(/^the chosen player is attacked or becomes the target of a spell or ability$/i.test(cond)) return (ev.kind === "playerAttacked" || ev.kind === "playerTargeted") && !!ev.pid && ev.pid === src.chosenPid;
+  if(/^your commander attacks$/i.test(cond)) return ev.kind === "attack" && !!ev.c && !!ev.c.cmdr && S.bf.includes(ev.c);
+  if(/^your commander leaves the battlefield$/i.test(cond)) return ev.kind === "leaveBf" && !!ev.c && !!ev.c.cmdr;
   if(ev.kind === "schemeSet") return /^you set a non-ongoing scheme in motion$/i.test(cond);
   if(/^a creature put onto the battlefield with this scheme dies$/i.test(cond)) return ev.kind === "die" && !!ev.c && !!src.u && ev.c.withSrc === src.u;
   if(/^you cast your second spell each turn$/i.test(cond)) return ev.kind === "cast" && spellsThisTurn() === 2;
@@ -10843,7 +10859,7 @@ const HANDLED_STATIC = [
   /^You may pay \{0\} rather than pay the mana cost for Zombie creature spells you cast/i, /^Once each turn, you may cast a spell with mana value less than or equal to the number of Elves and Faeries you control from among cards exiled with/i,
   /^Players can't search libraries\. Any player may pay/i, /^As (?:this creature|[^,]+?) enters, choose a number/i, /^Noncreature spells with mana value equal to the chosen number can't be cast/i,
   /^Each player can't draw more than one card each turn/i, /^Artifacts and creatures entering the battlefield don't cause abilities to trigger/i, /^Each opponent can't draw more than one card each turn/i, /^If an opponent would search a library, that player searches the top four cards/i, /^Artifacts and creatures your opponents control enter tapped/i,
-  /^Other creatures you control get \+\d+\/\+\d+\.?$/i, KW_ANTHEM_RE, UNTOUCH_RE, /^As you set this scheme in motion, choose an opponent\.?$/i, /^Creatures the chosen player controls can't attack you or planeswalkers you control\.?$/i, /^Permanents the chosen player controls don't untap during their untap step\.?$/i, /^Each opponent can't cast more than one spell each turn\.?$/i, /^Creatures your opponents control get -\d+\/-\d+\.?$/i, /^If a permanent entering(?: the battlefield)? causes a triggered ability/i, /^Permanents entering(?: the battlefield)? don't cause abilities/i,
+  /^Other creatures you control get \+\d+\/\+\d+\.?$/i, KW_ANTHEM_RE, UNTOUCH_RE, /^Your commander has ward \{\d+\}\.?$/i, /^As you set this scheme in motion, choose an opponent\.?$/i, /^Creatures the chosen player controls can't attack you or planeswalkers you control\.?$/i, /^Permanents the chosen player controls don't untap during their untap step\.?$/i, /^Each opponent can't cast more than one spell each turn\.?$/i, /^Creatures your opponents control get -\d+\/-\d+\.?$/i, /^If a permanent entering(?: the battlefield)? causes a triggered ability/i, /^Permanents entering(?: the battlefield)? don't cause abilities/i,
   /^Activated abilities of creatures your opponents control can't be activated/i, /^As long as this card is in your graveyard, lands you control have/i, /^You and creatures you control have protection from the chosen card type/i,
   /^Enchanted permanent is a Vehicle artifact with crew \d+ and it loses all other card types/i, /^Noncreature spells cost \{\d+\} more to cast/i, /^Players can't pay life or sacrifice nonland permanents/i, /^Overload\b/i,
   /^You may spend mana as though it were mana of any colou?r\.?$/i, /^You may cast colorless spells and artifact spells as though they had flash/i,
@@ -11865,7 +11881,7 @@ function historyAdd(win){
 /* ---------- Automatische Updates ---------- */
 // Liegt die App im Web, prüft sie regelmässig version.json im selben Ordner und lädt sich bei einer neuen Version neu.
 // Alles Wichtige (Spielstand, Deck, Tisch) liegt im Browser-Speicher und ist nach dem Neuladen wieder da.
-const APP_VERSION = "2026.11.19-3";
+const APP_VERSION = "2026.11.19-4";
 const ONLINE = /^https?:$/.test(location.protocol);
 let updPending = null, updTimer = null, updSnoozeUntil = 0;
 function busyForUpdate(){ return botBusy || (!$("#modal").hidden && modalState && ["block","deck"].includes(modalState.kind)); }

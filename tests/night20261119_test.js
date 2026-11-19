@@ -28,7 +28,7 @@ const clickCard = async t => { const el = [...d.querySelectorAll('#modalBox .car
   const AUTO = ['My Tendrils Run Deep', 'Your Inescapable Doom', 'Because I Have Willed It', 'Dark Wings Bring Your Downfall', 'Mine Is the Only Truth', 'The Very Soil Shall Shake',
     'Fear My Authority', 'I Am Duskmourn', 'My Forces Are Innumerable', 'You Cannot Hide from Me',
     'My Undead Horde Awakens', 'I Know All, I See All', 'Reality Is Mine to Control', 'My Laughter Echoes',
-    'Bow to My Command', 'I Bask in Your Silent Awe', 'Imprison This Insolent Wretch', 'I Am Untouchable'];
+    'Bow to My Command', 'I Bask in Your Silent Awe', 'Imprison This Insolent Wretch', 'I Am Untouchable', 'My Champion Stands Supreme'];
   for(const n of AUTO){ w.__sc = scheme(n); const st = ev('cardCheck(schemeAsSpell(window.__sc)).status'); check(st === 'auto', `${n}: automatisch (${st})`); }
 
   // Grundgerüst: laufendes Komplott bleibt liegen, kommt nicht sofort unter das Deck
@@ -224,6 +224,20 @@ const clickCard = async t => { const el = [...d.querySelectorAll('#modalBox .car
   ev('abilEvent({kind:"combatDamageToYou", much:3, pid:"bot"})'); await wait(300); await drain();
   { const sc = S().bf.find(c => /Scarecrow/.test(c.type || '')); check(!!sc && ev('kwHas(S.bf.find(c => /Scarecrow/.test(c.type || "")), "vigilance")') && active() === '', `Untouchable: Kampfschaden → 4/4-Vogelscheuche mit Wachsamkeit, aufgegeben (${S().bf.map(c => c.n).join()}, ${active()})`); }
   ev('withBot("bot", () => applyRemovalToMe(window.__bolt, removalOf(window.__bolt)))'); check(S().bf.length === 1, `Untouchable aufgegeben: Blitz trifft wieder (${S().bf.map(c => c.n).join()})`);
+
+  // My Champion Stands Supreme: Commander mit Ward {2}; greift er an, zwei +1/+1-Marken; verlässt er das Spiel → aufgeben
+  await reset(); ev('S.bf.push(newCard({n:"Held", type:"Legendary Creature — Human", o:"", pw:3, tg:3, cmdr:true}), newCard({n:"Bär", type:"Creature — Bear", o:"", pw:2, tg:2})); commit()');
+  await setOngoing('My Champion Stands Supreme');
+  w.__kill = N('Mord', 'Instant', 'Destroy target creature.', {cmc:3, mc:'{1}{B}{B}'});
+  check(ev('myWard(S.bf.find(c => c.n === "Held"))') === 2 && ev('myWard(S.bf.find(c => c.n === "Bär"))') === 0, 'Champion: Commander hat Ward {2}, andere nicht');
+  ev('S.attacking = []; markOnAttack([S.bf.find(c => c.n === "Held")])'); await wait(300); await drain();
+  check(ev('S.bf.find(c => c.n === "Held").c') === 2 && ev('power(S.bf.find(c => c.n === "Held"))') === 5, `Champion: Commander greift an → zwei +1/+1-Marken (${ev('S.bf.find(c => c.n === "Held").c')})`);
+  ev('S.bf = S.bf.filter(c => c.n === "Held"); withBot("bot", () => { BOT.bf = [newCard({n:"Island", type:"Basic Land — Island", o:""})]; botChanged(); })');
+  ev('withBot("bot", () => applyRemovalToMe(window.__kill, removalOf(window.__kill)))');
+  check(S().bf.some(c => c.n === 'Held'), 'Champion: KI kann Ward nicht zahlen → Mord gekontert');
+  ev('withBot("bot", () => { BOT.bf = [1, 2].map(() => newCard({n:"Island", type:"Basic Land — Island", o:""})); botChanged(); })');
+  ev('withBot("bot", () => applyRemovalToMe(window.__kill, removalOf(window.__kill)))'); await wait(300); await drain();
+  check(!S().bf.some(c => c.n === 'Held') && ev('BOTS.bot.bf.every(c => c.tap)') && active() === '', `Champion: KI zahlt Ward {2}, Held stirbt → aufgegeben (${active()})`);
 
   // Neues Spiel: laufende Komplotte kommen zurück ins Deck
   await reset(); await setOngoing('Your Inescapable Doom'); const nd = ev('S.arch.deck.length');
