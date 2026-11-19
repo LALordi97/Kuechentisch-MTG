@@ -10,15 +10,16 @@ Format der Deck-Dateien:
     ### Deckname | Anteil | Quelle (Turnier, Platz, Datum)
     4 Lightning Bolt
     ...
-cEDH-Decks beginnen mit einem Abschnitt «Commander», danach eine Leerzeile und «Deck».
+Commander-Decks (cEDH, Bracket 3/4) beginnen mit einem Abschnitt «Commander», danach eine Leerzeile und «Deck».
 Modern/Legacy: nach dem Hauptdeck eine Leerzeile, dann «Sideboard» und bis zu 15 Karten.
 Erwartet werden 60 Karten im Hauptdeck (Modern/Legacy, Ausnahmen: 61 oder 80 mit Yorion) und 100 Karten (cEDH, ohne Sideboard).
 """
 import json, re, sys, datetime, pathlib
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
-FORMATS = [("cEDH", "cedh"), ("Modern", "modern"), ("Legacy", "legacy")]
-SOURCES = "Modern und Legacy: MTGTop8, Metagame der letzten 2 Wochen · cEDH: EDHTop16, letzte 6 Monate (Turniere ab 50 Spielern)"
+FORMATS = [("cEDH", "cedh"), ("Bracket 4", "bracket4"), ("Bracket 3", "bracket3"), ("Modern", "modern"), ("Legacy", "legacy"), ("Standard", "standard"), ("Pauper", "pauper")]
+COMMANDER = ("cEDH", "Bracket 4", "Bracket 3")
+SOURCES = "Modern, Legacy, Standard und Pauper: MTGTop8, Metagame der letzten 2 Wochen · cEDH: EDHTop16, letzte 6 Monate (Turniere ab 50 Spielern) · Bracket 3 und 4: EDHREC-Durchschnittsdecks der beliebtesten Commander"
 
 
 def count(body):
@@ -54,10 +55,10 @@ def load():
             name, share, src = parts
             body = body.strip()
             n, sb = count(body)
-            ok = (n == 100 and sb == 0) if key == "cEDH" else (n in (60, 61, 80) and sb <= 15)
+            ok = (n == 100 and sb == 0) if key in COMMANDER else (n in (60, 61, 80) and sb <= 15)
             if not ok:
                 problems.append(f"{key}: «{name}» hat {n} Karten im Hauptdeck und {sb} im Sideboard")
-            elif key != "cEDH" and sb != 15:
+            elif key not in COMMANDER and sb != 15:
                 print(f"Hinweis: {key} «{name}» hat {sb} Sideboard-Karten")
             decks.append({"n": name, "p": share, "s": src, "l": body})
         if len(decks) != 16:

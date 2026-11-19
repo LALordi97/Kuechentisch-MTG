@@ -1,0 +1,551 @@
+### Boros Aggro | 12% | Champions Cup Store Qualifier, 1. Platz, 15.11.26
+2 Giott, King of the Dwarves
+4 Kili the Resourceful
+4 Dwarven Mauler
+4 Thorin, Mountain-king
+4 Dáin's Company
+3 Dwalin, Weaponmaster
+4 Basilisk Collar
+4 Lavaspur Boots
+4 Leyline Axe
+4 Dragonfire Blade
+3 Plains
+4 Inspiring Vantage
+4 Cavern of Souls
+4 Sacred Foundry
+4 Sunbillow Verge
+4 The Lonely Mountain
+
+Sideboard
+2 Chandra, Torch of Defiance
+3 Rest in Peace
+4 Torch the Tower
+4 Erode
+2 Shattered Acolyte
+
+### Dimir Aggro | 11% | MTGO League, 2. Platz, 16.11.26
+1 Hidden Lair
+1 Multiversal Passage
+4 Gloomlake Verge
+2 Restless Reef
+1 Tishana's Tidebinder
+1 Demolition Field
+4 Spyglass Siren
+3 Bitter Triumph
+1 Shipwreck Marsh
+1 Spell Snare
+1 Shoot the Sheriff
+4 Enduring Curiosity
+4 Floodpits Drowner
+4 Watery Grave
+4 Kaito, Bane of Nightmares
+2 Soulstone Sanctuary
+4 Swamp
+2 Wan Shi Tong, Librarian
+3 Requiting Hex
+4 Dream Beavers
+3 We Say Thee Nay!
+2 The Wondrous Wasp
+4 Island
+
+Sideboard
+1 Tishana's Tidebinder
+3 Duress
+1 Negate
+2 Flashfreeze
+1 Vren, the Relentless
+2 Strategic Betrayal
+1 Quantum Riddler
+2 Day of Black Sun
+1 The Theorist, Jace Beleren
+1 Raven Eagle
+
+### Jund Aggro | 9% | MTGO Challenge 16, 1. Platz, 15.11.26
+4 Biotech Specialist
+4 Blooming Marsh
+1 Thornspire Verge
+4 Gene Pollinator
+4 Greedy Freebooter
+4 Lively Dirge
+4 Obsessive Pursuit
+4 Starting Town
+1 Swamp
+1 Forest
+4 The Sackville-Bagginses
+3 Umbral Collar Zealot
+1 Smaug the Magnificent
+3 Blood Crypt
+4 Torch the Tower
+3 Stomping Ground
+3 Overgrown Tomb
+1 Blazemire Verge
+2 Witherbloom Charm
+1 Deadly Precision
+1 Mountain
+1 Wolverine, Fierce Fighter
+2 Syr Ginger, the Meal Ender
+
+Sideboard
+2 The Ooze
+2 Vicious Rivalry
+2 Deathmark
+1 Guerrilla Gorilla
+1 Maelstrom Pulse
+3 Duress
+2 Terminal Criticism
+1 Glorious Decay
+1 Q, Stacking the Deck
+
+### Selesnya Aggro | 9% | Planeswalker Series: Competitive, 1. Platz, 15.11.26
+4 Llanowar Elves
+4 Pawpatch Recruit
+2 Brightglass Gearhulk
+1 Surrak, Elusive Hunter
+4 Gene Pollinator
+4 Ouroboroid
+4 Michelangelo, Weirdness to 11
+4 Bejeweled Warg
+2 Guiding Hydra
+4 Practiced Offense
+2 Seam Rip
+2 Meltstrider's Resolve
+2 Plains
+6 Forest
+4 Temple Garden
+1 Overgrown Farmland
+4 Hushwood Verge
+3 Starting Town
+1 Multiversal Passage
+2 Abandoned Air Temple
+
+Sideboard
+1 Brightglass Gearhulk
+2 Surrak, Elusive Hunter
+4 Doorkeeper Thrull
+2 Sheltered by Ghosts
+2 Clarion Conqueror
+2 Leatherhead, Swamp Stalker
+1 Skateboard
+1 Erode
+
+### Dimir Control | 9% | Champions Cup Store Qualifier, 1. Platz, 14.11.26
+2 Sphinx of False Conclusions
+2 Uldaros Theorix
+3 Spell Snare
+1 Bitter Triumph
+2 Three Steps Ahead
+1 Shoot the Sheriff
+1 Feed the Cycle
+4 Consult the Star Charts
+4 Requiting Hex
+4 Countersculpt
+2 Jace's Machinations
+1 Break Under Pressure
+2 Deadly Cover-Up
+1 Day of Black Sun
+4 The Theorist, Jace Beleren
+2 Island
+3 Swamp
+4 Watery Grave
+4 Shipwreck Marsh
+1 Restless Reef
+2 Undercity Sewers
+1 Fountainport
+4 Gloomlake Verge
+2 Petrified Hamlet
+2 Theorist's Sanctum
+1 Ni'Var Science Academy
+
+Sideboard
+1 Day of Black Sun
+2 Duress
+2 Engineered Explosives
+2 Annul
+1 Ghost Vacuum
+2 Wan Shi Tong, Librarian
+1 Terminal Criticism
+2 Karn, Argent Defender
+2 Georgiou, Terran Emperor
+
+### Mono Green Aggro | 6% | RCQ, 1. Platz, 15.11.26
+4 Sazh's Chocobo
+1 Hard-Hitting Question
+4 Llanowar Elves
+2 Keen-Eyed Curator
+4 Carnivorous Cultivator
+4 Earthbender Ascension
+4 Mossborn Hydra
+4 Icetill Explorer
+3 Sapling Nursery
+3 Mightform Harmonizer
+4 Elven Passage
+4 Fabled Passage
+3 Ba Sing Se
+1 Escape Tunnel
+1 Pit of Offerings
+1 Demolition Field
+13 Forest
+
+Sideboard
+1 Sapling Nursery
+1 Mightform Harmonizer
+2 Sandman, Shifting Scoundrel
+2 Warg Tactics
+1 Mole Man, Moloid Master
+3 Meltstrider's Resolve
+2 Surrak, Elusive Hunter
+2 Torpor Orb
+1 Pick Your Poison
+
+### Izzet Control | 6% | MTGO RC Super Qualifier, 1. Platz, 15.11.26
+4 Anthropological Mission
+1 Burst Lightning
+2 Chandra, Chill of Compliance
+1 Engineered Explosives
+1 Fire Magic
+4 Flashback
+2 Great Hall of the Biblioplex
+1 Impractical Joke
+3 Into the Flood Maw
+2 Long River's Pull
+1 Multiversal Passage
+4 Sleight of Hand
+3 Ral, Crackling Wit
+4 Riverpyre Verge
+1 Sear
+2 Spell Snare
+4 Opt
+6 Island
+2 Torch the Tower
+1 Traumatic Critique
+2 Spell Pierce
+4 Spirebluff Canal
+4 Steam Vents
+1 Stormcarved Coast
+
+Sideboard
+1 Fire Magic
+1 Impractical Joke
+1 Spell Snare
+3 Bothersome Noisemaker
+2 Essence Burn
+1 Ghost Vacuum
+1 Petrified Hamlet
+2 Stock Up
+1 Flashfreeze
+2 Annul
+
+### Orzhov Aggro | 5% | MTGO Challenge 16, 1. Platz, 14.11.26
+4 Enlightened Confidant
+3 Erode
+4 Concealed Courtyard
+1 Aunt May
+4 Starting Town
+4 Amalia Benavides Aguirre
+1 Fountainport
+4 Haliya, Guided by Light
+4 Case of the Uneaten Feast
+4 Multiversal Passage
+4 Moseo, Vein's New Dean
+4 Plains
+4 Hinterland Sanctifier
+4 Godless Shrine
+2 Liliana the Faultless
+2 Starscape Cleric
+1 Great Arashin City
+1 Salt Vampire
+4 Lunar Convocation
+1 Springleaf Drum
+
+Sideboard
+1 Erode
+2 Sheltered by Ghosts
+1 Cathar Commando
+3 Seam Rip
+2 Pyrrhic Strike
+1 Vicious Rivalry
+1 Space-Time Anomaly
+1 Curious Farm Animals
+3 Duress
+
+### Azorius Aggro | 5% | MTGO Challenge 32, 1. Platz, 16.11.26
+1 Guiding Hydra
+4 Momo, Friendly Flier
+1 Erode
+4 Floodfarm Verge
+2 Multiversal Passage
+2 Seam Rip
+4 Practiced Offense
+1 Spider-Sense
+3 Daydream
+2 The Wondrous Wasp
+4 Gleaming Bastion
+4 Sage of the Skies
+4 Starfield Shepherd
+1 Nurturing Pixie
+4 Steamcore Scholar
+4 Quantum Riddler
+4 Hallowed Fountain
+4 Springleaf Drum
+6 Plains
+1 Island
+
+Sideboard
+1 Erode
+1 Seam Rip
+1 Spider-Sense
+1 Pyrrhic Strike
+3 The Theorist, Jace Beleren
+1 Ghost Vacuum
+2 No More Lies
+2 Settle the Wreckage
+1 Spell Pierce
+2 Clarion Conqueror
+
+### UW Control | 5% | MTGO League, 1. Platz, 16.11.26
+1 Captain Marvel, Earth's Protector
+4 Consult the Star Charts
+4 Countersculpt
+3 Day of Judgment
+3 Island
+2 Erode
+4 Floodfarm Verge
+1 Fountainport
+4 Hallowed Fountain
+4 Get Lost
+4 Deserted Beach
+2 Jace's Machinations
+1 Demolition Field
+4 No More Lies
+2 Petrified Hamlet
+2 Seam Rip
+4 The Theorist, Jace Beleren
+2 Theorist's Sanctum
+1 Three Steps Ahead
+2 Meticulous Archive
+3 Plains
+1 Spell Snare
+2 Pinnacle Starcage
+
+Sideboard
+1 Erode
+1 Disdainful Stroke
+3 Doorkeeper Thrull
+2 Rest in Peace
+2 Flashfreeze
+1 Sphinx of False Conclusions
+1 Ultima
+2 Wan Shi Tong, Librarian
+2 Chandra, Chill of Compliance
+
+### UR Aggro | 4% | RCQ, 1. Platz, 15.11.26
+2 Shock
+4 Burst Lightning
+4 Vibrant Outburst
+1 Sunspine Lynx
+1 Kellan, Planar Trailblazer
+3 Razorkin Needlehead
+3 Hexing Squelcher
+3 Nova Hellkite
+4 Burnout Bashtronaut
+4 Hired Claw
+4 Colorstorm Stallion
+4 Scalding Viper
+2 Soulstone Sanctuary
+4 Steam Vents
+4 Riverpyre Verge
+4 Spirebluff Canal
+9 Mountain
+
+Sideboard
+1 Soul-Guide Lantern
+3 Spell Pierce
+3 Sear
+3 Magebane Lizard
+1 Slagstorm
+1 Spell Snare
+1 Impractical Joke
+2 Sunspine Lynx
+
+### 4/5C Control | 2% | MTGO Challenge 16, 1. Platz, 12.11.26
+4 Sundown Pass
+4 Great Hall of the Biblioplex
+4 Steam Vents
+3 Gloomlake Verge
+3 Hallowed Fountain
+2 Shattered Sanctum
+1 Cori Mountain Monastery
+1 Sunbillow Verge
+1 Island
+1 Plains
+1 Sacred Foundry
+1 Mistrise Village
+4 Inevitable Defeat
+4 Tablet of Discovery
+4 Jeskai Revelation
+4 Stock Up
+3 No More Lies
+2 Day of Judgment
+2 Together as One
+2 Twinned Vision
+2 Flashback
+2 Consult the Star Charts
+2 Sear
+2 Fire Magic
+1 Spell Snare
+
+Sideboard
+1 Fire Magic
+2 Spell Snare
+2 Flashfreeze
+2 Negate
+1 Ultima
+2 Lightning Helix
+2 Strategic Betrayal
+1 Outrageous Robbery
+2 Thor, God of Thunder
+
+### Rakdos Aggro | 1% | MTGO Challenge 16, 3.–4. Platz, 14.11.26
+2 Bitter Triumph
+2 Stingerquill Charm
+3 Impractical Joke
+4 Cool but Rude
+2 The Ruinous Wrecking Crew
+2 Winter, Tormented Loner
+3 Captain James T. Kirk
+4 Carnage, Crimson Chaos
+4 Iron-Shield Elf
+4 Marauding Mako
+4 Moonshadow
+4 Masked Meower
+1 Swamp
+4 Blazemire Verge
+4 Multiversal Passage
+4 Blood Crypt
+4 Starting Town
+5 Mountain
+
+Sideboard
+3 Torpor Orb
+4 Duress
+2 Deathmark
+3 Case of the Crimson Pulse
+3 Strategic Betrayal
+
+### Reanimator | 1% | Champions Cup Store Qualifier, 1. Platz, 15.11.26
+2 Terror of the Peaks
+3 Bringer of the Last Gift
+3 Overlord of the Balemurk
+2 Oblivious Bookworm
+3 Ardyn, the Usurper
+4 Superior Spider-Man
+1 Formidable Speaker
+2 Deceit
+3 Wistfulness
+2 Seasoned Cryomancer
+2 Bitter Triumph
+2 Requiting Hex
+1 Vicious Rivalry
+3 Dredger's Insight
+3 Awaken the Honored Dead
+1 Swamp
+1 Forest
+2 Cavern of Souls
+3 Breeding Pool
+4 Watery Grave
+3 Overgrown Tomb
+1 Undercity Sewers
+1 Underground Mortuary
+3 Gloomlake Verge
+3 Wastewood Verge
+1 Willowrush Verge
+1 The Unicomplex
+
+Sideboard
+2 Requiting Hex
+1 Vicious Rivalry
+1 Awaken the Honored Dead
+1 Island
+2 Duress
+1 Myojin of Night's Reach
+1 The End
+1 Nowhere to Run
+2 Ghost Vacuum
+2 Ancient Vendetta
+1 Strategic Betrayal
+
+### Esper Aggro | 0,9% | MTGO Challenge 32, 1. Platz, 09.11.26
+2 Bitter Triumph
+3 Grim Bauble
+3 Practiced Offense
+3 Kaito, Bane of Nightmares
+1 Mabel, Bitter Recluse
+1 Guiding Hydra
+2 Likeness Looter
+3 Overlord of the Balemurk
+3 Starfield Shepherd
+4 Nurturing Pixie
+4 Moonshadow
+4 Dark Matter Manipulator
+4 Mockingbird
+1 Bleachbone Verge
+1 Plains
+1 Restless Anchorage
+2 Gloomlake Verge
+2 Starting Town
+4 Hallowed Fountain
+4 Concealed Courtyard
+4 Godless Shrine
+4 Watery Grave
+
+Sideboard
+2 Sheltered by Ghosts
+1 Curious Farm Animals
+3 Clarion Conqueror
+1 Annul
+1 Requiting Hex
+3 Strategic Betrayal
+2 Duress
+1 Spell Pierce
+1 Kaito, Bane of Nightmares
+
+### Jeskai Control | 0,9% | RCQ, 2. Platz, 07.11.26
+1 Warmaker Gunship
+1 Torpor Orb
+1 The Irencrag
+1 The Fire Crystal
+1 Authority of the Consuls
+1 The Enigma Jewel
+1 Braided Net
+1 Spring-Loaded Sawblades
+1 White Auracite
+2 Solitary Cell
+3 Pinnacle Starcage
+3 The Mind Stone
+3 Repurposing Bay
+4 United Battlefront
+4 Cryogen Relic
+4 Perilous Snare
+4 Simulacrum Synthesizer
+1 Gleaming Bastion
+1 Island
+1 Petrified Hamlet
+1 Meticulous Archive
+4 Plains
+4 Castle Doom
+4 Hallowed Fountain
+4 Floodfarm Verge
+4 Starting Town
+
+Sideboard
+2 Negate
+1 Astelli Reclaimer
+1 Seam Rip
+1 Day of Judgment
+1 Erode
+2 Voice of Victory
+2 Rest in Peace
+1 Krang, Master Mind
+2 Torpor Orb
+1 Authority of the Consuls
+1 Braided Net
