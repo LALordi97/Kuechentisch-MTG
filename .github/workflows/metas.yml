@@ -1,25 +1,27 @@
 name: Top-Decks holen (Standard, Pauper, Bracket 3 und 4)
-# Nur von Hand oder bei Änderung von tools/metas.py. Schreibt nichts ins Repository:
-# die Decklisten stehen im Protokoll und als Artefakt «decks» zum Übernehmen.
+# Nur von Hand oder bei Änderung von tools/metas.py. Läuft nie auf main: die geholten Decklisten
+# werden nur auf den Arbeitszweig (decks/…) committet, auf dem der Ablauf läuft. Übernahme auf main
+# erst nach Prüfung (tools/build.py, Regression).
 on:
   workflow_dispatch:
   push:
+    branches-ignore: [main]
     paths: ["tools/metas.py", ".github/workflows/metas.yml"]
 permissions:
-  contents: read
+  contents: write
 jobs:
   metas:
+    if: github.ref != 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - name: Decks aus MTGTop8 und EDHREC holen
         run: python3 tools/metas.py
-      - name: Decklisten ausgeben
+      - name: Auf den Arbeitszweig committen
         run: |
-          for f in standard pauper bracket3 bracket4; do
-            if [ -f decks/$f.txt ]; then echo "=====BEGIN $f====="; cat decks/$f.txt; echo "=====END $f====="; fi
-          done
-      - uses: actions/upload-artifact@v4
-        with:
-          name: decks
-          path: decks/
+          git add decks/standard.txt decks/pauper.txt decks/bracket3.txt decks/bracket4.txt 2>/dev/null || true
+          if git diff --cached --quiet; then echo "unverändert"; exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Top-Decks Standard, Pauper, Bracket 3/4 geholt (MTGTop8, EDHREC)"
+          git push origin HEAD:${GITHUB_REF_NAME}
