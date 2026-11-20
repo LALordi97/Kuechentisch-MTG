@@ -1,4 +1,4 @@
 {
-  "version": "2026.11.19-10",
-  "notes": "Neue Formate mit je 16 Top-Decks: Commander Bracket 3 und Bracket 4 (EDHREC-Durchschnittsdecks der beliebtesten Commander), Standard und Pauper (MTGTop8, letzte 2 Wochen)."
+  "version": "2026.11.20-1",
+  "notes": "28 Karten aus den neuen Top-Decks automatisch (u. a. Avenger of Zendikar, Anointed Procession, Academy Manufactor, Ancient Copper/Gold/Brass Dragon, Assassin's Trophy, Amalia, Avacyn, Barret, Afterlife from the Loam). Archenemy: A Display of My Dark Power (Länder geben ein Mana mehr) sowie Approach My Molten Realm, I Call for Slaughter und Delight in the Hunt (Schaden ändern, auch im Kampf) – damit alle 81 einmaligen Komplotte automatisch."
 }
