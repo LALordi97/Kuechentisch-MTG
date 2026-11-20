@@ -1,4 +1,4 @@
 {
-  "version": "2026.11.20-1",
-  "notes": "28 Karten aus den neuen Top-Decks automatisch (u. a. Avenger of Zendikar, Anointed Procession, Academy Manufactor, Ancient Copper/Gold/Brass Dragon, Assassin's Trophy, Amalia, Avacyn, Barret, Afterlife from the Loam). Archenemy: A Display of My Dark Power (Länder geben ein Mana mehr) sowie Approach My Molten Realm, I Call for Slaughter und Delight in the Hunt (Schaden ändern, auch im Kampf) – damit alle 81 einmaligen Komplotte automatisch."
+  "version": "2026.11.20-4",
+  "notes": "Testzweig Planechase (Etappe 1): neue Spielvariante im KI-Dialog – Ebenen-Deck mit 10 Ebenen von Scryfall, Knopf «Ebene» oben, Planar-Würfel in deinem Zug (erster Wurf gratis, dann {1} mehr pro Wurf), Chaos und Planeswalk; Dauereffekte und Auslöser der Ebene laufen automatisch."
 }

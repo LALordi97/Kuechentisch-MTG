@@ -6,7 +6,7 @@ Der Text wird so übernommen, wie die App ihn sieht (wie tpl() in index.html: Vo
 Dazu tests/oracle_parts.json: zugehörige Teile, die selbst in keinem Deck stehen (Meld-Partner und Meld-Ergebnis),
 im selben Format mit einem sechsten Eintrag: Name der Deck-Karte, zu der der Teil gehört.
 
-Schreibt ausserdem tests/oracle_schemes.json (alle Komplotte für Archenemy).
+Schreibt ausserdem tests/oracle_schemes.json (alle Komplotte für Archenemy) und tests/oracle_planes.json (Ebenen und Phänomene für Planechase).
 
 Aufruf:  python3 tools/oracle.py            # lädt die aktuelle Datei von Scryfall
          python3 tools/oracle.py bulk.json  # nimmt eine schon geladene Datei (zum Testen)
@@ -106,6 +106,10 @@ def main():
     schemes = sorted({sc["name"]: [sc["name"], sc.get("type_line", ""), sc.get("oracle_text") or "", "", 0] for sc in cards if "Scheme" in (sc.get("type_line") or "")}.values())
     (ROOT / "tests" / "oracle_schemes.json").write_text(json.dumps(schemes, ensure_ascii=False, indent=0) + "\n", encoding="utf8")
     print(f"{len(schemes)} Komplotte geschrieben")
+    # Ebenen und Phänomene (Planechase): für die Prüfung der Planechase-Funktion der App
+    planes = sorted({sc["name"]: [sc["name"], sc.get("type_line", ""), sc.get("oracle_text") or "", "", 0] for sc in cards if re.search(r"\b(Plane|Phenomenon)\b", sc.get("type_line") or "") and "Planeswalker" not in (sc.get("type_line") or "")}.values())
+    (ROOT / "tests" / "oracle_planes.json").write_text(json.dumps(planes, ensure_ascii=False, indent=0) + "\n", encoding="utf8")
+    print(f"{len(planes)} Ebenen/Phänomene geschrieben")
     (ROOT / "tests" / "oracle_decks.json").write_text(json.dumps(out, ensure_ascii=False, indent=0) + "\n", encoding="utf8")
     print(f"{len(out)} Karten geschrieben, {len(missing)} nicht gefunden" + (": " + ", ".join(missing) if missing else ""))
     # Zugehörige Teile (Meld): nur solche, die nicht schon als Deck-Karte dabei sind

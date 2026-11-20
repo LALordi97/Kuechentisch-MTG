@@ -320,6 +320,7 @@ textarea{width:100%;min-height:240px;resize:vertical;font-size:14px}
     <button id="bToken">Token</button>
     <button id="bBot">KI-Gegner</button>
     <button id="bArch" hidden>Komplotte</button>
+    <button id="bPlane" hidden>Ebene</button>
     <button id="bLook">Aussehen</button>
     <button id="bStats">Statistik</button>
     <button id="bLobby">Tisch</button>
@@ -487,7 +488,7 @@ function kaitoSync(){
     if(on && !c._kaitoO){ c._kaitoO = {type:c.type, pw:c.pw, tg:c.tg, kw:c.kw, o:c.o}; c.type = `${c.type.split("—")[0].trim()} Creature — ${g[2]}`; c.pw = +g[0]; c.tg = +g[1]; c.kw = [...(c.kw || []), g[3][0].toUpperCase() + g[3].slice(1)]; delete c._ab; }
     else if(!on && c._kaitoO){ Object.assign(c, c._kaitoO); delete c._kaitoO; delete c._ab; } });
 }
-function commit(){ try{ gyTrack(); }catch(e){} try{ kaitoSync(); if(!S.blessing && S.bf && S.bf.filter(x => !x.fd).length >= 10 && S.bf.some(x => !x.fd && /^Ascend\b/m.test(x.o || ""))){ S.blessing = true; act("erhält den Segen der Stadt (Ascend)"); } mycoSync(); (S.bf || []).forEach(c => { if(c._stO != null || /^\d+\+ \| /m.test(c.o || "")) stationApply(c); }); }catch(e){} try{ loopCheck(); }catch(e){ console.error(e); } try{ lostCheck(); }catch(e){} try{ const ba = $("#bArch"); if(ba){ ba.hidden = !archOn(); if(archOn()) ba.textContent = `Komplotte (${S.arch.deck.length})`; } }catch(e){} save(); undoNote(); renderAll(); schedulePush(); }
+function commit(){ try{ gyTrack(); }catch(e){} try{ kaitoSync(); if(!S.blessing && S.bf && S.bf.filter(x => !x.fd).length >= 10 && S.bf.some(x => !x.fd && /^Ascend\b/m.test(x.o || ""))){ S.blessing = true; act("erhält den Segen der Stadt (Ascend)"); } mycoSync(); (S.bf || []).forEach(c => { if(c._stO != null || /^\d+\+ \| /m.test(c.o || "")) stationApply(c); }); }catch(e){} try{ loopCheck(); }catch(e){ console.error(e); } try{ lostCheck(); }catch(e){} try{ const ba = $("#bArch"); if(ba){ ba.hidden = !archOn(); if(archOn()) ba.textContent = `Komplotte (${S.arch.deck.length})`; } }catch(e){} try{ const bp = $("#bPlane"); if(bp){ bp.hidden = !planeOn(); if(planeOn()) bp.textContent = `Ebene: ${S.plane.cur ? S.plane.cur.n : "–"}`; } }catch(e){} save(); undoNote(); renderAll(); schedulePush(); }
 /* ---------- Rückgängig ---------- */
 // Vor jeder Aktion wird der eigene Spielstand gemerkt. Änderungen, die kurz hintereinander passieren, zählen als eine Aktion.
 const UNDO = {stack:[], last:null, lastT:0, restoring:false};
@@ -3093,6 +3094,7 @@ function openBotDialog(){
     <div id="bDecks" style="display:flex;flex-direction:column;gap:6px"></div>
     ${claudeSettingsHtml()}
     <label class="row stat"><input type="checkbox" id="bRestart" checked> Mein eigenes Spiel auch neu starten</label>
+    <label class="row stat"><input type="checkbox" id="bPlaneOn"> Planechase (Probe): Ebenen-Deck mit 10 Ebenen von Scryfall, Planar-Würfel in deinem Zug (Knopf «Ebene» oben).</label>
     <label class="row stat"><input type="checkbox" id="bArchOn"> Archenemy: Ich bin der Erzfeind (40 Leben, ich beginne, Komplott-Deck mit 20 Komplotten). Die KI-Gegner spielen als Team gegen mich.</label>
     <p class="stat" style="margin:0">Mehrere KI-Gegner spielen jeder für sich gegen dich (Jeder gegen jeden). Untereinander greifen sie sich nicht an.</p>
     <div class="row"><button class="primary" id="bGo">Spiel gegen die KI starten</button><span class="stat" id="bProg"></span></div>
@@ -3129,6 +3131,11 @@ function openBotDialog(){
       try{ schemes = await schemeDeckBuild(t => { $("#bProg").textContent = t; }); }
       catch(e){ $("#bGo").disabled = false; $("#bProg").textContent = ""; $("#bErr").textContent = e.message || "Die Komplotte konnten nicht geladen werden."; return; }
     }
+    let planes = null;
+    if($("#bPlaneOn").checked){
+      try{ planes = await planeDeckBuild(t => { $("#bProg").textContent = t; }); }
+      catch(e){ $("#bGo").disabled = false; $("#bProg").textContent = ""; $("#bErr").textContent = e.message || "Die Ebenen konnten nicht geladen werden."; return; }
+    }
     $("#bGo").disabled = false; $("#bProg").textContent = "";
     LS.set("kt-botn", picks.length);
     clearBots();
@@ -3137,6 +3144,7 @@ function openBotDialog(){
     if(($("#bRestart").checked || schemes) && S.deck.length) startGame();
     closeModal();
     S.arch = schemes ? {on:true, deck:schemes, n:0, last:null} : null;
+    S.plane = null; if(planes) planeStart(planes);
     if(schemes){ S.life = Math.max(40, S.life); S.startLife = S.life; act(`ist der Erzfeind: ${S.life} Leben, Komplott-Deck mit ${schemes.length} Komplotten`); commit(); }
     const seats = [me.id, ...botIds()];
     const pick = schemes ? me.id : seats[Math.floor(Math.random() * seats.length)];
@@ -3172,6 +3180,7 @@ function startBot(name, format, deck, id = "bot"){
 }
 $("#bBot").onclick = openBotDialog;
 $("#bArch").onclick = openArchDialog;
+$("#bPlane").onclick = openPlaneDialog;
 injectBot();
 
 
@@ -3562,7 +3571,7 @@ function botSelfOthers(q){
 }
 function archOn(){ return !!(S && S.arch && S.arch.on); }
 /* Laufende Komplotte (Ongoing): bleiben offen liegen (S.arch.active), bis sie aufgegeben werden; wirken wie Embleme */
-function archActive(){ return S && S.arch && S.arch.on && Array.isArray(S.arch.active) ? S.arch.active : []; }
+function archActive(){ const a = S && S.arch && S.arch.on && Array.isArray(S.arch.active) ? S.arch.active : []; const p = planeActive(); return p.length ? [...a, ...p] : a; }
 function oppLifeOf(pid){ return isBotId(pid) && BOTS[pid] ? BOTS[pid].life : Number((others[pid] || {}).life) || 0; }
 function oppStartLife(pid){ const o = others[pid] || {}; const b = isBotId(pid) && BOTS[pid]; if(b && b.startLife) return b.startLife; if(Number(o.startLife)) return Number(o.startLife);
   return (Array.isArray(o.cz) && o.cz.length) || ["bf", "gy", "ex"].some(z => Array.isArray(o[z]) && o[z].some(c => c && c.cmdr)) || (b && Array.isArray(b.cz) && b.cz.length) ? 40 : 20; }
@@ -3593,7 +3602,7 @@ function archDmg(n, mine){ let v = +n || 0; if(v <= 0 || !S) return v; if(mine &
 function myCreaturesShielded(){ return !!S && S.shieldKey === turnKey(); }
 function oppDmgToMe(n, srcN, raw = true){ if(raw) n = archDmg(n, false); const v = oppDmgPrevent(n); if(v < n) act(`Nothing Can Stop Me Now: ${n - v} Schaden${srcN ? ` von ${srcN}` : ""} verhindert`); noteDmgToMe(v); return v; }
 function schemeAbandon(src){
-  const list = archActive(), i = list.indexOf(src); if(i < 0) return false;
+  const list = S && S.arch && Array.isArray(S.arch.active) ? S.arch.active : [], i = list.indexOf(src); if(i < 0) return false;
   list.splice(i, 1); S.arch.deck.push(src.sc || {n:src.n, o:src.o, img:src.img, ongoing:true});
   act(`gibt das Komplott «${src.n}» auf (kommt unter das Komplott-Deck)`); return true;
 }
@@ -3633,6 +3642,77 @@ function openArchDialog(){
   if(last){ box.append(Object.assign(document.createElement("h3"), {textContent:`Zuletzt: ${last.n}`})); if(okImg(last.img)){ const im = document.createElement("img"); im.src = last.img; im.alt = last.n; im.style.cssText = "width:min(420px,100%);border-radius:12px;display:block"; box.append(im); } else box.append(Object.assign(document.createElement("p"), {textContent:last.o})); }
   const row = document.createElement("div"); row.className = "row";
   row.append(btn("Nächstes Komplott jetzt", () => { closeModal(); queued(() => schemeMotion(true)); }, "small"), btn("Archenemy beenden", () => { S.arch.on = false; act("beendet Archenemy"); commit(); closeModal(); }, "small"));
+  box.append(row);
+}
+/* ---------- Planechase (Etappe 1) ----------
+   Ebenen-Deck von Scryfall (t:plane), die aktuelle Ebene liegt offen und wirkt wie ein laufendes Komplott (archActive):
+   Dauereffekte, «Whenever chaos ensues» und «When you planeswalk to …» laufen über dieselben Wege.
+   Planar-Würfel: im eigenen Zug in einer Hauptphase, der erste Wurf kostet {0}, jeder weitere {1} mehr; Chaos (1 von 6) löst «chaos ensues» aus, Planeswalk (1 von 6) wechselt zur nächsten Ebene.
+   Noch nicht (spätere Etappen): Phänomene, Würfeln der KI und der Mitspieler, Ebene im Netz. */
+const PLANE = {cache:null};
+function planeOn(){ return !!(typeof S !== "undefined" && S && S.plane && S.plane.on); }
+function planeActive(){ return planeOn() && S.plane.cur ? [S.plane.cur] : []; }
+function planeAsCard(pl){ const c = newCard({n:pl.n, type:pl.type || "Plane", o:String(pl.o || ""), mc:"", cmc:0, img:pl.img || null}); c.plane = true; c.pl = pl; return c; }
+async function planeFetch(onProg){
+  if(PLANE.cache) return PLANE.cache;
+  const out = []; let url = API + "/cards/search?" + new URLSearchParams({q:"t:plane -t:phenomenon", unique:"cards", order:"name"}).toString();
+  for(let page = 0; url && page < 5; page++){
+    onProg && onProg(`Lade Ebenen … ${out.length || ""}`);
+    const r = await fetch(url); if(!r.ok) break;
+    const j = await r.json();
+    (j.data || []).forEach(pl => { if(!/\bPlane\b/.test(pl.type_line || "")) return; out.push({n:String(pl.name || "Ebene"), type:String(pl.type_line || "Plane"), o:String(pl.oracle_text || ""), img:(pl.image_uris && (pl.image_uris.normal || pl.image_uris.large)) || null}); });
+    url = j.has_more ? j.next_page : null; await sleep(110);
+  }
+  if(!out.length) throw new Error("Die Ebenen konnten nicht von Scryfall geladen werden.");
+  return (PLANE.cache = out);
+}
+/* Ebenen-Deck: 10 verschiedene Ebenen, zuerst die, welche die App ganz automatisch ausführen kann */
+async function planeDeckBuild(onProg){
+  const all = await planeFetch(onProg);
+  const auto = shuffle(all.filter(pl => { try{ return cardCheck(planeAsCard(pl)).status === "auto"; }catch(e){ return false; } }));
+  const rest = shuffle(all.filter(pl => !auto.includes(pl)));
+  return [...auto, ...rest].slice(0, 10);
+}
+function planeStart(deck){
+  S.plane = {on:true, deck:deck.slice(), cur:null, rollKey:null, rolls:0, n:0};
+  const pl = S.plane.deck.shift(); if(!pl) return;
+  S.plane.cur = planeAsCard(pl); act(`Planechase: die erste Ebene ist «${pl.n}»`); commit();
+}
+const planeRollCost = () => planeOn() && S.plane.rollKey === turnKey() ? (S.plane.rolls || 0) : 0;
+async function planeswalk(why){
+  if(!planeOn()) return;
+  const old = S.plane.cur;
+  if(old){ abilEvent({kind:"planeswalkFrom", c:old}, [old]); await queued(() => {}); S.plane.deck.push(old.pl || {n:old.n, o:old.o, img:old.img, type:old.type}); }
+  const pl = S.plane.deck.shift(); if(!pl){ S.plane.cur = null; commit(); return; }
+  S.plane.cur = planeAsCard(pl); S.plane.n = (S.plane.n || 0) + 1;
+  act(`Planeswalk${why ? ` (${why})` : ""}: neue Ebene «${pl.n}»${old ? `, «${old.n}» kommt unter das Ebenen-Deck` : ""}`); commit();
+  abilEvent({kind:"planeswalkTo", c:S.plane.cur}, [S.plane.cur]);
+}
+async function planeRoll(){
+  if(!planeOn()) return;
+  if(TURN.active !== me.id){ toast("Den Planar-Würfel wirfst du nur in deinem eigenen Zug."); return; }
+  const cost = planeRollCost();
+  if(cost > 0 && !(await payFor({n:"Planar-Würfel", mc:`{${cost}}`, type:"Ability"}))) return;
+  if(S.plane.rollKey !== turnKey()){ S.plane.rollKey = turnKey(); S.plane.rolls = 0; }
+  S.plane.rolls++;
+  const r = 1 + Math.floor(Math.random() * 6);
+  const face = r === 1 ? "chaos" : r === 6 ? "walk" : "blank";
+  if(typeof fxSend === "function") fxSend({kind:"dice", sides:6, result:face === "chaos" ? "Chaos" : face === "walk" ? "Planeswalk" : "leer", by:me.name || "Jemand"});
+  act(`wirft den Planar-Würfel${cost ? ` (für {${cost}})` : ""}: ${face === "chaos" ? "Chaos!" : face === "walk" ? "Planeswalk!" : "leer"}`);
+  if(face === "chaos"){ abilEvent({kind:"chaos"}); commit(); }
+  else if(face === "walk") await planeswalk("Planar-Würfel");
+  else commit();
+  return face;
+}
+function openPlaneDialog(){
+  if(!planeOn()) return;
+  modalState = {kind:"ask"}; $("#modal").hidden = false;
+  const box = $("#modalBox"); box.innerHTML = ""; box.append(head("Planechase: Ebene"));
+  const c = S.plane.cur;
+  box.insertAdjacentHTML("beforeend", `<p class="muted" style="margin:0">Ebenen-Deck: ${S.plane.deck.length} · Planar-Würfel diesen Zug: ${planeRollCost() ? `nächster Wurf kostet {${planeRollCost()}}` : "erster Wurf gratis"}.</p>`);
+  if(c){ box.append(Object.assign(document.createElement("h3"), {textContent:c.n})); if(okImg(c.img)){ const im = document.createElement("img"); im.src = c.img; im.alt = c.n; im.style.cssText = "width:min(480px,100%);border-radius:12px;display:block"; box.append(im); } box.append(Object.assign(document.createElement("p"), {textContent:c.o})); }
+  const row = document.createElement("div"); row.className = "row";
+  row.append(btn(`Planar-Würfel werfen${planeRollCost() ? ` ({${planeRollCost()}})` : ""}`, () => { closeModal(); queued(() => planeRoll()); }, "primary"), btn("Planechase beenden", () => { S.plane.on = false; act("beendet Planechase"); commit(); closeModal(); }, "small"));
   box.append(row);
 }
 /* Wer auf 0 oder weniger Leben fällt (oder 10 Gift hat), verliert – sofort, nicht erst beim nächsten KI-Zug */
@@ -10213,6 +10293,8 @@ function adNauseam(src){
 }
 /* ---------- Auslöser verteilen ---------- */
 function trigMatches(ab, src, ev){
+  if(ev.kind === "chaos") return /^chaos ensues$/i.test(ab.cond || "") && !!src.plane;
+  if(ev.kind === "planeswalkTo" || ev.kind === "planeswalkFrom") return ev.c === src && new RegExp(`^you planeswalk ${ev.kind === "planeswalkTo" ? "to" : "away from"} ${selfPat(src)}$`, "i").test(ab.cond || "");
   if(!src.harnessed && /^∞/m.test(src.o || "") && String(src.o).split("\n").some(l => /^∞/.test(l) && l.includes(ab.cond))) return false;
   const SELF = selfPat(src);
   const cond = ab.cond; let m0;
@@ -12094,7 +12176,7 @@ function historyAdd(win){
 /* ---------- Automatische Updates ---------- */
 // Liegt die App im Web, prüft sie regelmässig version.json im selben Ordner und lädt sich bei einer neuen Version neu.
 // Alles Wichtige (Spielstand, Deck, Tisch) liegt im Browser-Speicher und ist nach dem Neuladen wieder da.
-const APP_VERSION = "2026.11.20-1";
+const APP_VERSION = "2026.11.20-4";
 const ONLINE = /^https?:$/.test(location.protocol);
 let updPending = null, updTimer = null, updSnoozeUntil = 0;
 function busyForUpdate(){ return botBusy || (!$("#modal").hidden && modalState && ["block","deck"].includes(modalState.kind)); }
@@ -12578,7 +12660,7 @@ $("#bNew").onclick = () => { if(!S.deck.length) return openDeckDialog(); startGa
 /* «Neues Spiel»: die KI-Gegner starten mit (neu gemischt, neue Hand, volle Leben); bei Archenemy auch das Komplott-Deck */
 function restartBots(){
   if(net.role === "client") return;
-  const ids = botIds(); if(!ids.length && !archOn()) return;
+  const ids = botIds(); if(!ids.length && !archOn() && !planeOn()) return;
   ids.forEach(id => {
     const b = BOTS[id];
     let deck = Array.isArray(b.deckT) && b.deckT.length ? b.deckT : [...b.library, ...b.hand, ...b.bf, ...b.gy, ...b.ex, ...b.cz].filter(c => !c.tok).map(c => ({n:c.n, img:c.img, back:c.back, type:c.type, o:c.o, mc:c.mc, cmc:c.cmc, pw:c.pwO ?? c.pw, tg:c.tgO ?? c.tg, kw:c.kw || [], pm:c.pm, cmdr:b.cz.includes(c)}));
@@ -12586,6 +12668,7 @@ function restartBots(){
   });
   useBot("bot");
   if(archOn()){ (S.arch.active || []).forEach(c => S.arch.deck.push(c.sc || {n:c.n, o:c.o, img:c.img, ongoing:true})); S.arch.active = []; S.arch.deck = shuffle(S.arch.deck); S.arch.n = 0; S.arch.last = null; S.arch.lastKey = null; S.life = Math.max(40, S.life); S.startLife = S.life; act(`ist der Erzfeind: ${S.life} Leben, Komplott-Deck neu gemischt`); }
+  if(planeOn()){ const all = [...(S.plane.cur ? [S.plane.cur.pl || {n:S.plane.cur.n, o:S.plane.cur.o, img:S.plane.cur.img, type:S.plane.cur.type}] : []), ...S.plane.deck]; planeStart(shuffle(all)); }
   if(!ids.length){ commit(); return; }
   const seats = [me.id, ...botIds()];
   const pick = archOn() ? me.id : seats[Math.floor(Math.random() * seats.length)];
