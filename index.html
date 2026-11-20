@@ -2470,9 +2470,9 @@ function botChooseAttackers(def){
   let atk = cands.filter(a => {
     const bl = myBlk.filter(b => canBlock(b, a));
     if(!bl.length) return true;
-    if(bl.some(b => winsFight(b, a))) return false;
+    if(bl.some(b => { const r = blockOutcome(a, b); return r.aDead && !r.bDead; })) return false;
     if(kwHas(a, "indestructible")) return true;
-    return bl.every(b => tough(a) > power(b) || winsFight(a, b));
+    return bl.every(b => !blockOutcome(a, b).aDead);
   });
   // Rückschlag-Rechnung: genug Blocker zu Hause lassen
   const myPower = botDefenders().flatMap(d => d.blk).map(power).sort((a, b) => b - a); // Rückschlag: von allen Gegnern
@@ -2968,19 +2968,37 @@ function botReceiveCombat(m){
   if(BOT.life <= 0) botLog(`verliert das Spiel (Leben ${BOT.life})`);
   botChanged();
 }
+/* KI blockt: Ausgang eines Einzelblocks mit Erstschlag, Doppelschlag, Todesberührung und Unzerstörbarkeit (KI verbessern, 20.11.2026) */
+function blockOutcome(a, b){
+  const fs = c => kwHas(c, "first strike") || kwHas(c, "double strike");
+  const dies = (src, tgt, d) => d > 0 && !kwHas(tgt, "indestructible") && (d >= tough(tgt) || kwHas(src, "deathtouch"));
+  let ha = 0, hb = 0, aDead = false, bDead = false;
+  const step = first => {
+    const aHits = !aDead && (first ? fs(a) : (!fs(a) || kwHas(a, "double strike"))), bHits = !bDead && (first ? fs(b) : (!fs(b) || kwHas(b, "double strike")));
+    const da = aHits ? Math.max(0, power(a)) : 0, db = bHits ? Math.max(0, power(b)) : 0;
+    hb += da; ha += db;
+    if(da > 0 && dies(a, b, hb)) bDead = true;
+    if(db > 0 && dies(b, a, ha)) aDead = true;
+  };
+  step(true); step(false);
+  return {aDead, bDead};
+}
+const atkDmg = a => Math.max(0, power(a)) * (kwHas(a, "double strike") ? 2 : 1);
 function botChooseBlocks(attackers){
   const blocks = new Map();
   const free = BOT.bf.filter(c => isCreature(c) && !c.tap);
-  let remaining = attackers.reduce((s, a) => s + power(a), 0);
-  [...attackers].sort((a, b) => power(b) - power(a)).forEach(a => {
+  let remaining = attackers.reduce((s, a) => s + atkDmg(a), 0);
+  [...attackers].sort((a, b) => atkDmg(b) - atkDmg(a)).forEach(a => {
     const opts = free.filter(b => canBlock(b, a));
     if(!opts.length) return;
-    const survives = b => !(power(a) >= tough(b) || kwHas(a, "deathtouch")) || kwHas(b, "indestructible");
-    const kills = b => power(b) > 0 && (power(b) >= tough(a) || kwHas(b, "deathtouch"));
+    const survives = b => !blockOutcome(a, b).bDead;
+    const kills = b => blockOutcome(a, b).aDead;
     let pick = opts.find(b => survives(b) && kills(b)) || opts.find(b => survives(b) && power(a) >= 2)
       || opts.find(b => kills(b) && threatScore(b) <= threatScore(a));
-    if(!pick && remaining >= BOT.life) pick = [...opts].sort((x, y) => threatScore(x) - threatScore(y))[0];
-    if(pick){ blocks.set(a.u, pick); free.splice(free.indexOf(pick), 1); remaining -= power(a); }
+    // Notblock nur, wenn sonst tödlich; gegen Trampelschaden hilft er nur um die Widerstandskraft des Blockers
+    const saved = b => kwHas(a, "trample") ? Math.min(atkDmg(a), Math.max(0, tough(b))) : atkDmg(a);
+    if(!pick && remaining >= BOT.life) pick = [...opts].sort((x, y) => (saved(y) - saved(x)) || (threatScore(x) - threatScore(y)))[0];
+    if(pick){ blocks.set(a.u, pick); free.splice(free.indexOf(pick), 1); remaining -= saved(pick); }
   });
   return blocks;
 }
@@ -4714,6 +4732,7 @@ function manaChoicesD(c){
       const m = String(x.o || "").match(/^([A-Z][a-z]+?)(?: creatures)?s? you control have "(\{T\}: Add [^"]+)"/m); if(m && !/^Creature$/i.test(m[1]) && isCreature(c) && typeMatch(c, m[1])) grants.push(m[2]);
       const w = String(x.o || "").match(/As long as you control (\w+) or more lands, lands you control have "(\{T\}: Add [^"]+)"/i); if(w && isLand(c) && S.bf.filter(y => !y.fd && isLand(y)).length >= (nWord(w[1]) || +w[1] || 99)) grants.push(w[2]);
       if(isLand(c) && /^Lands you control are every basic land type in addition to their other types/im.test(x.o || "")) grants.push("{T}: Add one mana of any color.");
+      { const e = String(x.o || "").match(/^Enchanted land has "(\{T\}: Add [^"]+)"/m); if(e && x.eq === c.u && isLand(c)) grants.push(e[1]); }
     });
   }
   if(c && isCreature(c) && !c.tok && typeof S !== "undefined" && S.bf && S.bf.includes(c) && S.bf.some(x => !x.fd && /^Nontoken creatures you control are Forest lands in addition to their other types/im.test(x.o || ""))) grants.push("{T}: Add {G}.");
@@ -6081,6 +6100,8 @@ function matchStep2(p, src, full, SELF){
   // Akiri, Fearless Voyager
   if(/^unattach an Equipment from a creature you control$/i.test(p) && /If you do, tap that creature and it gains indestructible until end of turn/i.test(full || "")) return [W({t:"akiriUnattach"})];
   if(/^(?:if you do, )?tap that creature and it gains indestructible until end of turn$/i.test(p) && /unattach an Equipment from a creature you control/i.test(full || "")) return [{t:"skip"}];
+  // Ashling, Flame Dancer: «If this is the second time this ability has resolved this turn, …» / «If it's the third time, …»
+  if((m = p.match(/^if (?:this is|it's) the (second|third|fourth) time(?: this ability has resolved this turn)?, (.+)$/i))){ const sub = matchStep2(m[2], src, full, SELF); if(sub.length && !sub.some(x => x.t === "manual")){ sub.forEach(x => { x.ifResolved = {second:2, third:3, fourth:4}[m[1].toLowerCase()]; }); return sub; } }
   if((m = p.match(/^each opponent mills (a card|one|two|three|four|five|\d+)(?: cards?)?$/i))) return [W({t:"oppMill", n:m[1] === "a card" ? 1 : m[1]})];
   if((m = p.match(/^creatures target player controls get ([+-]\d+)\/([+-]\d+) until end of turn$/i))) return [W({t:"massPump", p:+m[1], tg:+m[2], ex:null, tp:true})];
   if((m = p.match(/^create (a|an|one|two|three|four|five|x|\d+|that many) (tapped )?(.+?) tokens? named ([^"]+?)(?: with (.+))?$/i))) return [W({t:"token", n:m[1], tapped:!!m[2], desc:m[3], named:m[4].trim(), extra:m[5] || ""})];
@@ -7336,6 +7357,7 @@ async function runSteps(steps, src, ctx = {}){
     if(st.ifCond && !interveningIf(`if ${st.ifCond}, x`, src).ok) continue;
     if(st.ifNotCond && interveningIf(`if ${st.ifNotCond}, x`, src).ok) continue;
     if(st.ifFlip && ctx.flip !== st.ifFlip) continue;
+    if(st.ifResolved != null){ if(ctx._resN == null){ const k = turnKey(); src._rs = src._rs && src._rs.k === k ? {k, n:src._rs.n + 1} : {k, n:1}; ctx._resN = src._rs.n; } if(ctx._resN !== st.ifResolved) continue; }
     if(st.unlessCtr != null && Math.abs(src.c || 0) >= st.unlessCtr){ act(`${src.n}: ${Math.abs(src.c || 0)} Marken – entfällt`); continue; }
     if(st.ifControl){ const k = S.bf.filter(c => !c.fd && descMatch(st.ifControl.desc.replace(/s$/, ""), c)).length; const ok = st.ifControl.dir === "fewer" ? k <= st.ifControl.n : k >= st.ifControl.n; if(!ok){ act(`${src.n}: Bedingung nicht erfüllt (${k} ${st.ifControl.desc})`); continue; } }
     if(st.may && st.t !== "unless"){ const yes = await confirmMay(src, st.text || describeStep(st)); ctx.mayNo = !yes; if(!yes) continue; }
@@ -7405,6 +7427,7 @@ async function runSteps(steps, src, ctx = {}){
         const n = st.n === "that much" ? (ctx.much ?? await askNumber(`${src.n}: Wie viel Schaden?`, "")) : await needX();
         const who = st.who.toLowerCase();
         if(/^each opponent$/.test(who)){ liveOpps().forEach(o => hitOpponent(o.id, {kind:"damage", amount:n, src:src.n})); break; }
+        if(/^each opponent and each creature (?:they control|your opponents control)$/.test(who)){ liveOpps().forEach(o => { hitOpponent(o.id, {kind:"damage", amount:n, src:src.n}); (isBotId(o.id) ? botOf(o.id).bf : (Array.isArray((others[o.id] || {}).bf) ? others[o.id].bf : [])).filter(c => c && isCreature(c)).forEach(c => hitOpponent(o.id, {kind:"damage", amount:n, card:c.u, src:src.n})); }); act(`${src.n}: ${n} Schaden an jeden Gegner und jede seiner Kreaturen`); break; }
         if(/^you$/.test(who)){ S.life -= n; act(`${src.n}: ${n} Schaden an dich`); break; }
         if(/^(each|all) (other )?creatures?( and each (player|planeswalker))?/.test(who) || /^each creature/.test(who)){
           S.bf.filter(c => isCreature(c) && !(/other/.test(who) && c === src)).forEach(c => applyHitToCard(c, {kind:"damage", amount:n}, false));
@@ -11029,6 +11052,7 @@ function oppDrawScan(){
 /* ---------- Fähigkeiten-Check: Was kann die App mit den Karten im Deck? ---------- */
 const HANDLED_STATIC = [
   // Nacht 20.11.2026 (nightBoost/nightKw)
+  /^Enchanted land has "\{T\}: Add [^"]+"\.?$/i,
   IRON_THRONE_RE,
   MANUFACTOR_RE,
   /^(?:Dualcast — )?The second spell you cast each turn costs \{\d+\} less to cast\.?$/i,
@@ -12094,7 +12118,7 @@ function historyAdd(win){
 /* ---------- Automatische Updates ---------- */
 // Liegt die App im Web, prüft sie regelmässig version.json im selben Ordner und lädt sich bei einer neuen Version neu.
 // Alles Wichtige (Spielstand, Deck, Tisch) liegt im Browser-Speicher und ist nach dem Neuladen wieder da.
-const APP_VERSION = "2026.11.20-1";
+const APP_VERSION = "2026.11.20-5";
 const ONLINE = /^https?:$/.test(location.protocol);
 let updPending = null, updTimer = null, updSnoozeUntil = 0;
 function busyForUpdate(){ return botBusy || (!$("#modal").hidden && modalState && ["block","deck"].includes(modalState.kind)); }

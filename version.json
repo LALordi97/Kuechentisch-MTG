@@ -1,4 +1,4 @@
 {
-  "version": "2026.11.20-1",
-  "notes": "28 Karten aus den neuen Top-Decks automatisch (u. a. Avenger of Zendikar, Anointed Procession, Academy Manufactor, Ancient Copper/Gold/Brass Dragon, Assassin's Trophy, Amalia, Avacyn, Barret, Afterlife from the Loam). Archenemy: A Display of My Dark Power (Länder geben ein Mana mehr) sowie Approach My Molten Realm, I Call for Slaughter und Delight in the Hunt (Schaden ändern, auch im Kampf) – damit alle 81 einmaligen Komplotte automatisch."
+  "version": "2026.11.20-5",
+  "notes": "Zwei weitere Karten automatisch (Abundant Growth, Ashling, Flame Dancer). Die KI blockt und greift jetzt mit Erstschlag, Doppelschlag und Todesberührung richtig an. Dazu von heute Nacht: 28 Karten aus den neuen Top-Decks, A Display of My Dark Power und die Schadens-Komplotte."
 }

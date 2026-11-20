@@ -177,5 +177,17 @@ const AUTO = ['Altar of the Brood', 'Arms of Hadar', 'Avenger of Zendikar', 'Bas
     const n0 = N('Normal', 'Artifact', '{T}: Add {C}.'); put(n0); check(ev('manaChoices')(n0)[0].add.length === 1, 'Dark Power: Nichtländer unverändert');
     ev('S.pool = emptyPoolObj(); onMyTurnStart()'); await wait(80); await drain(); sw.tap = false;
     check(!ev('S.darkPower') && ev('manaChoices')(sw)[0].add.length === 1, 'Dark Power: endet zu Beginn meines nächsten Zuges'); }
+
+  // Abundant Growth: verzaubertes Land gibt Mana jeder Farbe
+  await reset(); { const ld = N('Wastes', 'Basic Land — Wastes', '{T}: Add {C}.'); put(ld); const ag = C('Abundant Growth'); ag.eq = ld.u; put(ag);
+    const opts = ev('manaChoices')(ld); check(opts.length >= 2 && opts.some(o => o.combo || (o.add || []).some(x => x !== 'C')), `Abundant Growth: Land hat zusätzlich «Mana jeder Farbe» (${opts.length} Möglichkeiten)`); }
+  // Ashling: zweites Auflösen im Zug → 2 Schaden an jeden Gegner und seine Kreaturen; drittes → {R}{R}{R}{R}
+  await reset(); { const as = C('Ashling, Flame Dancer', {pw:3, tg:3}); put(as); opp('Bär'); opp('Riese', {pw:4, tg:4});
+    const once = async () => { S().hand.push(N('Weg' + Math.random(), 'Instant')); const pr = run(as, /Magecraft|discard a card, then draw/); await wait(200); const el = d.querySelector('#modalBox .card'); if(el){ el.click(); await wait(60); } await click('Weiter'); await click('OK'); await click('Abwerfen'); await wait(150); await pr; await drain(); };
+    await once(); check(ev('BOTS.bot.life') === 20, 'Ashling: erstes Auflösen – kein Schaden');
+    await once(); await wait(150);
+    check(ev('BOTS.bot.life') === 18 && !ev('BOT.bf.some(c => c.n === "Bär")') && ev('BOT.bf.some(c => c.n === "Riese")'), `Ashling: zweites Auflösen – 2 Schaden an KI und ihre Kreaturen (Leben ${ev('BOTS.bot.life')})`);
+    ev('S.pool = emptyPoolObj()'); await once();
+    check(ev('S.pool.R') === 4 && ev('BOTS.bot.life') === 18, `Ashling: drittes Auflösen – {R}{R}{R}{R} (${ev('poolStr(poolOf())')})`); }
   console.log(fails ? `${fails} FEHLER` : 'ALLES OK'); process.exit(0);
 })();
