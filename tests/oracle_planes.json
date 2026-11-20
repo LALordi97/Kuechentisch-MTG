@@ -1,0 +1,1437 @@
+[
+[
+"Academy at Tolaria West",
+"Plane — Dominaria",
+"At the beginning of your end step, if you have no cards in hand, draw seven cards.\nWhenever chaos ensues, discard your hand.",
+"",
+0
+],
+[
+"Agyrem",
+"Plane — Ravnica",
+"Whenever a white creature dies, return it to the battlefield under its owner's control at the beginning of the next end step.\nWhenever a nonwhite creature dies, return it to its owner's hand at the beginning of the next end step.\nWhenever chaos ensues, creatures can't attack you until a player planeswalks.",
+"",
+0
+],
+[
+"Akoum",
+"Plane — Zendikar",
+"Players may cast enchantment spells as though they had flash.\nWhenever chaos ensues, destroy target creature that isn't enchanted.",
+"",
+0
+],
+[
+"Amy's Home",
+"Plane — Earth",
+"When you planeswalk to Amy's Home and at the beginning of your upkeep, you may exile a nonland card from your hand with a number of time counters on it equal to its mana value. If it doesn't have suspend, it gains suspend.\nWhenever chaos ensues, time travel. (For each suspended card you own and each permanent you control with a time counter on it, you may add or remove a time counter.)",
+"",
+0
+],
+[
+"Antarctic Research Base",
+"Plane — Earth",
+"When you planeswalk to Antarctic Research Base and at the beginning of your upkeep, investigate.\nWhenever chaos ensues, put X +1/+1 counters on target creature you control, where X is the number of artifacts you control. It becomes a Plant in addition to its other types.",
+"",
+0
+],
+[
+"Aplan Mortarium",
+"Plane — Alfava Metraxis",
+"Byzantium Radiation — At the beginning of your upkeep, put an exposure counter on Aplan Mortarium. Then you lose life equal to the number of exposure counters on it.\nWhenever chaos ensues, create two 2/2 black Alien Angel artifact creature tokens with first strike, vigilance, and \"Whenever an opponent casts a creature spell, this token isn't a creature until end of turn.\"",
+"",
+0
+],
+[
+"Aretopolis",
+"Plane — Kephalai",
+"When you planeswalk to Aretopolis and at the beginning of your upkeep, put a scroll counter on Aretopolis, then you gain life equal to the number of scroll counters on it.\nWhen Aretopolis has ten or more scroll counters on it, planeswalk.\nWhenever chaos ensues, put a scroll counter on Aretopolis, then draw cards equal to the number of scroll counters on it.",
+"",
+0
+],
+[
+"Artist Alley",
+"Plane — MagicCon",
+"Whenever you planeswalk here and at the beginning of your upkeep, exile the top card of your library. You may play that card this turn.\nWhenever Chaos ensues, exile the top six cards of your library. An opponent or player outside the game chooses a nonland card with their favorite art. Then you may cast that spell without paying its mana cost.",
+"",
+0
+],
+[
+"Asmoranomardicadaistinaculdacar's Kitchen",
+"Plane — Hell",
+"Whenever you planeswalk here and whenever a creature enters under your control, create a Food token.\nWhenever you gain life, target opponent loses that much life.\nWhenever Chaos ensues, you may sacrifice any number of artifacts or creatures. Draw that many cards and lose that much life.",
+"",
+0
+],
+[
+"Astral Arena",
+"Plane — Kolbahan",
+"No more than one creature can attack each combat.\nNo more than one creature can block each combat.\nWhenever chaos ensues, Astral Arena deals 2 damage to each creature.",
+"",
+0
+],
+[
+"Bad Wolf Bay",
+"Plane — Earth",
+"At the beginning of combat on your turn, exile up to one target creature. Return it to the battlefield under its owner's control at the beginning of the next end step.\nWhen chaos ensues, cards can't enter from exile this turn. Then planeswalk.",
+"",
+0
+],
+[
+"Bant",
+"Plane — Alara",
+"All creatures have exalted. (Whenever a creature attacks alone, it gets +1/+1 until end of turn for each instance of exalted among permanents its controller controls.)\nWhenever chaos ensues, put a divinity counter on target green, white, or blue creature. That creature has indestructible for as long as it has a divinity counter on it.",
+"",
+0
+],
+[
+"Besieged Viking Village",
+"Plane — Earth",
+"All creatures have \"Boast — {1}: Put a +1/+1 counter on this creature.\" (Activate only if that creature attacked this turn and only once each turn.)\nWhenever chaos ensues, put an indestructible counter on target creature you control that attacked this turn.",
+"",
+0
+],
+[
+"Bicycle Rack",
+"Plane — Amsterdam",
+"Cards in each player's hand have cycling {2}.\nChaos: Until end of turn, creatures you control have \"This creature gets +1/+1 for each card you've discarded this turn.\"",
+"",
+0
+],
+[
+"Black Lotus Lounge",
+"Plane — MagicCon",
+"When you planeswalk here and at the beginning of your upkeep, create a Black Lotus artifact token.\nWhenever Chaos ensues, each player draws a card for each artifact token they control.",
+"",
+0
+],
+[
+"Bloodhill Bastion",
+"Plane — Equilor",
+"Whenever a creature enters, it gains double strike and haste until end of turn.\nWhenever chaos ensues, exile target nontoken creature you control, then return it to the battlefield under your control.",
+"",
+0
+],
+[
+"Bowie Base One",
+"Plane — Mars",
+"At the beginning of your end step, goad target creature controlled by the player to your left. (Until your next turn, that creature attacks each combat if able and attacks a player other than you if able.)\nWhenever chaos ensues, target creature gains islandwalk until end of turn. (It can't be blocked as long as defending player controls an Island.)",
+"",
+0
+],
+[
+"Caught in a Parallel Universe",
+"Phenomenon",
+"When you encounter Caught in a Parallel Universe, each player chooses a creature controlled by the player to their left. Each player creates a token that's a copy of the creature they chose, except it has menace. (Then planeswalk away from this phenomenon.)",
+"",
+0
+],
+[
+"Celestine Reef",
+"Plane — Luvion",
+"Creatures without flying or islandwalk can't attack.\nWhenever chaos ensues, until a player planeswalks, you can't lose the game and your opponents can't win the game.",
+"",
+0
+],
+[
+"Chaotic Aether",
+"Phenomenon",
+"When you encounter Chaotic Aether, each blank roll of the planar die is a {CHAOS} roll until a player planeswalks away from a plane. (Then planeswalk away from this phenomenon.)",
+"",
+0
+],
+[
+"Circus of the Sun",
+"Plane — Las Vegas",
+"Whenever you planeswalk here or at the beginning of your upkeep, create two 1/1 red performer creature tokens with flying and haste.\nWhenever one or more creatures you control with flying deal combat damage to a player, you may return it to your hand. If you do, draw cards equal to its power.\nWhenever Chaos ensues, put a flying counter on up to one target creature. It becomes a Performer in addition to its other types.",
+"",
+0
+],
+[
+"City Hall",
+"Plane — Chicago",
+"When you planeswalk here, you become the Monarch.\nWhenever Chaos ensues, each player may create two tapped treasure tokens. Each player who does can't attack you during their next turn.",
+"",
+0
+],
+[
+"City of the Daleks",
+"Plane — Skaro",
+"Whenever you attack, target opponent loses X life, where X is the number of artifacts you control.\nWhenever chaos ensues, for each opponent, you create a 3/3 black Dalek artifact creature token with menace that attacks that opponent this turn if able. Those tokens gain haste. Sacrifice them at the beginning of the next end step.",
+"",
+0
+],
+[
+"Clamilton Estate",
+"Plane — Clamhattan",
+"If a wordy permanent entering the battlefield would cause an ability of that permanent or another wordy permanent to trigger, that ability triggers an additional time. (A permanent is wordy if it has four or more lines of rules text.)\nWhenever Chaos ensues, exile cards from the top of your library until you exile a wordy nonland card, Put that card into your hand. Put each card not cast this way on the bottom of your library in a random order.",
+"",
+0
+],
+[
+"Cliffside Market",
+"Plane — Mercadia",
+"When you planeswalk to Cliffside Market and at the beginning of your upkeep, you may exchange life totals with target player.\nWhenever chaos ensues, exchange control of two target permanents that share a card type.",
+"",
+0
+],
+[
+"Coal Hill School",
+"Plane — Earth",
+"Whenever a player casts a historic spell, that player draws a card. (Artifacts, legendaries, and Sagas are historic.)\nWhenever chaos ensues, return target historic card from your graveyard to your hand.",
+"",
+0
+],
+[
+"Dalek Intensive Care",
+"Plane — The Dalek Asylum",
+"When you planeswalk to Dalek Intensive Care and at the beginning of your upkeep, exile a non-Dalek creature you control. If you do, create a 3/3 black Dalek artifact creature token with menace. It gains haste until end of turn.\nWhenever chaos ensues, target Dalek you control deals damage equal to its power to target creature you don't control.",
+"",
+0
+],
+[
+"Deceptive Divination",
+"Plane — Secret Lair",
+"Change the text of each sorcery spell and sorcery card not on the stack by replacing \"sorcery\" with \"instant.\"\nWhenever chaos ensues, choose two target players. Each of them searches their library for a card, then shuffles and puts that card on top.",
+"",
+0
+],
+[
+"Edge of Malacol",
+"Plane — Belenon",
+"If a creature you control would untap during your untap step, put two +1/+1 counters on it instead.\nWhenever chaos ensues, untap each creature you control.",
+"",
+0
+],
+[
+"Eloren Wilds",
+"Plane — Shandalar",
+"Whenever a player taps a permanent for mana, that player adds one mana of any type that permanent produced.\nWhenever chaos ensues, target player can't cast spells until a player planeswalks.",
+"",
+0
+],
+[
+"Elvish Impersonation Contest",
+"Plane — Las Vegas",
+"Whenever you planeswalk here and at the beginning of your upkeep, create an Elvish Impersonators token. (It's a {3}{G} Elf creature with \"As this creature enters, roll a six-sided die twice. Its base power becomes the first result and its base toughness becomes the second result.\")\nThank you very much—Whenever Chaos ensues, target Elvish Impersonators becomes a 6/6. Its controller creates a Treasure token.",
+"",
+0
+],
+[
+"Enigma Ridges",
+"Plane — Echoir",
+"When you planeswalk to Enigma Ridges, each player who controls fewer lands than the player who controls the most lands searches their library for a number of basic land cards less than or equal to the difference, reveals them, puts them into their hand, then shuffles.\nWhenever chaos ensues, draw a card, then you may put a land card from your hand onto the battlefield.",
+"",
+0
+],
+[
+"Esper",
+"Plane — Alara",
+"Artifact spells cost {1} less to cast.\nWhenever chaos ensues, creatures you control that are white, blue, and/or black become artifacts in addition to their other types until end of turn. Then each artifact creature you control gains vigilance, menace, and lifelink until end of turn.",
+"",
+0
+],
+[
+"Event Horizon",
+"Plane — Blind Eternities",
+"Nonbasic lands are Wastes.\nWhenever you tap a permanent for {C}, add an additional {C}.\nWhenever chaos ensues, choose one —\n• Draw four cards.\n• Destroy target permanent.\n• You may return target creature card from your graveyard to the battlefield.",
+"",
+0
+],
+[
+"Fblthp: Completely, Utterly, Totally Lost",
+"Plane — Secret Lair",
+"When you planeswalk to this plane and at the beginning of your upkeep, create a Map token. (It's an artifact with \"{1}, {T}, Sacrifice this token: Target creature you control explores. Activate only as a sorcery.\")\nWhenever chaos ensues, draw two cards, then discard two cards. Untap up to three lands.",
+"",
+0
+],
+[
+"Feeding Grounds",
+"Plane — Muraganda",
+"Red spells cost {1} less to cast.\nGreen spells cost {1} less to cast.\nWhenever chaos ensues, put X +1/+1 counters on target creature, where X is that creature's mana value.",
+"",
+0
+],
+[
+"Fields of Summer",
+"Plane — Moag",
+"Whenever a player casts a spell, that player may gain 2 life.\nWhenever chaos ensues, you may gain 10 life.",
+"",
+0
+],
+[
+"Finally! Left-Handed Magic Cards",
+"Plane — Secret Lair",
+"Each creature's base power is equal to its printed toughness.\nEach creature's base toughness is equal to its printed power.\nWhenever chaos ensues, draw a card from the bottom of your library.",
+"",
+0
+],
+[
+"Fixed Point in Time",
+"Phenomenon",
+"When you encounter Fixed Point in Time, until your next turn, if a player would planeswalk as a result of rolling the planar die, chaos ensues instead. (Then planeswalk away from this phenomenon.)",
+"",
+0
+],
+[
+"Furnace Layer",
+"Plane — New Phyrexia",
+"When you planeswalk to Furnace Layer and at the beginning of your upkeep, select target player at random. That player discards a card. If that player discards a land card this way, they lose 3 life.\nWhenever chaos ensues, you may destroy target nonland permanent.",
+"",
+0
+],
+[
+"Game Knights Live",
+"Plane — MagicCon",
+"Whenever a player casts their commander or attacks with their commander, they may say \"Only one may stand.\" If they do, that commander becomes a Knight in addition to its other types until a player planeswalks away from Game Knights Live.\nKnights you control have double strike and trample.\nWhenever chaos ensues, commanders you control can't be blocked this turn and gain \"Whenever this creature deals combat damage to a player, draw a card\" until end of turn.",
+"",
+0
+],
+[
+"Gardens of Tranquil Repose",
+"Plane — Necros",
+"Suspended Animation — Whenever a creature dies, exile it. Its controller scries 1.\nWhenever chaos ensues, create X 3/3 black Dalek artifact creature tokens with menace, where X is one plus the number of cards exiled with Gardens of Tranquil Repose.",
+"",
+0
+],
+[
+"Gavony",
+"Plane — Innistrad",
+"All creatures have vigilance.\nWhenever chaos ensues, creatures you control gain indestructible until end of turn.",
+"",
+0
+],
+[
+"Ghirapur",
+"Plane — Avishkar",
+"At the beginning of combat on your turn, until end of turn, each noncreature, non-Vehicle artifact you control becomes a 5/3 Vehicle in addition to its other types and gains trample, haste, and crew 2.\nWhenever chaos ensues, return target noncreature artifact card from your graveyard to your hand.",
+"",
+0
+],
+[
+"Ghirapur Grand Prix",
+"Plane — Avishkar",
+"When you planeswalk here, all players start their engines! (If you have no speed, it starts at 1. It increases once on each of your turns when an opponent loses life. Max speed is 4.)\nAt the beginning of your end step, put X +1/+1 counters on target creature you control, where X is your speed.\nWhen you planeswalk away from Ghirapur Grand Prix, each player with the highest speed among players creates three Treasure tokens.",
+"",
+0
+],
+[
+"Glen Elendra",
+"Plane — Lorwyn",
+"At end of combat, you may exchange control of target creature you control that dealt combat damage to a player this combat and target creature that player controls.\nWhenever chaos ensues, gain control of target creature you own.",
+"",
+0
+],
+[
+"Glimmervoid Basin",
+"Plane — Mirrodin",
+"Whenever a player casts an instant or sorcery spell with a single target, that player copies that spell for each other spell, permanent, card not on the battlefield, and/or player the spell could target. Each copy targets a different one of them.\nWhenever chaos ensues, choose target creature. Each player except that creature's controller creates a token that's a copy of that creature.",
+"",
+0
+],
+[
+"Goldmeadow",
+"Plane — Lorwyn",
+"Whenever a land enters, that land's controller creates three 0/1 white Goat creature tokens.\nWhenever chaos ensues, create a 0/1 white Goat creature token.",
+"",
+0
+],
+[
+"Grand Ossuary",
+"Plane — Ravnica",
+"Whenever a creature dies, its controller distributes a number of +1/+1 counters equal to its power among any number of target creatures they control.\nWhenever chaos ensues, each player exiles all creatures they control and creates X 1/1 green Saproling creature tokens, where X is the total power of the creatures they exiled this way. Then planeswalk.",
+"",
+0
+],
+[
+"Grixis",
+"Plane — Alara",
+"Blue, black, and/or red creature cards in your graveyard have unearth. The unearth cost is equal to the card's mana cost. (Pay the card's mana cost: Return it to the battlefield. The creature gains haste. Exile it at the beginning of the next end step or if it would leave the battlefield. Unearth only as a sorcery.)\nWhenever chaos ensues, put target creature card from a graveyard onto the battlefield under your control.",
+"",
+0
+],
+[
+"Grove of the Dreampods",
+"Plane — Fabacin",
+"When you planeswalk to Grove of the Dreampods and at the beginning of your upkeep, reveal cards from the top of your library until you reveal a creature card. Put that card onto the battlefield and the rest on the bottom of your library in a random order.\nWhenever chaos ensues, return target creature card from your graveyard to the battlefield.",
+"",
+0
+],
+[
+"Happy Yargle Day!",
+"Plane — Secret Lair",
+"At the beginning of each player's end step, if that player doesn't control a creature named Yargle, Glutton of Urborg, that player puts a bargle counter on a creature they control. It becomes a copy of Yargle, Glutton of Urborg, except it isn't legendary.\nWhenever chaos ensues, choose Swords to Plowshares, Opt, Fatal Push, Anger of the Gods, or Explore at random. Copy the chosen card. You may cast the copy without paying its mana cost.",
+"",
+0
+],
+[
+"Hedron Fields of Agadeem",
+"Plane — Zendikar",
+"Creatures with power 7 or greater can't attack or block.\nWhenever chaos ensues, create a 7/7 colorless Eldrazi creature token with annihilator 1. (Whenever it attacks, defending player sacrifices a permanent of their choice.)",
+"",
+0
+],
+[
+"High Noon At Thunder Junction",
+"Plane — Thunder Junction",
+"Whenever a player draws their second card each turn, any of their opponents may say \"DRAW!\". The first opponent to do so clashes with that player. The player that wins the clash creates two 1/1 black Assassin creature tokens. (Each clashing player reveals the top card of their library, then puts that card on the top or bottom. A player wins if their card had a higher mana value.)\nWhenever Chaos ensues, draw a card.",
+"",
+0
+],
+[
+"High and Dry Black Market",
+"Phenomenon",
+"Whenever you planeswalk here, starting with you, each player chooses up to 5 ♦ worth of modes and may choose the same mode more than once. (Then Planeswalk away from this phenomenon.)\n♦ — Create a Treasure Token.\n♦ ♦ — Draw a card.\n♦ ♦ ♦ — Create a 3/2 colorless Shapeshifter creature token with Changeling.",
+"",
+0
+],
+[
+"Horizon Boughs",
+"Plane — Pyrulea",
+"All permanents untap during each player's untap step.\nWhenever chaos ensues, you may search your library for up to three basic land cards, put them onto the battlefield tapped, then shuffle.",
+"",
+0
+],
+[
+"Hotel of Fears",
+"Plane — Spacecraft",
+"At the beginning of your upkeep, exile the top card of your library. You lose life equal to its mana value. You may play that card this turn.\nPraise Him — Whenever chaos ensues, choose a color. Put X +1/+1 counters on target creature you control, where X is your devotion to that color. Then sacrifice another creature. (Your devotion to a color is the number of mana symbols of that color in the mana costs of permanents you control.)",
+"",
+0
+],
+[
+"Human—Time Lord Meta-Crisis",
+"Phenomenon",
+"When you encounter Human—Time Lord Meta-Crisis, each player chooses one or two creatures they control. Each player creates a token that's a copy of the first creature they chose, except it isn't legendary. Then each player who chose a second creature puts a number of +1/+1 counters on the token they created equal to the power of the second creature they chose. (Then planeswalk away from this phenomenon.)",
+"",
+0
+],
+[
+"Imaginary Friends (Plane)",
+"Plane — Secret Lair",
+"Players may cast spells as though they were other cards legal in this game's format with the same type and mana cost. (Mana cost includes color.)\nWhenever chaos ensues, exile cards from the top of your library until you reveal a nonland card. You may cast that card without paying its mana cost, but only as another card following this plane's first ability. Put the rest on the bottom of your library in a random order.",
+"",
+0
+],
+[
+"Immersturm",
+"Plane — Valla",
+"Whenever a creature enters, that creature's controller may have it deal damage equal to its power to any target of their choice.\nWhenever chaos ensues, exile target creature, then return it to the battlefield under its owner's control.",
+"",
+0
+],
+[
+"Interplanar Tunnel",
+"Phenomenon",
+"When you encounter Interplanar Tunnel, reveal cards from the top of your planar deck until you reveal five plane cards. Put a plane card from among them on top of your planar deck, then put the rest of the revealed cards on the bottom in a random order. (Then planeswalk away from this phenomenon.)",
+"",
+0
+],
+[
+"Inys Haen",
+"Plane — Cridhe",
+"When you planeswalk to Inys Haen and at the beginning of your upkeep, mill three cards.\nWhen you planeswalk away from Inys Haen, each player returns all land cards from their graveyard to the battlefield tapped.\nWhenever chaos ensues, return target nonland card from your graveyard to your hand.",
+"",
+0
+],
+[
+"Isle of Vesuva",
+"Plane — Dominaria",
+"Whenever a nontoken creature enters, its controller creates a token that's a copy of that creature.\nWhenever chaos ensues, destroy target creature and all other creatures with the same name as that creature.",
+"",
+0
+],
+[
+"Izzet Steam Maze",
+"Plane — Ravnica",
+"Whenever a player casts an instant or sorcery spell, that player copies it. The player may choose new targets for the copy.\nWhenever chaos ensues, instant and sorcery spells you cast this turn cost {3} less to cast.",
+"",
+0
+],
+[
+"Jalira's Show",
+"Plane — Las Vegas",
+"Whenever you attack, create a 1/1 red Performer creature token with flying.\nWhenever you planeswalk here or chaos ensues, destroy up to one target creature. When you do, its controller reveals cards from the top of their library until they reveal a creature card. The player puts that card onto the battlefield, then puts the rest on the bottom of their library in a random order.",
+"",
+0
+],
+[
+"Jund",
+"Plane — Alara",
+"Whenever a player casts a creature spell that's black, red, or green, it gains devour 5. (As that creature enters, you may sacrifice any number of creatures. It enters with five times that many +1/+1 counters on it.)\nWhenever chaos ensues, create two 1/1 red Goblin creature tokens.",
+"",
+0
+],
+[
+"Kerblam! Warehouse",
+"Plane — Kandoka",
+"Whenever one or more creatures you control deal combat damage to a player, create a Treasure token.\nWhenever chaos ensues, until your next turn, noncreature artifacts you control gain \"{T}, Sacrifice this artifact: Flip a coin. If you win the flip, this artifact deals 3 damage to any target.\"",
+"",
+0
+],
+[
+"Kessig",
+"Plane — Innistrad",
+"Prevent all combat damage that would be dealt by non-Werewolf creatures.\nWhenever chaos ensues, each creature you control gets +2/+2, gains trample, and becomes a Werewolf in addition to its other types until end of turn.",
+"",
+0
+],
+[
+"Ketria",
+"Plane — Ikoria",
+"When you planeswalk to Ketria and at the beginning of your upkeep, put your choice of a vigilance, menace, or trample counter on target creature you control.\nWhenever chaos ensues, exile cards from the top of your library until you exile a nonland permanent card. Put that card onto the battlefield or into your hand.",
+"",
+0
+],
+[
+"Kharasha Foothills",
+"Plane — Mongseng",
+"Whenever a creature you control attacks a player, for each other opponent, you may create a token that's a copy of that creature, tapped and attacking that opponent. Exile those tokens at the beginning of the next end step.\nWhenever chaos ensues, you may sacrifice any number of creatures. If you do, Kharasha Foothills deals that much damage to target creature.",
+"",
+0
+],
+[
+"Kilnspire District",
+"Plane — Ravnica",
+"When you planeswalk to Kilnspire District and at the beginning of your first main phase, put a charge counter on Kilnspire District, then add {R} for each charge counter on it.\nWhenever chaos ensues, you may pay {X}. If you do, Kilnspire District deals X damage to any target.",
+"",
+0
+],
+[
+"Krosa",
+"Plane — Dominaria",
+"All creatures get +2/+2.\nWhenever chaos ensues, you may add {W}{U}{B}{R}{G}.",
+"",
+0
+],
+[
+"Lair of the Ashen Idol",
+"Plane — Azgol",
+"At the beginning of your upkeep, sacrifice a creature. If you can't, planeswalk.\nWhenever chaos ensues, any number of target players each create a 2/2 black Zombie creature token.",
+"",
+0
+],
+[
+"Lake Silencio",
+"Plane — Earth",
+"Still Point in Time — All spells have split second. (As long as a spell with split second is on the stack, players can't cast spells or activate abilities that aren't mana abilities.)\nWhenever chaos ensues, Lake Silencio deals 6 damage to target creature an opponent controls. If a creature dealt damage this way would die this turn, exile it instead.",
+"",
+0
+],
+[
+"Lethe Lake",
+"Plane — Arkhos",
+"At the beginning of your upkeep, mill ten cards.\nWhenever chaos ensues, target player mills ten cards.",
+"",
+0
+],
+[
+"Li'l Giri Saves the Day",
+"Plane — Secret Lair",
+"Legendary Food tokens you control have hexproof and indestructible.\nWhen you planeswalk to this plane, create Li'l Giri, a legendary 1/1 colorless Food Warrior artifact creature token.\nWhenever chaos ensues, put X +1/+1 counters on target legendary artifact creature you control, where X is the number of times you've rolled the planar die this turn.",
+"",
+0
+],
+[
+"Littjara",
+"Plane — Kaldheim",
+"When you planeswalk to Littjara and at the beginning of your upkeep, create a 2/2 blue Shapeshifter creature token with changeling. (It is every creature type.)\nWhenever chaos ensues, choose a creature type. Put a +1/+1 counter on each creature you control of that type.",
+"",
+0
+],
+[
+"Llanowar",
+"Plane — Dominaria",
+"All creatures have \"{T}: Add {G}{G}.\"\nWhenever chaos ensues, untap all creatures you control.",
+"",
+0
+],
+[
+"Mad Labs",
+"Phenomenon",
+"When you encounter this phenomenon, starting with the next player in turn order, that player chooses a permanent type. The next player chooses a number between 1 and 10. The next player chooses a keyword counter. Then reveal and resolve the following ability with those words. (don't reveal the second ability before the words have been chosen!)\nEach player creates a token that's a copy of a [permanent] and puts [number] +1/+1 counters on it. If it's not a creature, it becomes a 0/0 creature in addition to its other types. It enters with [keyword] counter.",
+"",
+0
+],
+[
+"Math is for Blockers (Plane)",
+"Plane — Secret Lair",
+"Whenever a nontoken creature attacks, exile it. Return it to the battlefield under its owner's control tapped and attacking at the beginning of that player's next declare attackers step.\nWhenever chaos ensues, goad target creature. (Until your next turn, It attacks each combat if able and attacks a player other than you if able.)",
+"",
+0
+],
+[
+"Megaflora Jungle",
+"Plane — Gargantikar",
+"Each creature with mana value 2 or less gets +2/+2.\nWhenever chaos ensues, create a 1/1 green Insect creature token with flying named Butterfly.",
+"",
+0
+],
+[
+"Minamo",
+"Plane — Kamigawa",
+"Whenever a player casts a spell, that player may draw a card.\nWhenever chaos ensues, each player may return a blue card from their graveyard to their hand.",
+"",
+0
+],
+[
+"Mirrored Depths",
+"Plane — Karsus",
+"Whenever a player casts a spell, that player flips a coin. If the player loses the flip, counter that spell.\nWhenever chaos ensues, target player reveals the top card of their library. If it's a nonland card, you may cast it without paying its mana cost.",
+"",
+0
+],
+[
+"Mojave Desert",
+"Plane — Las Vegas",
+"Whenever you planeswalk here, each player searches their library for up to two basic land or Desert cards and puts them onto the battlefield tapped, then shuffles their library. If a Desert entered the battlefield under a player's control this way, they create a 1/1 black Snake creature token with deathtouch.\nWhenever Chaos ensues, create X 1/1 black Snake creature token with deathtouch, where X is 1 plus the number of nonbasic land types among lands that player controls.",
+"",
+0
+],
+[
+"Mondassian Colony Ship",
+"Plane — Spacecraft",
+"Whenever a creature attacks, it gets +1/+1 until end of turn for each other creature its controller controls that shares a creature type with it.\nWhenever chaos ensues, turn target creature face down. It becomes a 2/2 Cyberman artifact creature.",
+"",
+0
+],
+[
+"Morphic Tide",
+"Phenomenon",
+"When you encounter Morphic Tide, each player shuffles all permanents they own into their library, then reveals that many cards from the top of their library. Each player puts all artifact, creature, land, and planeswalker cards revealed this way onto the battlefield, then does the same for enchantment cards, then puts all cards revealed this way that weren't put onto the battlefield on the bottom of their library in any order. (Then planeswalk away from this phenomenon.)",
+"",
+0
+],
+[
+"Mount Keralia",
+"Plane — Regatha",
+"At the beginning of your end step, put a pressure counter on Mount Keralia.\nWhen you planeswalk away from Mount Keralia, it deals damage equal to the number of pressure counters on it to each creature and each planeswalker.\nWhenever chaos ensues, prevent all damage that planes named Mount Keralia would deal this game to permanents you control.",
+"",
+0
+],
+[
+"Multiversal High Council",
+"Plane — Universia Beyondia",
+"Universes Beyond spells you cast cost {1} less to cast.\nEach creature gets +1/+1 for each different Universe among permanents its controller controls. (Magic: The Gathering and D&D each count as a universe.)\nWhenever Chaos ensues, for each universe, return up to one target card from that Universe from your graveyard to your hand.",
+"",
+0
+],
+[
+"Murasa",
+"Plane — Zendikar",
+"Whenever a nontoken creature enters, its controller may search their library for a basic land card, put it onto the battlefield tapped, then shuffle.\nWhenever chaos ensues, target land becomes a 4/4 creature that's still a land.",
+"",
+0
+],
+[
+"Mutual Epiphany",
+"Phenomenon",
+"When you encounter Mutual Epiphany, each player draws four cards. (Then planeswalk away from this phenomenon.)",
+"",
+0
+],
+[
+"Mycosynthwave",
+"Plane — Secret Lair",
+"All permanents are artifacts in addition to their other types.\nAll cards that aren't on the battlefield, spells, and permanents are colorless.\nPlayers may spend mana as though it were mana of any color.\nWhenever chaos ensues, the next spell you cast this turn has affinity for artifacts.",
+"",
+0
+],
+[
+"Naar Isle",
+"Plane — Wildfire",
+"At the beginning of your upkeep, put a flame counter on Naar Isle, then Naar Isle deals damage to you equal to the number of flame counters on it.\nWhenever chaos ensues, Naar Isle deals 3 damage to target player or planeswalker.",
+"",
+0
+],
+[
+"Naktamun",
+"Plane — Amonkhet",
+"Each creature card in your graveyard has embalm. Its embalm cost is equal to its mana cost. (Exile a creature card from your graveyard and pay its embalm cost: Create a token that's a copy of it, except it's a white Zombie in addition to its other types with no mana cost. Embalm only as a sorcery.)\nWhenever chaos ensues, you may discard a card. If you do, draw a card.",
+"",
+0
+],
+[
+"Naya",
+"Plane — Alara",
+"You may play any number of lands on each of your turns.\nWhenever chaos ensues, target red, green, or white creature you control gets +1/+1 until end of turn for each land you control.",
+"",
+0
+],
+[
+"Nephalia",
+"Plane — Innistrad",
+"At the beginning of your end step, mill seven cards. Then return a card at random from your graveyard to your hand.\nWhenever chaos ensues, return target card from your graveyard to your hand.",
+"",
+0
+],
+[
+"New Argive",
+"Plane — Dominaria",
+"Whenever a historic creature you control attacks, it gets +2/+2 until end of turn. (Artifacts, legendaries, and Sagas are historic.)\nWhenever chaos ensues, reveal cards from the top of your library until you reveal a historic card. Put that card into your hand and the rest on the bottom of your library in a random order.",
+"",
+0
+],
+[
+"New New York",
+"Plane — New Earth",
+"At the beginning of combat on your turn, until end of turn, noncreature artifacts you control become 3/3 Vehicles in addition to their other types and gain flying, haste, and crew 1.\nWhenever chaos ensues, create a Treasure token and a 2/2 white Alien creature token.",
+"",
+0
+],
+[
+"New Player's Journey",
+"Plane — Foundations",
+"When you planeswalk here, each player may search their library for a basic land card, put it into their hand, then shuffle.\nWhenever you play a card from Foundations or a core set (including Alpha!), draw a card.\nWhenever chaos ensues, you gain life equal to the number of years you've played Magic, rounded up. Then planeswalk.",
+"",
+0
+],
+[
+"No Way Out",
+"Plane — Duskmourn",
+"No Way Out enters with three dread counters.\nYou can never leave — If a player would planeswalk while this plane has dread counters, chaos ensues instead.\nWhenever you roll the planar die, manifest dread. (Look at the top two cards of your library. Put one onto the battlefield face down as a 2/2 creature and the other into your graveyard. Turn it face up any time for its mana cost if it's a creature card.)\nWhenever Chaos ensures each player may turn a face-down permanent they control face-up. Remove a dread counter from this plane.",
+"",
+0
+],
+[
+"Norn's Dominion",
+"Plane — New Phyrexia",
+"When you planeswalk away from Norn's Dominion, destroy each nonland permanent without a fate counter on it, then remove all fate counters from all permanents.\nWhenever chaos ensues, you may put a fate counter on target permanent.",
+"",
+0
+],
+[
+"Norn's Seedcore",
+"Plane — New Phyrexia",
+"When you planeswalk to Norn's Seedcore, chaos ensues.\nWhenever chaos ensues, reveal cards from the top of your planar deck until you reveal a plane card. Planeswalk to it, except don't planeswalk away from any plane. Put the rest of the revealed cards on the bottom of your planar deck in any order.",
+"",
+0
+],
+[
+"North Pole Research Base",
+"Plane — Earth",
+"At the beginning of your upkeep, target opponent draws a card and creates a Treasure token.\nWhenever chaos ensues, create a 2/2 white Alien creature token. When you do, tap target nontoken creature an opponent controls. Put a stun counter on it. (If a permanent with a stun counter would become untapped, remove one from it instead.)",
+"",
+0
+],
+[
+"Nyx",
+"Plane — Theros",
+"Nontoken creatures are enchantments in addition to their other types.\nConstellation — Whenever an enchantment you control enters, you gain 1 life.\nWhenever chaos ensues, choose a color. Add an amount of mana of that color equal to your devotion to that color.",
+"",
+0
+],
+[
+"Omenpath Instability",
+"Phenomenon",
+"When you encounter this phenomenon, each player creates an Entropy enchantment token with \"Sacrifice this enchantment: Chaos ensues. Activate only as a sorcery\" and an Omenpath enchantment token with \"Sacrifice this enchantment: Planeswalk. Activate only as a sorcery.\" (Then Planeswalk away from this phenomenon.)",
+"",
+0
+],
+[
+"Onakke Catacomb",
+"Plane — Shandalar",
+"All creatures are black and have deathtouch.\nWhenever chaos ensues, creatures you control get +1/+0 and gain first strike until end of turn.",
+"",
+0
+],
+[
+"Ood Sphere",
+"Plane — Horsehead Nebula",
+"Song of the Ood — Noncreature spells have convoke. (A player's creatures can help cast those spells. Each creature they tap while casting a noncreature spell pays for {1} or one mana of that creature's color.)\nRed-Eye — Whenever chaos ensues, for each opponent, goad up to one target creature that opponent controls. Until your next turn, those creatures can't become tapped unless they're being declared as attackers.",
+"",
+0
+],
+[
+"Orochi Colony",
+"Plane — Kamigawa",
+"Whenever a creature you control deals combat damage to a player, you may search your library for a basic land card, put it onto the battlefield tapped, then shuffle.\nWhenever chaos ensues, target creature can't be blocked this turn.",
+"",
+0
+],
+[
+"Orzhova",
+"Plane — Ravnica",
+"When you planeswalk away from Orzhova, each player returns all creature cards from their graveyard to the battlefield.\nWhenever chaos ensues, for each opponent, exile up to one target creature card from that player's graveyard.",
+"",
+0
+],
+[
+"Otaria",
+"Plane — Dominaria",
+"Instant and sorcery cards in graveyards have flashback. The flashback cost is equal to the card's mana cost. (Its owner may cast the card from their graveyard for its mana cost. Then they exile it.)\nWhenever chaos ensues, take an extra turn after this one.",
+"",
+0
+],
+[
+"Oteclán",
+"Plane — Ixalan",
+"When you planeswalk to Oteclán and at the beginning of your upkeep, chaos ensues.\nWhenever chaos ensues, discover 3. (Exile cards from the top of your library until you exile a nonland card with that mana value or less. Cast it without paying its mana cost or put it into your hand. Put the rest on the bottom in a random order.)",
+"",
+0
+],
+[
+"Paliano",
+"Plane — Fiora",
+"When one or more creatures you control deal combat damage to a player, if there is no monarch, you become the monarch.\nWhenever chaos ensues, create a 1/1 black Assassin creature token with deathtouch and haste.",
+"",
+0
+],
+[
+"Panopticon",
+"Plane — Mirrodin",
+"When you planeswalk to Panopticon, draw a card.\nAt the beginning of your draw step, draw an additional card.\nWhenever chaos ensues, draw a card.",
+"",
+0
+],
+[
+"Pin Collector's Booth",
+"Plane — MagicCon",
+"Whenever you attack, create a Pin token attached to target attacking creature you control. It's an Pin Aura enchantment with enchant creature and \"Enchanted creature gets +1/+1.\"\nWhenever Chaos ensues, each opponent loses X life, where X is the total number of pins attached to you and creatures you control. (This includes pins on your backpack.)",
+"",
+0
+],
+[
+"Pin Trading",
+"Phenomenon",
+"When you encounter this, draw a card for each pin you are wearing and each Pin token attached to creatures you control. (This includes pins on your backpack.) (Then planeswalk away from this phenomenon.)",
+"",
+0
+],
+[
+"Planewide Disaster",
+"Phenomenon",
+"When you encounter Planewide Disaster, destroy all creatures. (Then planeswalk away from this phenomenon.)",
+"",
+0
+],
+[
+"Pompeii",
+"Plane — Earth",
+"When you planeswalk to Pompeii and at the beginning of your upkeep, put an eruption counter on it.\nWhenever you roll a blank on the planar die, scry 2. Then put an eruption counter on Pompeii.\nWhen chaos ensues, Pompeii deals damage to each creature and each player equal to the number of eruption counters on Pompeii. Each player sacrifices a land of their choice. Then planeswalk.",
+"",
+0
+],
+[
+"Pools of Becoming",
+"Plane — Bolas's Meditation Realm",
+"At the beginning of your end step, put the cards in your hand on the bottom of your library in any order, then draw that many cards.\nWhenever chaos ensues, reveal the top three cards of your planar deck. Each of the revealed cards' chaos abilities triggers. Then put the revealed cards on the bottom of your planar deck in any order.",
+"",
+0
+],
+[
+"Prahv",
+"Plane — Ravnica",
+"If you cast a spell this turn, you can't attack with creatures.\nIf you attacked with creatures this turn, you can't cast spells.\nWhenever chaos ensues, you gain life equal to the number of cards in your hand.",
+"",
+0
+],
+[
+"Preston's Stage",
+"Plane — Las Vegas",
+"Whenever a player performs a magic trick, they create a Hat token. (You perform a magic trick when you cast an instant or spell with flash, or turn a face-down creature face-up. Hat tokens are artifact tokens with \"{1}, {T}, Sacrifice this artifact: Create a 1/1 white Rabbit creature token.\")\nWhenever Chaos ensues, until your next turn, creature cards in your hand have flash.",
+"",
+0
+],
+[
+"Prime Minister's Cabinet Room",
+"Plane — Earth",
+"At the beginning of combat on your turn, up to one target creature you control becomes a copy of target creature an opponent controls.\nWill of the council — Whenever chaos ensues, starting with you, each player votes for a creature you don't control. Exile each creature with the most votes or tied for most votes.",
+"",
+0
+],
+[
+"Probability Flux",
+"Phenomenon",
+"Until your next turn, if a player would roll one or more dice, instead they roll that many dice plus one and ignore one.",
+"",
+0
+],
+[
+"Pursued by Something",
+"Plane — Duskmourn",
+"At the beginning of your second main phase, if you control a tapped creature, manifest dread. (Look at the top two cards of your library. Put one onto the battlefield face down as a 2/2 creature and the other into your graveyard. Turn it face up any time for its mana cost if it's a creature card.)\nWhenever Chaos ensues, exile target creature. If it's an instant or sorcery, cast it without paying its mana cost. Otherwise put it onto the battlefield under its owner's control.",
+"",
+0
+],
+[
+"Quicksilver Sea",
+"Plane — Mirrodin",
+"When you planeswalk to Quicksilver Sea and at the beginning of your upkeep, scry 4. (Look at the top four cards of your library, then put any number of them on the bottom and the rest on top in any order.)\nWhenever chaos ensues, reveal the top card of your library. You may play it without paying its mana cost.",
+"",
+0
+],
+[
+"Raiders' Allegiance",
+"Plane — Ixalan",
+"Raid — At the beginning of your second main phase, for each player dealt combat damage this turn, you get a point counter and create a 2/2 black Pirate creature token with menace.\nWhenever you planeswalk away from here, each player with the most point counters or tied for the most point counters creates three Treasure tokens and draws three cards. Then remove all point counters from each player.\nWhenever Chaos ensues, proliferate for each Pirate you control.",
+"",
+0
+],
+[
+"Raven's Run",
+"Plane — Shadowmoor",
+"All creatures have wither. (They deal damage to creatures in the form of -1/-1 counters.)\nWhenever chaos ensues, put a -1/-1 counter on target creature, two -1/-1 counters on another target creature, and three -1/-1 counters on a third target creature.",
+"",
+0
+],
+[
+"Reality Shaping",
+"Phenomenon",
+"When you encounter Reality Shaping, starting with you, each player may put a permanent card from their hand onto the battlefield. (Then planeswalk away from this phenomenon.)",
+"",
+0
+],
+[
+"Riptide Island",
+"Plane — Dominaria",
+"When you planeswalk to Riptide Island and at the beginning of your upkeep, create two 1/1 colorless Sliver creature tokens.\nWhenever chaos ensues, Slivers you control gain haste and get +X/+X until end of turn, where X is the number of Slivers you control.",
+"",
+0
+],
+[
+"Royal Booster",
+"Phenomenon",
+"When you encounter this phenomenon, open a Magic: The Gathering booster pack and shuffle it without looking at its contents. Those cards become the booster deck. You become the monarch. For the rest of the game, at the beginning of the monarch's end step, that player draws a card from the booster deck. They may spend mana of any type to cast those cards. (Then Planeswalk away from this phenomenon.)",
+"",
+0
+],
+[
+"Sanctum of Serra",
+"Plane — Serra's Realm",
+"When you planeswalk away from Sanctum of Serra, destroy all nonland permanents.\nWhenever chaos ensues, you may have your life total become 20.",
+"",
+0
+],
+[
+"Sea of Sand",
+"Plane — Rabiah",
+"Players reveal each card they draw.\nWhenever a player draws a land card, that player gains 3 life.\nWhenever a player draws a nonland card, that player loses 3 life.\nWhenever chaos ensues, put target permanent on top of its owner's library.",
+"",
+0
+],
+[
+"Selesnya Loft Gardens",
+"Plane — Ravnica",
+"If an effect would create one or more tokens, it creates twice that many of those tokens instead.\nIf an effect would put one or more counters on a permanent, it puts twice that many of those counters on that permanent instead.\nWhenever chaos ensues, until end of turn, whenever you tap a land for mana, add one mana of any type that land produced.",
+"",
+0
+],
+[
+"Shiv",
+"Plane — Dominaria",
+"All creatures have \"{R}: This creature gets +1/+0 until end of turn.\"\nWhenever chaos ensues, create a 5/5 red Dragon creature token with flying.",
+"",
+0
+],
+[
+"Shrinking Plane",
+"Plane — Foldaria",
+"When you planeswalk here and at the beginning of your upkeep, fold this plane in half. Draw cards equal to the number of times it's been folded. If you can't fold it, planeswalk.\nChaos: Completely unfold this plane. Each opponent discards two cards.",
+"",
+0
+],
+[
+"Shy Town",
+"Plane — Chicago",
+"Whenever you planeswalk here and whenever chaos ensues, for each opponent, put a shy counter on up to one target creature they control. That creature becomes a Coward in addition to its other types.\nAt the beginning of your upkeep, create a 2/2 red Warrior creature token with haste and \"Cowards can't block Warriors.\"",
+"",
+0
+],
+[
+"Singing Towers of Darillium",
+"Plane — Darillium",
+"Each nonland card in your hand without foretell has foretell. Its foretell cost is equal to its mana cost reduced by {2}. (During your turn, you may pay {2} and exile it from your hand face down. Cast it on a later turn for its foretell cost.)\nWhenever chaos ensues, you may cast a foretold card you own from exile without paying its mana cost this turn.",
+"",
+0
+],
+[
+"Sky Deck",
+"Plane — Chicago",
+"Whenever you planeswalk here, at the beginning of your upkeep, or whenever chaos ensues, put a glass counter on up to one target nonland permanent.\nWhen you planeswalk away from here, destroy all permanents with glass counters on them.",
+"",
+0
+],
+[
+"Skybreen",
+"Plane — Kaldheim",
+"Players play with the top card of their libraries revealed.\nSpells that share a card type with the top card of a library can't be cast.\nWhenever chaos ensues, target player loses life equal to the number of cards in their hand.",
+"",
+0
+],
+[
+"Sokenzan",
+"Plane — Kamigawa",
+"All creatures get +1/+1 and have haste.\nWhenever chaos ensues, untap all creatures that attacked this turn. If it's a main phase, there is an additional combat phase after this phase, followed by an additional main phase.",
+"",
+0
+],
+[
+"Sorin's Remastered Manor",
+"Plane — Innistrad",
+"When you planeswalk here and at the beginning your upkeep, put a spooky counter on target creature you control.\nSpooky creatures you control have +1/+1 and menace. (A creature is spooky if it has a spooky counter or it could be a horror movie monster.)\nA Murder at Markov Manor — Whenever chaos ensues, target spooky creature you control bites target opponent or creature an opponent controls. (The creature deals damage equal to its power to the creature your opponent controls. You gain that much life.)",
+"",
+0
+],
+[
+"Spatial Merging",
+"Phenomenon",
+"When you encounter Spatial Merging, reveal cards from the top of your planar deck until you reveal two plane cards. Simultaneously planeswalk to both of them. Put all other cards revealed this way on the bottom of your planar deck in any order.",
+"",
+0
+],
+[
+"Spectrox Mines",
+"Plane — Androzani Minor",
+"When you planeswalk to Spectrox Mines and at the beginning of your upkeep, you lose 3 life and create a Treasure token.\nWhenever chaos ensues, create a Food token and a 2/2 black Human Rogue creature token.",
+"",
+0
+],
+[
+"Stairs to Infinity",
+"Plane — Xerex",
+"Players have no maximum hand size.\nWhenever you roll the planar die, draw a card.\nWhenever chaos ensues, reveal the top card of your planar deck. You may put it on the bottom of your planar deck.",
+"",
+0
+],
+[
+"Stensia",
+"Plane — Innistrad",
+"Whenever a creature deals damage to one or more players for the first time each turn, put a +1/+1 counter on it.\nWhenever chaos ensues, each creature you control gains \"{T}: This creature deals 1 damage to target player or planeswalker\" until end of turn.",
+"",
+0
+],
+[
+"Stormcage Containment Facility",
+"Plane — Unknown Planet",
+"Each creature card in your graveyard has escape. The escape cost is equal to the card's mana cost plus exile three other cards from your graveyard. (You may cast cards from your graveyard for their escape cost.)\nWhenever chaos ensues, detain target creature an opponent controls. (Until your next turn, that creature can't attack or block and its activated abilities can't be activated.)",
+"",
+0
+],
+[
+"Strixhaven",
+"Plane — Arcavios",
+"Instant and sorcery spells players cast have demonstrate. (Whenever a player casts an instant or sorcery spell, they may copy it. If they do, they choose an opponent to also copy it. Players may choose new targets for their copies.)\nWhenever chaos ensues, return up to one target instant or sorcery card from a graveyard to its owner's hand.",
+"",
+0
+],
+[
+"Stronghold Furnace",
+"Plane — Rath",
+"If a source would deal damage to a permanent or player, it deals double that damage instead.\nWhenever chaos ensues, Stronghold Furnace deals 1 damage to any target.",
+"",
+0
+],
+[
+"Stroopwafel Cafe",
+"Plane — Amsterdam",
+"Players may look at the top card of their library at any time and may play cards from the top of their library.\nThe top card of each player's library is a Food artifact. (It's an artifact with \"{2}, {T}, Sacrifice this artifact: You gain 3 life.\" Activate this ability from the top of the library.)\nChaos: You may sacrifice a Food. If you do, draw a card, gain three life and each opponent loses 3 life.",
+"",
+0
+],
+[
+"TARDIS Bay",
+"Plane — Gallifrey",
+"The first spell you cast during each of your turns with mana value 2 or greater has cascade. (When you cast that spell, exile cards from the top of your library until you exile a nonland card that costs less. You may cast it without paying its mana cost. Put the exiled cards on the bottom in a random order.)\nWhen chaos ensues, gain control of target artifact. Then planeswalk.",
+"",
+0
+],
+[
+"Takenuma",
+"Plane — Kamigawa",
+"Whenever a creature leaves the battlefield, its controller draws a card.\nWhenever chaos ensues, return target creature you control to its owner's hand.",
+"",
+0
+],
+[
+"Talon Gates",
+"Plane — Dominaria",
+"Any time you could cast a sorcery, you may exile a nonland card from your hand with X time counters on it, where X is its mana value. If the exiled card doesn't have suspend, it gains suspend. (At the beginning of its owner's upkeep, they remove a time counter. When the last is removed, the player may cast it without paying its mana cost. If it's a creature, it has haste.)\nWhenever chaos ensues, remove two time counters from each suspended card you own.",
+"",
+0
+],
+[
+"Tarnation",
+"Plane — Thunder Junction",
+"Whenever a player commits a crime, they may draw a card. (Targeting opponents, anything they control, and/or cards in their graveyards is a crime.)\nWhenever chaos ensues, Tarnation deals 1 damage to any target.",
+"",
+0
+],
+[
+"Tazeem",
+"Plane — Zendikar",
+"Creatures can't block.\nWhenever chaos ensues, draw a card for each land you control.",
+"",
+0
+],
+[
+"Team-Up!",
+"Phenomenon",
+"Whenever you encounter this Phenomenon, for the rest of the game, each player wins the game if the players to their left and right are eliminated. (Multiple players can win the game this way.)",
+"",
+0
+],
+[
+"Tember City",
+"Plane — Kinshala",
+"Whenever a player taps a land for mana, Tember City deals 1 damage to that player.\nWhenever chaos ensues, each other player sacrifices a nonland permanent of their choice.",
+"",
+0
+],
+[
+"Temple of Atropos",
+"Plane — Time",
+"At the beginning of each of your postcombat main phases, there is an additional beginning phase after this phase. (The beginning phase includes the untap, upkeep, and draw steps.)\nWhen chaos ensues, reverse the game's turn order. Then planeswalk. (For example, if play had proceeded clockwise around the table, it now goes counterclockwise.)",
+"",
+0
+],
+[
+"Ten Wizards Mountain",
+"Plane — Shenmeng",
+"Whenever you roll the planar die, put a +1/+1 counter on up to one target creature.\nWhenever chaos ensues, creatures you control gain flying until end of turn.",
+"",
+0
+],
+[
+"The Aether Flues",
+"Plane — Iquatana",
+"When you planeswalk to The Aether Flues and at the beginning of your upkeep, you may sacrifice a creature. If you do, reveal cards from the top of your library until you reveal a creature card, put that card onto the battlefield, then shuffle all other cards revealed this way into your library.\nWhenever chaos ensues, you may put a creature card from your hand onto the battlefield.",
+"",
+0
+],
+[
+"The Bean",
+"Plane — Chicago",
+"When you planeswalk here, each player chooses a creature they control and creates a token that's a copy of it, except it's a Reflection in addition to its other types.\nAll Reflections have shadow. (They can block or be blocked only by creatures with shadow.)\nWhenever chaos ensues, create a token that's a copy of a creature you control, except it's a Reflection in addition to its other types.",
+"",
+0
+],
+[
+"The Caldaia",
+"Plane — Capenna",
+"Creature spells you cast from your hand have blitz {3}. (If you cast a spell for its blitz cost, it gains haste and \"When this creature dies, draw a card.\" Sacrifice it at the beginning of the next end step.)\nWhenever chaos ensues, return target creature card from your graveyard to your hand.",
+"",
+0
+],
+[
+"The Cave of Skulls",
+"Plane — Earth",
+"Each creature card in your graveyard has scavenge. The scavenge cost is equal to its mana cost. (Exile a creature card from your graveyard and pay its mana cost: Put a number of +1/+1 counters equal to that card's power on target creature. Scavenge only as a sorcery.)\nWhenever chaos ensues, create two 1/1 white Warrior creature tokens.",
+"",
+0
+],
+[
+"The Cheetah Planet",
+"Plane — Outside Mutter's Spiral",
+"When you planeswalk to The Cheetah Planet and at the beginning of your upkeep, put two +1/+1 counters on target non-Cat creature you control. It becomes a Cat in addition to its other types.\nWhenever chaos ensues, all Cats gain provoke until end of turn. (Whenever a Cat attacks, its controller may have target creature defending player controls untap and block it if able.)",
+"",
+0
+],
+[
+"The Command Zone",
+"Plane — MagicCon",
+"When you planeswalk here, each player who controls their commander draws a card. Other players may put their commander from the command zone onto the battlefield.\nIf an ability of your commander would trigger during your turn, that ability triggers an additional time.\nWhenever chaos ensues, the number of times each commander has been cast from the command zone becomes 0. (This resets commander tax.)",
+"",
+0
+],
+[
+"The Dark Barony",
+"Plane — Ulgrotha",
+"Whenever a nonblack card is put into a player's graveyard from anywhere, that player loses 1 life.\nWhenever chaos ensues, each opponent discards a card.",
+"",
+0
+],
+[
+"The Dining Car",
+"Plane — Spacecraft",
+"When you planeswalk to The Dining Car, each player creates a Food token.\nSixty-Six Seconds — At the beginning of your upkeep, sacrifice a creature with the least toughness among creatures you control. Then investigate.\nWhenever chaos ensues, activated abilities of artifact tokens you control cost {2} less to activate this turn.",
+"",
+0
+],
+[
+"The Doctor's Childhood Barn",
+"Plane — Gallifrey",
+"Creatures enter tapped.\nWhenever chaos ensues, for each opponent, choose up to one target nonland permanent that opponent controls. Untap those permanents. They phase out. They can't phase in for as long as The Doctor's Childhood Barn remains face up. When a player planeswalks, those permanents phase in.",
+"",
+0
+],
+[
+"The Doctor's Tomb",
+"Plane — Trenzalore",
+"If a creature would die, instead exile it and that creature's controller loses 2 life.\nWhenever chaos ensues, redistribute any number of players' life totals. (Each of those players gets one life total back.)",
+"",
+0
+],
+[
+"The Drum, Mining Facility",
+"Plane — Earth",
+"Whenever you roll the planar die, creatures you control get +1/+1 and gain haste until end of turn.\nWhenever chaos ensues, end the turn. (Exile all spells and abilities from the stack. The player whose turn it is discards down to their maximum hand size. Damage wears off, and \"this turn\" and \"until end of turn\" effects end.)",
+"",
+0
+],
+[
+"The Eon Fog",
+"Plane — Equilor",
+"Players skip their untap steps.\nWhenever chaos ensues, untap all permanents you control.",
+"",
+0
+],
+[
+"The Fertile Lands of Saulvinia",
+"Plane — Antausia",
+"Whenever a player taps a land for mana, that player adds one mana of any type that land produced.\nWhenever chaos ensues, reveal cards from the top of your planar deck until you reveal a plane card. Chaos ensues on that plane. Then put all cards revealed this way on the bottom of your planar deck in any order.",
+"",
+0
+],
+[
+"The Food Court",
+"Plane — Eldraine",
+"Artifacts are Foods in addition to their other types (They have \"{2}, {T}, Sacrifice this artifact: You gain 3 life.\")\nSacrifice three Foods: Add {W}{U}{B}{R}{G}. Activate only once each turn and only during your turn.\nChaos: You become the Monarch. If you are already the Monarch, draw a card.",
+"",
+0
+],
+[
+"The Fourth Sphere",
+"Plane — Phyrexia",
+"At the beginning of your upkeep, sacrifice a nonblack creature.\nWhenever chaos ensues, create a 2/2 black Zombie creature token.",
+"",
+0
+],
+[
+"The Golden City of Orazca",
+"Plane — Ixalan",
+"Ascend (If you control ten or more permanents, you get the city's blessing for the rest of the game.)\nWhenever one or more creatures you control deal combat damage to a player, create a Treasure token. Then draw a card if you have the city's blessing.\nWhenever chaos ensues, you may put a permanent card from your hand onto the battlefield tapped.",
+"",
+0
+],
+[
+"The Great Aerie",
+"Plane — Tarkir",
+"When you planeswalk to The Great Aerie and at the beginning of your upkeep, bolster 3. (Choose a creature with the least toughness among creatures you control and put three +1/+1 counters on it.)\nWhenever chaos ensues, choose up to one target creature you control and up to one target creature an opponent controls. Each of those creatures deals damage equal to its toughness to the other.",
+"",
+0
+],
+[
+"The Great Forest",
+"Plane — Lorwyn",
+"Each creature assigns combat damage equal to its toughness rather than its power.\nWhenever chaos ensues, creatures you control get +0/+2 and gain trample until end of turn.",
+"",
+0
+],
+[
+"The Hippodrome",
+"Plane — Segovia",
+"All creatures get -5/-0.\nWhenever chaos ensues, you may destroy target creature if its power is 0 or less.",
+"",
+0
+],
+[
+"The Lux Foundation Library",
+"Plane — The Library",
+"Players have no maximum hand size.\nWhenever a creature you control deals combat damage to a player, you may draw a card.\nWhenever chaos ensues, put a shadow counter on target creature. (A creature with shadow can block or be blocked by only creatures with shadow.)",
+"",
+0
+],
+[
+"The Maelstrom",
+"Plane — Alara",
+"When you planeswalk to The Maelstrom and at the beginning of your upkeep, you may reveal the top card of your library. If a permanent card is revealed this way, you may put it onto the battlefield. If you revealed a card but didn't put it onto the battlefield, put it on the bottom of your library.\nWhenever chaos ensues, return target permanent card from your graveyard to the battlefield.",
+"",
+0
+],
+[
+"The Matrix of Time",
+"Plane — Gallifrey",
+"When you planeswalk to The Matrix of Time, each player exiles the top card of their library.\nDuring your turn, you may play lands and cast spells from among cards exiled with The Matrix of Time.\nWhenever you play a land or cast a spell from among cards exiled with The Matrix of Time, that card's owner loses 3 life and exiles the top card of their library.\nWhenever chaos ensues, create two Treasure tokens.",
+"",
+0
+],
+[
+"The Moonbase",
+"Plane — Moon",
+"Low Gravity — All creatures have \"{2}: This creature gains flying until end of turn. Activate only as a sorcery.\"\nWhenever chaos ensues, for each opponent, choose up to one target creature card in that player's graveyard. Put those cards onto the battlefield face down under your control. They're 2/2 Cyberman artifact creatures.",
+"",
+0
+],
+[
+"The Pit",
+"Plane — The Abyss",
+"When you planeswalk to The Pit, each player creates their choice of a 3/3 white Angel creature token with flying or a 6/6 black Demon creature token with flying, trample, and \"At the beginning of your upkeep, sacrifice another creature. If you can't, this token deals 6 damage to you.\"\nWhenever chaos ensues, each player sacrifices a nonartifact creature of their choice.",
+"",
+0
+],
+[
+"The Pro Tour",
+"Plane — MagicCon",
+"Draft—When you planeswalk here, each player opens a booster pack, drafts a card, and exiles it face down. Each player may play the card they drafted for as long as it remains exiled. Players may spend any type of mana to cast spells this way.\nStandard—Whenever chaos ensues, each player draws cards equal to the number of differently named Standard-legal cards they control. (Basic lands count. Tokens don't.)",
+"",
+0
+],
+[
+"The Pyramid of Mars",
+"Plane — Mars",
+"When you planeswalk to The Pyramid of Mars and at the beginning of your upkeep, surveil 2. (Look at the top two cards of your library, then put any number of them into your graveyard and the rest on top of your library in any order.)\nWhenever chaos ensues, return target creature card from your graveyard to the battlefield.",
+"",
+0
+],
+[
+"The Sphere",
+"Plane — Las Vegas",
+"Whenever a creature you control becomes blocked, round both its power and toughness up to the nearest 5. (A creature with 5 power would round up to 5.)\nWhenever Chaos ensues, Amass Fans 5. (Put five +1/+1 counters on an Army you control. It's also a Fan. If you don't control an army, create a 0/0 red Fan Army creature token first.)",
+"",
+0
+],
+[
+"The Western Cloud",
+"Plane — Gobakhan",
+"Prevent all damage that would be dealt to creatures and planeswalkers you control.\nWhenever chaos ensues, create three tapped Treasure tokens. They each deal 1 damage to each creature and each planeswalker.",
+"",
+0
+],
+[
+"The Wilds",
+"Plane — Eldraine",
+"When you planeswalk to The Wilds and at the beginning of your upkeep, create a Food token.\nWhenever chaos ensues, target player sacrifices a creature of their choice. If they do, you create a Food token. You create two Food tokens instead if the sacrificed creature's toughness was 4 or greater.",
+"",
+0
+],
+[
+"The Windy City",
+"Plane — Chicago",
+"When you planeswalk here and at the beginning of your upkeep, put a flying counter on target nontoken creature you control without flying.\nWhenever chaos ensues, exile target creature with flying. For as long as it remains exiled, its owner may cast it by paying {2} rather than paying its mana cost.\nWhen you planeswalk away from The Windy City, remove all flying counters from all creatures.",
+"",
+0
+],
+[
+"The Zephyr Maze",
+"Plane — Kyneth",
+"Creatures with flying get +2/+0.\nCreatures without flying get -2/-0.\nWhenever chaos ensues, target creature gains flying until end of turn.",
+"",
+0
+],
+[
+"Time Distortion",
+"Phenomenon",
+"When you encounter Time Distortion, reverse the game's turn order. (For example, if play had proceeded clockwise around the table, it now goes counterclockwise. Then planeswalk away from this phenomenon.)",
+"",
+0
+],
+[
+"Towashi",
+"Plane — Kamigawa",
+"Modified creatures you control have trample and \"Whenever this creature deals combat damage to a player or planeswalker, draw a card.\" (Equipment, Auras you control, and counters are modifications.)\nWhenever chaos ensues, distribute three +1/+1 counters among one, two, or three target creatures you control.",
+"",
+0
+],
+[
+"Trail of the Mage-Rings",
+"Plane — Vryn",
+"Instant and sorcery spells have rebound. (The spell's controller exiles the spell as it resolves if they cast it from their hand. At the beginning of that player's next upkeep, they may cast that card from exile without paying its mana cost.)\nWhenever chaos ensues, you may search your library for an instant or sorcery card, reveal it, put it into your hand, then shuffle.",
+"",
+0
+],
+[
+"Truga Jungle",
+"Plane — Ergamon",
+"All lands have \"{T}: Add one mana of any color.\"\nWhenever chaos ensues, reveal the top three cards of your library. Put all land cards revealed this way into your hand and the rest on the bottom of your library in any order.",
+"",
+0
+],
+[
+"Turri Island",
+"Plane — Ir",
+"Creature spells cost {2} less to cast.\nWhenever chaos ensues, reveal the top three cards of your library. Put all creature cards revealed this way into your hand and the rest into your graveyard.",
+"",
+0
+],
+[
+"Two Streams Facility",
+"Plane — Apalapucia",
+"Whenever you planeswalk to Two Streams Facility and at the beginning of the first upkeep of the game, each player chooses green anchor or red waterfall.\nEach player who last chose green anchor may play an additional land during each of their turns.\nCreatures controlled by players who last chose red waterfall get +2/+0 and have haste.\nWhenever chaos ensues, each player who last chose green anchor chooses red waterfall, and vice versa.",
+"",
+0
+],
+[
+"UNIT Headquarters",
+"Plane — Earth",
+"When you planeswalk to UNIT Headquarters and at the beginning of your upkeep, create a tapped 1/1 white Soldier creature token.\nWhenever chaos ensues, put a +1/+1 counter on each creature you control.",
+"",
+0
+],
+[
+"Undercity Reaches",
+"Plane — Ravnica",
+"Whenever a creature deals combat damage to a player, its controller may draw a card.\nWhenever chaos ensues, you have no maximum hand size for the rest of the game.",
+"",
+0
+],
+[
+"Unknown Event",
+"Phenomenon",
+"When you encounter this, Each player opens a Magic the Gathering booster pack. They may select up to two cards from that pack and exile them face down. For the rest of the game, players may look at and play cards exiled this way without paying their mana costs. (Then Planeswalk away from this phenomenon.)",
+"",
+0
+],
+[
+"Unleash the Flux",
+"Phenomenon",
+"When you encounter Unleash the Flux, each player sacrifices a nonland permanent of their choice, then you flip a coin. If you lose the flip, repeat this process. (Then planeswalk away from this phenomenon.)",
+"",
+0
+],
+[
+"Unyaro",
+"Plane — Zhalfir",
+"At the beginning of your end step, if you planeswalked to Unyaro this turn, untap all creatures. They phase out until a player planeswalks. (Treat them and anything attached to them as though they didn't exist.)\nWhenever chaos ensues, create two 2/2 white and blue Knight creature tokens with vigilance.",
+"",
+0
+],
+[
+"Valor's Reach",
+"Plane — Kylem",
+"Whenever your team attacks with exactly two creatures, those creatures gain double strike until end of turn.\nWhenever chaos ensues, untap up to two target creatures your team controls. If it's a main phase, there is an additional combat phase after this phase, followed by an additional main phase.",
+"",
+0
+],
+[
+"Velis Vel",
+"Plane — Lorwyn",
+"Each creature gets +1/+1 for each other creature on the battlefield that shares at least one creature type with it. (For example, if two Elemental Shamans and an Elemental Spirit are on the battlefield, each gets +2/+2.)\nWhenever chaos ensues, target creature gains all creature types until end of turn.",
+"",
+0
+],
+[
+"We Hope You Like Squirrels",
+"Plane — Secret Lair",
+"At the beginning of each player's upkeep and whenever a player casts a spell, that player creates a 1/1 green Squirrel creature token.\nWhenever chaos ensues, put a +1/+1 counter on each Squirrel you control.",
+"",
+0
+],
+[
+"Welcome to Valley",
+"Plane — Bloomburrow",
+"Whenever you cast an animal spell, draw a card. (Animals are any non-human creature types that are animals in real life.)\nWhenever Chaos ensues, create a token that's a copy of target creature you control, except it's a 1/1.",
+"",
+0
+],
+[
+"Windmill Farm",
+"Plane — Amsterdam",
+"When you planeswalk here and at the beginning of your upkeep, create a Tulip Petal artifact token that has \"{T}, Sacrifice this artifact: Add one mana of any color.\"\nChaos: Spin this plane until the arrow lands on a permanent. If the plane rotated at least 360 degrees during the spin, create a token that's a copy of that permanent.",
+"",
+0
+],
+[
+"Windriddle Palaces",
+"Plane — Belenon",
+"Players play with the top card of their libraries revealed.\nYou may play lands and cast spells from the top of any player's library.\nWhenever chaos ensues, each player mills a card.",
+"",
+0
+],
+[
+"Year-End Review",
+"Phenomenon",
+"Each player may choose a nontoken creature they own on the battlefield, reveal a creature card from their hand, or choose a creature card in their graveyard. Those cards become promoted to commander. Each player may put their new commander into the com- mand zone. Then planeswalk away from this phenom- enon. (All original commanders are still commanders.)",
+"",
+0
+]
+]
