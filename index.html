@@ -1532,7 +1532,7 @@ function pub(){
   const m = S.match || {w:0, l:0};
   return {name: me.name, life:S.life, poison:S.poison, turn:S.turn, handN:S.hand.length, libN:S.library.length,
     initiative: !!S.initiative, monarch: !!S.monarch, taxNext: !!S.taxNext, bf:S.bf.map(strip), gy:S.gy.map(strip), ex:S.ex.map(strip), cz:S.cz.map(strip), match: (m.w || m.l) ? `${m.w}–${m.l}` : "",
-    pool: poolStr(poolOf()), marks: marksPub(), protect: !!(S.protect), locks: (Array.isArray(S.locks) ? S.locks : []).filter(l => l && (l.key === turnKey() || l.untilNext)).slice(0, 5).map(l => ({key:l.untilNext ? turnKey() : l.key, noncreature:!!l.noncreature, creature:!!l.creature, noAttack:!!l.noAttack, noBlockNoFly:!!l.noBlockNoFly, pid: typeof l.pid === "string" ? l.pid.slice(0, 40) : null, src:String(l.src || "").slice(0, 60)})), companion: S.companion ? String(S.companion.n).slice(0, 80) : "", mat: LOOK.mat, sleeve: okColor(LOOK.sleeve) ? LOOK.sleeve : "", avatar: okImg(LOOK.avatar) ? LOOK.avatar : "", deckName: String(S.deckName || "").slice(0, 40)};
+    pool: poolStr(poolOf()), marks: marksPub(), protect: !!(S.protect), arch: archPub(), locks: (Array.isArray(S.locks) ? S.locks : []).filter(l => l && (l.key === turnKey() || l.untilNext)).slice(0, 5).map(l => ({key:l.untilNext ? turnKey() : l.key, noncreature:!!l.noncreature, creature:!!l.creature, noAttack:!!l.noAttack, noBlockNoFly:!!l.noBlockNoFly, pid: typeof l.pid === "string" ? l.pid.slice(0, 40) : null, src:String(l.src || "").slice(0, 60)})), companion: S.companion ? String(S.companion.n).slice(0, 80) : "", mat: LOOK.mat, sleeve: okColor(LOOK.sleeve) ? LOOK.sleeve : "", avatar: okImg(LOOK.avatar) ? LOOK.avatar : "", deckName: String(S.deckName || "").slice(0, 40)};
 }
 let pushTimer = null;
 function schedulePush(){ clearTimeout(pushTimer); pushTimer = setTimeout(pushState, 120); }
@@ -2802,7 +2802,7 @@ function nextBlock(){
 }
 /* Angriff: Ziel pro Kreatur wählbar (Mitspieler oder KI) */
 const PENDING_ATK = {};
-function attackTargets(){ return order.filter(id => id !== me.id && others[id] && !others[id].off); }
+function attackTargets(){ return order.filter(id => id !== me.id && others[id] && !others[id].off && !(others[id].arch && others[id].arch.bow === me.id)); }
 function openAttackDialog(preTarget){
   if(botBusy) return;
   modalState = {kind:"ask"}; $("#modal").hidden = false;
@@ -2896,7 +2896,7 @@ function receiveBlocks(m){
   r.deadA.forEach(c => moveCard(c.u, "gy"));
   const who = displayName(P.target);
   act(`Kampf gegen ${who}: ${r.lines.join("; ") || "keine Angreifer mehr"}${r.gain ? `. Lebensverknüpfung +${r.gain}` : ""}`);
-  sendTo(P.target, {t:"cres", cid:m.cid, dmg:r.dmg, cmdDmg:r.cmdDmg, hn:(r.hits || []).filter(h => h.amount > 0).length, dead:r.deadB.map(b => b.u)});
+  sendTo(P.target, {t:"cres", cid:m.cid, md:moltenOn() || undefined, dmg:r.dmg, cmdDmg:r.cmdDmg, hn:(r.hits || []).filter(h => h.amount > 0).length, dead:r.deadB.map(b => b.u)});
   commit();
 }
 function receiveCombatResult(m){
@@ -2904,7 +2904,7 @@ function receiveCombatResult(m){
   (Array.isArray(m.dead) ? m.dead : []).forEach(u => { if(S.bf.some(c => c.u === u)) moveCard(u, "gy"); });
   if(emissaryType() === "Creature" && dmg > 0){ act(`${dmg} Kampfschaden verhindert (Serra's Emissary: Schutz vor Kreaturen)`); m.dmg = 0; }
   let dmg2 = emissaryType() === "Creature" ? 0 : dmg;
-  if(dmg2 > 0 && S.molten){ act(`Approach My Molten Realm: Kampfschaden verdoppelt (${dmg2} → ${dmg2 * 2})`); dmg2 *= 2; }
+  if(dmg2 > 0 && S.molten && !m.md){ act(`Approach My Molten Realm: Kampfschaden verdoppelt (${dmg2} → ${dmg2 * 2})`); dmg2 *= 2; }
   if(dmg2 > 0 && archActive().some(x => NCSMN_RE.test(x.o || ""))){ const hn = Math.max(1, parseInt(m.hn, 10) || 1); const v = Math.max(0, dmg2 - hn * (dmg2 - oppDmgPrevent(dmg2))); act(`Nothing Can Stop Me Now: ${dmg2 - v} Kampfschaden verhindert`); dmg2 = v; }
   noteDmgToMe(dmg2);
   S.life -= dmg2; graceFloor();
@@ -3189,12 +3189,12 @@ function hitOpponent(pid, hdef){
     const dbl = S.bf.filter(x => !x.fd && /^If a source you control would deal damage to a permanent or player, it deals double that damage/im.test(x.o || "")).length;
     if(dbl){ hdef = {...hdef, amount:(parseInt(hdef.amount, 10) || 0) * Math.pow(2, dbl)}; act(`Angrath's Marauders: doppelter Schaden (${hdef.amount})`); }
     if(plus){ hdef = {...hdef, amount:(parseInt(hdef.amount, 10) || 0) + plus}; act(`${S.bf.filter(x => /that much damage plus \d+ instead/i.test(x.o || "")).map(x => x.n).join(", ")}: +${plus} Schaden`); }
-    { const a0 = parseInt(hdef.amount, 10) || 0, a1 = archDmg(a0, true); if(a1 !== a0){ hdef = {...hdef, amount:a1}; act(`Komplott: ${a0} → ${a1} Schaden`); } }
+    { const a0 = parseInt(hdef.amount, 10) || 0, a1 = archDmg(a0, true); if(a1 !== a0){ hdef = {...hdef, amount:a1}; act(`Komplott: ${a0} → ${a1} Schaden`); } if(moltenOn()) hdef = {...hdef, md:true}; }
   }
   if((hdef.kind || "damage") === "damage" && !hdef.card && (parseInt(hdef.amount, 10) || 0) > 0 && typeof abilEvent === "function") { const sc = hdef.src && S.bf.find(c => c.n === hdef.src); setTimeout(() => abilEvent({kind:"noncombatOpp", much:parseInt(hdef.amount, 10), pid, c:sc || null}), 0); }
   const srcCard = hdef.src && S.bf.find(c => c.n === hdef.src);
   fxSend({kind:"arrow", style:"hit", from: srcCard ? {u:srcCard.u} : {pid:me.id}, to: hdef.card ? {u:hdef.card} : {pid}});
-  sendTo(pid, {t:"hit", kind:hdef.kind || "damage", amount: Math.max(0, Math.min(99, parseInt(hdef.amount, 10) || 0)), card: hdef.card || null, src: String(hdef.src || "").slice(0, 80), kw: String(hdef.kw || "").slice(0, 60), srcType: String(hdef.srcType || "").slice(0, 80), ...(hdef.noRegen ? {noRegen:true} : {})});
+  sendTo(pid, {t:"hit", kind:hdef.kind || "damage", amount: Math.max(0, Math.min(99, parseInt(hdef.amount, 10) || 0)), ...(hdef.md ? {md:true} : {}), card: hdef.card || null, src: String(hdef.src || "").slice(0, 80), kw: String(hdef.kw || "").slice(0, 60), srcType: String(hdef.srcType || "").slice(0, 80), ...(hdef.noRegen ? {noRegen:true} : {})});
 }
 function hitText(m, what){
   const by = String(m.by || "Gegner").slice(0, 24), src = m.src ? ` (${String(m.src).slice(0, 80)})` : "";
@@ -3256,7 +3256,7 @@ function receiveHit(m){
     const c = S.bf.find(x => x.u === m.card); if(!c) return;
     if((m.kind || "damage") === "damage" && amt > 0){
       if(isCreature(c) && myCreaturesShielded()){ sendLog({from:"", text:hitText(m, `${amt} Schaden an ${c.n} verhindert (Delight in the Hunt)`), sys:true}); commit(); return; }
-      const a1 = archDmg(amt, false); if(a1 !== amt){ m = {...m, amount:a1}; amt = a1; }
+      const a1 = m.md ? amt : archDmg(amt, false); if(a1 !== amt){ m = {...m, amount:a1}; amt = a1; }
     }
     txt = applyHitToCard(c, m, false);
   } else if(m.kind === "loseMonarch"){ if(!S.monarch) return; S.monarch = false; txt = `${me.name || "du"} ist nicht mehr Monarch`; }
@@ -3264,7 +3264,7 @@ function receiveHit(m){
   else if(m.kind === "poison"){ S.poison += amt; txt = `${amt} Giftmarke${amt > 1 ? "n" : ""} an ${me.name || "dich"} (jetzt ${S.poison})`; }
   else if(m.kind === "heal"){ S.life += amt; txt = `${me.name || "du"} erhält ${amt} Leben (jetzt ${S.life})`; }
   else if(m.kind === "loss"){ S.life -= amt; txt = `${me.name || "du"} verliert ${amt} Leben (jetzt ${S.life})`; }
-  else { const pro = emissaryType(); if(pro && m.srcType && new RegExp(`\\b${pro}\\b`, "i").test(m.srcType)){ txt = `${amt} Schaden verhindert (Schutz vor ${pro})`; } else { const amt0 = amt; amt = m.from && m.from !== me.id ? oppDmgToMe(amt0, m.src) : amt0; S.life -= amt; graceFloor(); txt = `${amt} Schaden an ${me.name || "dich"} (Leben ${S.life})`; } }
+  else { const pro = emissaryType(); if(pro && m.srcType && new RegExp(`\\b${pro}\\b`, "i").test(m.srcType)){ txt = `${amt} Schaden verhindert (Schutz vor ${pro})`; } else { const amt0 = amt; amt = m.from && m.from !== me.id ? oppDmgToMe(amt0, m.src, !m.md) : amt0; S.life -= amt; graceFloor(); txt = `${amt} Schaden an ${me.name || "dich"} (Leben ${S.life})`; } }
   if(txt) sendLog({from:"", text: hitText(m, txt), sys:true});
   if(!/^(heal|loseInit|untap)$/.test(m.kind || "")) noteCrime();
   mycoSync();
@@ -3423,8 +3423,11 @@ function onMyTurnStart(){
   if(S.turn === 1) pregameFirstTurnReminder();
   setTimeout(sagaAdvanceAll, 0); // Sagas: Kapitelmarke nach dem Ziehen
   emptyPool("neuer Zug");
-  { const choke = allBfCards().some(x => x.n === "Choke" || /^Islands don't untap during their controllers' untap steps/im.test(x.o || "")); const skipU = !!S.skipUntapNext; if(skipU){ S.skipUntapNext = false; act("überspringt den Enttappschritt (Time Bends to My Will)"); } S.bf.forEach(c => { c._noUntap = skipU || (choke && typeMatch(c, "Island")) || (c.stun > 0); }); }
-  S.bf.forEach(c => { delete c.phased; if(c._noUntap){ if(c.stun > 0 && c.tap){ c.stun--; act(`${c.n}: Betäubungsmarke entfernt statt Enttappen (noch ${c.stun})`); } else if(c.tap) act(`${c.n} bleibt getappt (Choke)`); delete c._noUntap; return; } if(c.exertKey != null && c.exertKey === S.turn - 1){ act(`${c.n} bleibt getappt (angestrengt)`); return; } if(!/doesn't untap during your untap step/i.test(c.o || "")) c.tap = false; });
+  let jail0 = false;
+  { const choke = allBfCards().some(x => x.n === "Choke" || /^Islands don't untap during their controllers' untap steps/im.test(x.o || "")); const skipU = !!S.skipUntapNext; if(skipU){ S.skipUntapNext = false; act("überspringt den Enttappschritt (Time Bends to My Will)"); }
+    const jail = othersArch().find(x => x.imprison === me.id); jail0 = !!jail; if(jail) act(`enttappt nichts (Imprison This Insolent Wretch von ${jail.name})`);
+    S.bf.forEach(c => { c._noUntap = skipU || !!jail || (choke && typeMatch(c, "Island")) || (c.stun > 0); }); }
+  S.bf.forEach(c => { delete c.phased; if(c._noUntap){ if(c.stun > 0 && c.tap){ c.stun--; act(`${c.n}: Betäubungsmarke entfernt statt Enttappen (noch ${c.stun})`); } else if(c.tap && !jail0) act(`${c.n} bleibt getappt (Choke)`); delete c._noUntap; return; } if(c.exertKey != null && c.exertKey === S.turn - 1){ act(`${c.n} bleibt getappt (angestrengt)`); return; } if(!/doesn't untap during your untap step/i.test(c.o || "")) c.tap = false; });
   S.protect = null; if(S.lifeLock && !S.lifeLock.eot) S.lifeLock = null;
   if(Array.isArray(S.locks)) S.locks = S.locks.filter(l => !l.untilNext);
   if(S.darkPower){ S.darkPower = null; act("A Display of My Dark Power endet"); }
@@ -3588,7 +3591,18 @@ const NCSMN_RE = /^If a source an opponent controls would deal damage to you, pr
 function oppDmgPrevent(n){ const k = archActive().filter(x => NCSMN_RE.test(x.o || "")).length; return Math.max(0, (+n || 0) - k); }
 function noteDmgToMe(n){ if(!(n > 0) || !S) return; const k = turnKey(); if(S.dmgTK !== k){ S.dmgTK = k; S.dmgN = 0; } S.dmgN += n; }
 /* Komplott-Schadensänderungen: I Call for Slaughter (+1 für meine Quellen diesen Zug), Approach My Molten Realm (doppelt bis zu meinem nächsten Zug) */
-function archDmg(n, mine){ let v = +n || 0; if(v <= 0 || !S) return v; if(mine && S.slaughterKey === turnKey()) v += 1; if(S.molten) v *= 2; return v; }
+function archDmg(n, mine){ let v = +n || 0; if(v <= 0 || !S) return v; if(mine && S.slaughterKey === turnKey()) v += 1; if(moltenOn()) v *= 2; return v; }
+/* Komplotte eines Erzfeinds auch für menschliche Mitspieler (Netz): öffentlicher Teil von S.arch.active und Approach My Molten Realm */
+function archPub(){
+  if(typeof S === "undefined" || !S) return null;
+  const a = archActive(), ch = re => { const x = a.find(y => re.test(y.o || "")); return x && typeof x.chosenPid === "string" ? x.chosenPid.slice(0, 40) : null; };
+  const out = {molten:!!S.molten, bask:a.some(x => BASK_RE.test(x.o || "")), bow:ch(BOW_RE), imprison:ch(IMPRISON_RE), names:a.map(x => String(x.n || "").slice(0, 60)).slice(0, 8)};
+  return out.molten || out.bask || out.bow || out.imprison || out.names.length ? out : null;
+}
+const BASK_RE = /^Each opponent can't cast more than one spell each turn/im, BOW_RE = /^Creatures the chosen player controls can't attack you/im, IMPRISON_RE = /^Permanents the chosen player controls don't untap during their untap step/im;
+/* Komplotte der anderen Spieler (nur Mitspieler, nicht ich selbst) */
+function othersArch(){ return typeof others === "undefined" ? [] : Object.entries(others).filter(([id, o]) => id !== me.id && o && !o.off && o.arch && typeof o.arch === "object").map(([id, o]) => ({id, name:o.name || "Erzfeind", ...o.arch})); }
+function moltenOn(){ return !!(typeof S !== "undefined" && S && S.molten) || othersArch().some(x => x.molten === true); }
 // Delight in the Hunt: Schaden an meinen Kreaturen wird diesen Zug verhindert
 function myCreaturesShielded(){ return !!S && S.shieldKey === turnKey(); }
 function oppDmgToMe(n, srcN, raw = true){ if(raw) n = archDmg(n, false); const v = oppDmgPrevent(n); if(v < n) act(`Nothing Can Stop Me Now: ${n - v} Schaden${srcN ? ` von ${srcN}` : ""} verhindert`); noteDmgToMe(v); return v; }
@@ -10493,6 +10507,7 @@ async function castCosts(c){
 async function castWarn(c, zone){
   const why = [];
   const tk = turnKey();
+  if(!isLand(c)){ const bk = othersArch().find(x => x.bask === true); if(bk && spellsThisTurn() >= 1) why.push(`I Bask in Your Silent Awe (${bk.name}): du kannst nur einen Zauber pro Zug wirken`); }
   Object.entries(others).forEach(([id, o]) => {
     if(!o || id === me.id) return;
     (Array.isArray(o.locks) ? o.locks : []).forEach(l => { if(l && l.key === tk && !l.noAttack && (!l.pid || l.pid === me.id) && (!l.noncreature || !isCreature(c)) && (!l.creature || isCreature(c))) why.push(`${l.src}: du kannst diesen Zug keine ${l.noncreature ? "Nicht-Kreatur-" : l.creature ? "Kreatur" : ""}${l.creature ? "enzauber" : "Zauber"} wirken`); });
@@ -12094,7 +12109,7 @@ function historyAdd(win){
 /* ---------- Automatische Updates ---------- */
 // Liegt die App im Web, prüft sie regelmässig version.json im selben Ordner und lädt sich bei einer neuen Version neu.
 // Alles Wichtige (Spielstand, Deck, Tisch) liegt im Browser-Speicher und ist nach dem Neuladen wieder da.
-const APP_VERSION = "2026.11.20-1";
+const APP_VERSION = "2026.11.20-3";
 const ONLINE = /^https?:$/.test(location.protocol);
 let updPending = null, updTimer = null, updSnoozeUntil = 0;
 function busyForUpdate(){ return botBusy || (!$("#modal").hidden && modalState && ["block","deck"].includes(modalState.kind)); }

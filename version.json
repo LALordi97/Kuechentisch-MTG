@@ -1,4 +1,4 @@
 {
-  "version": "2026.11.20-1",
-  "notes": "28 Karten aus den neuen Top-Decks automatisch (u. a. Avenger of Zendikar, Anointed Procession, Academy Manufactor, Ancient Copper/Gold/Brass Dragon, Assassin's Trophy, Amalia, Avacyn, Barret, Afterlife from the Loam). Archenemy: A Display of My Dark Power (Länder geben ein Mana mehr) sowie Approach My Molten Realm, I Call for Slaughter und Delight in the Hunt (Schaden ändern, auch im Kampf) – damit alle 81 einmaligen Komplotte automatisch."
+  "version": "2026.11.20-3",
+  "notes": "Testzweig nacht/2026-11-20: laufende Komplotte des Erzfeinds gelten jetzt auch für menschliche Mitspieler – Bow to My Command (kein Angriff auf den Erzfeind), I Bask in Your Silent Awe (nur ein Zauber pro Zug), Imprison This Insolent Wretch (nichts enttappt) – und Approach My Molten Realm verdoppelt den Schaden der Mitspieler genau (auch im Kampf)."
 }
