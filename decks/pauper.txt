@@ -1,0 +1,484 @@
+### Dimir Control | 12% | MTGO Challenge 16, 1. Platz, 17.11.26
+4 Baleful Strix
+4 Spellstutter Sprite
+3 Faerie Seer
+2 Ninja of the Deep Hours
+2 Thorn of the Black Rose
+3 Brainstorm
+1 Dispel
+4 Counterspell
+4 Lorien Revealed
+4 Snuff Out
+2 Cast Down
+1 Extract a Confession
+1 Dimir Aqueduct
+1 Bojuka Bog
+1 Swamp
+4 Contaminated Aquifer
+10 Island
+2 Augur of Bolas
+1 Seething Landscape
+1 Plunder the Trollshaws
+1 Suffocating Fumes
+1 Gurmag Angler
+1 Murmuring Mystic
+2 Cut Down
+
+Sideboard
+1 Extract a Confession
+1 Okiba-Gang Shinobi
+3 Annul
+4 Blue Elemental Blast
+1 Arms of Hadar
+2 Relic of Progenitus
+2 Campfire
+1 Stormbound Geist
+
+### Affinity | 10% | 1^ Tappa Lega Treviso, 1. Platz, 15.11.26
+4 Myr Enforcer
+4 Refurbished Familiar
+4 Utrom Monitor
+3 Krark-Clan Shaman
+4 Ichor Wellspring
+4 Nihil Spellbomb
+2 Blood Fountain
+4 Galvanic Blast
+4 Reckoner's Bargain
+2 Toxin Analysis
+4 Thoughtcast
+1 Makeshift Munitions
+4 Great Furnace
+4 Mistvault Bridge
+4 Seat of the Synod
+4 Vault of Whispers
+2 Drossforge Bridge
+2 Silverbluff Bridge
+
+Sideboard
+4 Blue Elemental Blast
+4 Envelop
+4 Red Elemental Blast
+2 Breath Weapon
+1 Vandalblast
+
+### Burn | 10% | Mont Weekly Event, 1. Platz, 18.11.26
+4 Guttersnipe
+4 Sneaky Snacker
+4 Voldaren Epicure
+2 Kessig Flamebreather
+4 Fiery Temper
+4 Fireblast
+4 Lava Dart
+4 Lightning Bolt
+4 Faithless Looting
+4 Grab the Prize
+4 Highway Robbery
+19 Mountain
+
+Sideboard
+4 Pyroblast
+3 Cast into the Fire
+3 Relic of Progenitus
+3 Smash to Smithereens
+2 End the Festivities
+
+### Balustrade Spy | 8% | Common Ground: Tuesday Clash #001 - Nardini, 1. Platz, 18.11.26
+4 Balustrade Spy
+3 Gatecreeper Vine
+4 Generous Ent
+2 Jaspera Sentinel
+2 Lotleth Giant
+4 Masked Vandal
+3 Mesmeric Fiend
+2 Nyxborn Hydra
+4 Overgrown Battlement
+3 Quirion Ranger
+4 Sagu Wildling
+4 Saruli Caretaker
+3 Wall of Roots
+2 Dread Return
+4 Land Grant
+4 Lead the Stampede
+4 Winding Way
+3 Forest
+1 Swamp
+
+Sideboard
+1 Mesmeric Fiend
+1 Swamp
+3 Accursed Marauder
+2 Avenging Hunter
+2 Faerie Macabre
+1 Flaring Pain
+2 Scattershot Archer
+1 Undergrowth Leopard
+2 Vitu-Ghazi Inspector
+
+### Boros Aggro | 5% | MTGO League, 1. Platz, 17.11.26
+4 Rustvale Bridge
+3 Ancient Den
+3 Great Furnace
+2 Shattered Landscape
+2 Plains
+2 Boros Garrison
+2 Mountain
+1 Kabira Crossroads
+1 Bojuka Bog
+4 Sneaky Snacker
+4 Kor Skyfisher
+4 Glint Hawk
+2 Novice Inspector
+4 Galvanic Blast
+4 Dispatch
+4 Melded Moxite
+4 Ragged Short Spear
+3 Pursue the Past
+2 Relic of Progenitus
+2 Lightning Bolt
+1 Prismatic Strands
+1 Thraben Charm
+1 Makeshift Munitions
+
+Sideboard
+1 Prismatic Strands
+2 Thraben Charm
+1 Electrickery
+2 Faerie Macabre
+2 Vandalblast
+1 Campfire
+3 Dust to Dust
+1 Pyroblast
+1 Dawnbringer Cleric
+1 Red Elemental Blast
+
+### Urzatron | 5% | Lega Prato - Season II - Tappa I, 1. Platz, 16.11.26
+1 Stonehorn Dignitary
+3 Mnemonic Wall
+4 Expedition Map
+4 Giant's Boulder
+1 Energy Refractor
+3 Prophetic Prism
+2 Bonder's Ornament
+1 Crop Rotation
+1 Ephemerate
+2 Moment's Peace
+3 Plunder the Trollshaws
+1 Prohibit
+1 Weather the Storm
+1 Breath Weapon
+2 Ghostly Flicker
+1 Pulse of Murasa
+1 Unwind
+2 Mystical Teachings
+3 Lorien Revealed
+4 Visionary's Dance
+1 Rolling Thunder
+1 Conduit Pylons
+1 Bojuka Bog
+4 Island
+4 Urza's Mine
+4 Urza's Power Plant
+4 Urza's Tower
+
+Sideboard
+1 Stonehorn Dignitary
+1 Weather the Storm
+4 Hydroblast
+1 Blue Elemental Blast
+4 Pyroblast
+2 Bramble Wurm
+1 Ancient Grudge
+1 Envelop
+
+### Aura Aggro | 4% | Tsp Series ! 3°event - Tonio Spinelli TA, 1. Platz, 15.11.26
+4 Gladecover Scout
+4 Silhana Ledgewalker
+4 Slippery Bogle
+4 Malevolent Rumble
+4 Abundant Growth
+3 Ancestral Mask
+4 Armadillo Cloak
+1 Cartouche of Solidarity
+4 Ethereal Armor
+4 Rancor
+2 Snake Umbra
+4 Utopia Sprawl
+1 Spirit Link
+11 Forest
+3 Plains
+3 Tranquil Landscape
+
+Sideboard
+3 Cartouche of Solidarity
+2 Spirit Link
+3 Standard Bearer
+2 Sentinel's Eyes
+2 Ram Through
+3 Soul-Guide Lantern
+
+### Red Deck Wins | 4% | SREZ series #1 - pipa-popa, 1. Platz, 16.11.26
+4 Clockwork Percussionist
+4 Voldaren Epicure
+4 Goblin Bushwhacker
+4 Burning-Tree Emissary
+4 Goblin Tomb Raider
+3 Experimental Synthesizer
+4 Lightning Bolt
+4 Galvanic Blast
+4 Reckless Impulse
+4 Rally at the Hornburg
+1 End the Festivities
+2 Chain Lightning
+4 Great Furnace
+14 Mountain
+
+Sideboard
+2 End the Festivities
+2 Flaring Pain
+2 Smash to Smithereens
+2 Cast into the Fire
+4 Red Elemental Blast
+1 Flash of Defiance
+2 Relic of Progenitus
+
+### Gruul Aggro | 4% | Monday night Event - Zipzinger, 1. Platz, 17.11.26
+4 Avenging Hunter
+4 Boarding Party
+4 Writhing Chrysalis
+4 Eldrazi Repurposer
+4 Jewel Thief
+2 Nyxborn Hydra
+2 Sagu Wildling
+1 Crimson Fleet Commodore
+4 Arbor Elf
+2 Bannerhide Krushok
+2 Ram Through
+1 Breath Weapon
+1 Temur Battle Rage
+2 Lead the Stampede
+4 Utopia Sprawl
+3 Wild Growth
+14 Forest
+2 Mountain
+
+Sideboard
+2 Breath Weapon
+2 Relic of Progenitus
+3 Deglamer
+2 Vandalblast
+1 Ancient Grudge
+1 Scattershot Archer
+2 Feed the Clan
+1 Pulse of Murasa
+1 Faerie Macabre
+
+### Elves | 4% | League Playoffs, 1. Platz, 15.11.26
+2 Fyndhorn Elves
+4 Llanowar Elves
+4 Nyxborn Hydra
+3 Elvish Mystic
+4 Quirion Ranger
+4 Priest of Titania
+2 Masked Vandal
+4 Timberwatch Elf
+1 Faerie Macabre
+4 Avenging Hunter
+4 Generous Ent
+2 Sagu Wildling
+2 Heritage Reclamation
+4 Winding Way
+4 Lead the Stampede
+1 Gingerbread Cabin
+11 Forest
+
+Sideboard
+2 Masked Vandal
+2 Faerie Macabre
+2 Wellwisher
+3 Wrap in Vigor
+3 Vitu-Ghazi Inspector
+3 Monstrous Emergence
+
+### RG Ruby Storm | 4% | Liga Otoñal Bilbao Posavasos 2026 // Jornada 6, 1. Platz, 15.11.26
+4 Goblin Anarchomancer
+4 Thornscape Familiar
+4 Manamorphose
+4 Seething Song
+4 Desperate Ritual
+4 Twinned Vision
+2 Big Score
+3 Crossover Collaboration
+2 First Day of Class
+4 Glimpse the Impossible
+2 Seize the Storm
+2 Wrenn's Resolve
+3 Reckless Impulse
+1 Bitter Reunion
+5 Mountain
+4 Hickory Woodlot
+4 Sandstone Needle
+4 Geothermal Crevice
+
+Sideboard
+1 Abandon Attachments
+1 Origin of Metalbending
+2 Weather the Storm
+2 Gruul Turf
+4 Pyroblast
+1 Flaring Pain
+2 Red Elemental Blast
+1 Fling
+1 Scattershot
+
+### Mono Blue Aggro | 3% | St. Paupi 1, 1. Platz, 15.11.26
+4 Cryptic Serpent
+4 Delver of Secrets
+4 Tolarian Terror
+4 Lorien Revealed
+3 Ponder
+2 Artful Dodge
+2 Deem Inferior
+2 Sleep of the Dead
+4 Brainstorm
+4 Counterspell
+4 Mental Note
+4 Thought Scour
+3 Force Spike
+2 Vapor Snag
+14 Island
+
+Sideboard
+4 Annul
+4 Hydroblast
+3 Gut Shot
+2 Murmuring Mystic
+2 Relic of Progenitus
+
+### Weenie White | 3% | MTGO League, 1. Platz, 15.11.26
+3 Leonardo, Big Brother
+4 Lunarch Veteran
+4 Novice Inspector
+4 Thraben Inspector
+4 Kor Skyfisher
+4 Raffine's Informant
+1 Whitemane Lion
+2 Elite Interceptor
+4 Thraben Charm
+2 Guardians' Pledge
+3 Prismatic Strands
+2 Idyllic Grange
+17 Plains
+4 Battle Screech
+1 Ramosian Rally
+1 Spider-Man, Web-Slinger
+
+Sideboard
+1 Prismatic Strands
+1 Journey to Nowhere
+2 Arashin Cleric
+1 Hallow
+4 Dust to Dust
+1 Revoke Existence
+2 Ultimate Alliance
+1 Return to Dust
+1 Dawnbringer Cleric
+1 Standard Bearer
+
+### Mono Blue Terror | 3% | MTGO Challenge 16, 2. Platz, 17.11.26
+1 Deep Analysis
+2 Sleep of the Dead
+3 Deem Inferior
+3 Ponder
+3 Dispel
+4 Thought Scour
+4 Lorien Revealed
+4 Brainstorm
+4 Counterspell
+4 Mental Note
+1 Murmuring Mystic
+3 Delver of Secrets
+4 Cryptic Serpent
+4 Tolarian Terror
+16 Island
+
+Sideboard
+3 Gut Shot
+4 Blue Elemental Blast
+4 Annul
+4 Hydroblast
+
+### Ephemerate | 3% | Srez Series #2 - Pipa-popa, 1. Platz, 17.11.26
+1 Spell Pierce
+1 Lightning Bolt
+1 Bonder's Ornament
+1 Late to Dinner
+1 Union of the Third Path
+1 Thraben Charm
+2 Breath Weapon
+2 Campfire
+2 Brainstorm
+3 Ponder
+3 Ephemerate
+4 Counterspell
+4 Dispatch
+4 Thoughtcast
+4 Cleansing Wildfire
+1 Goliath Paladin
+1 Stonehorn Dignitary
+1 Ardent Elementalist
+1 Archaeomancer
+2 Murmuring Mystic
+2 Mulldrifter
+1 Snow-Covered Mountain
+1 Ancient Den
+1 Snow-Covered Plains
+3 Seat of the Synod
+4 Silverbluff Bridge
+4 Snow-Covered Island
+4 Rustvale Bridge
+
+Sideboard
+1 Swirling Sandstorm
+3 Pyroblast
+4 Hydroblast
+2 Envelop
+1 Blue Elemental Blast
+2 Cast into the Fire
+1 Union of the Third Path
+1 Thraben Charm
+
+### Gates | 2% | My Monday Event, 1. Platz, 16.11.26
+1 Blessed Ghoul
+4 Sacred Cat
+3 Outlaw Medic
+1 Shattered Acolyte
+4 Sneaky Snacker
+1 Guardian of the Guildpact
+4 Writhing Chrysalis
+3 Melded Moxite
+4 Lightning Bolt
+2 Thraben Charm
+2 Prismatic Strands
+1 Call Damage Control
+3 Malevolent Rumble
+4 Pursue the Past
+1 Bitter Reunion
+2 Journey to Nowhere
+4 Basilisk Gate
+4 Citadel Gate
+4 Cliffgate
+1 Heap Gate
+2 Manor Gate
+2 Mountain
+3 Plains
+
+Sideboard
+1 Shattered Acolyte
+1 Guardian of the Guildpact
+2 Thraben Charm
+1 Prismatic Strands
+3 Pyroblast
+2 Tamiyo's Safekeeping
+1 Vandalblast
+2 Ancient Grudge
+2 Breath Weapon

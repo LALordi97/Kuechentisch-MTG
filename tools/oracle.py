@@ -48,7 +48,7 @@ def parse_cards(raw):
 
 def deck_names():
     names = []
-    for f in ("cedh.txt", "modern.txt", "legacy.txt"):
+    for f in ("cedh.txt", "modern.txt", "legacy.txt", "standard.txt", "pauper.txt", "bracket3.txt", "bracket4.txt"):
         p = ROOT / "decks" / f
         if not p.exists():
             continue

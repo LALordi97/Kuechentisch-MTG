@@ -1,0 +1,1495 @@
+### Y'shtola, Night's Blessed | 9,2% | EDHREC Durchschnittsdeck Bracket 3, 7114 Decks, 19.11.26
+Commander
+Y'shtola, Night's Blessed
+
+Deck
+1 Arcane Signet
+1 Archaeomancer's Map
+1 Bender's Waterskin
+1 Bolas's Citadel
+1 Decanter of Endless Water
+1 Fellwar Stone
+1 Relic of Legends
+1 Sol Ring
+1 Talisman of Dominance
+1 Talisman of Hierarchy
+1 Talisman of Progress
+1 Thought Vessel
+1 Arcane Sanctum
+1 Choked Estuary
+1 Command Tower
+1 Darkwater Catacombs
+1 Drowned Catacomb
+1 Exotic Orchard
+1 Fetid Heath
+1 Flooded Strand
+1 Glacial Fortress
+1 Godless Shrine
+1 Hallowed Fountain
+5 Island
+1 Isolated Chapel
+1 Marsh Flats
+1 Path of Ancestry
+3 Plains
+1 Polluted Delta
+1 Port Town
+1 Prairie Stream
+1 Raffine's Tower
+1 Reliquary Tower
+1 Skycloud Expanse
+1 Sunken Hollow
+1 Sunken Ruins
+3 Swamp
+1 Underground River
+1 Watery Grave
+1 Alisaie Leveilleur
+1 Alphinaud Leveilleur
+1 Archmage Emeritus
+1 Baleful Strix
+1 Delney, Streetwise Lookout
+1 Emet-Selch of the Third Seat
+1 Fandaniel, Telophoroi Ascian
+1 G'raha Tia, Scion Reborn
+1 Geist of Saint Thalia
+1 Kambal, Consul of Allocation
+1 Lyse Hext
+1 Papalymo Totolymo
+1 Tataru Taru
+1 Vito, Thorn of the Dusk Rose
+1 Authority of the Consuls
+1 Black Market Connections
+1 Bloodchief Ascension
+1 Curiosity
+1 Ghostly Prison
+1 Helm of the Ghastlord
+1 Observed Stasis
+1 Ophidian Eye
+1 Propaganda
+1 Sigil of Sleep
+1 Anguished Unmaking
+1 Counterspell
+1 Deadly Rollick
+1 Dig Through Time
+1 Dismember
+1 Fell the Profane
+1 Fierce Guardianship
+1 Flawless Maneuver
+1 Frantic Search
+1 Lethal Scheme
+1 Rewind
+1 Sink into Stupor
+1 Snuff Out
+1 Stroke of Midnight
+1 Swords to Plowshares
+1 Transpose
+1 Unwind
+1 Void Rend
+1 Teferi, Time Raveler
+1 Circle of Power
+1 Cleansing Nova
+1 Exsanguinate
+1 Irenicus's Vile Duplication
+1 Quantum Misalignment
+1 Risky Shortcut
+1 Syphon Mind
+1 Toxic Deluge
+1 Vindicate
+
+### Teval, the Balanced Scale | 7,8% | EDHREC Durchschnittsdeck Bracket 3, 6021 Decks, 19.11.26
+Commander
+Teval, the Balanced Scale
+
+Deck
+1 Arcane Signet
+1 Cauldron of Essence
+1 Conduit of Worlds
+1 Hedge Shredder
+1 Lightning Greaves
+1 Sol Ring
+1 Breeding Pool
+1 Cephalid Coliseum
+1 Command Beacon
+1 Command Tower
+1 Crypt of Agadeem
+1 Dreamroot Cascade
+1 Exotic Orchard
+1 Field of the Dead
+1 Foreboding Landscape
+4 Forest
+1 Golgari Rot Farm
+1 Hedge Maze
+1 Hinterland Harbor
+3 Island
+1 Llanowar Wastes
+1 Memorial to Folly
+1 Misty Rainforest
+1 Opulent Palace
+1 Overgrown Tomb
+1 Polluted Delta
+1 Shifting Woodland
+1 Sunken Hollow
+3 Swamp
+1 Terramorphic Expanse
+1 Underground Mortuary
+1 Verdant Catacombs
+1 Watery Grave
+1 Woodland Cemetery
+1 Zagoth Triome
+1 Aftermath Analyst
+1 Avenger of Zendikar
+1 Colossal Grave-Reaver
+1 Craterhoof Behemoth
+1 Deathrite Shaman
+1 Eternal Witness
+1 Gravecrawler
+1 Hedron Crab
+1 Icetill Explorer
+1 Jarad, Golgari Lich Lord
+1 Kheru Goldkeeper
+1 Kishla Skimmer
+1 Kotis, Sibsig Champion
+1 Meren of Clan Nel Toth
+1 Muldrotha, the Gravetide
+1 Nyx Weaver
+1 Ob Nixilis, the Fallen
+1 River Kelpie
+1 Sakura-Tribe Elder
+1 Shigeki, Jukai Visionary
+1 Sidisi, Brood Tyrant
+1 Six
+1 Skull Prophet
+1 Stitcher's Supplier
+1 Syr Konrad, the Grim
+1 Tatyova, Benthic Druid
+1 The Gitrog Monster
+1 The Scarab God
+1 Timeless Witness
+1 Wight of the Reliquary
+1 Wonder
+1 Awaken the Honored Dead
+1 Insidious Roots
+1 Phyrexian Reclamation
+1 Ripples of Undeath
+1 Teval's Judgment
+1 Tortured Existence
+1 An Offer You Can't Refuse
+1 Assassin's Trophy
+1 Counterspell
+1 Crop Rotation
+1 Grapple with the Past
+1 Harrow
+1 Lethal Scheme
+1 Putrefy
+1 Tear Asunder
+1 Afterlife from the Loam
+1 Cultivate
+1 Dread Return
+1 Farseek
+1 Life from the Loam
+1 Living Death
+1 Nature's Lore
+1 Rampant Growth
+1 Reanimate
+1 Victimize
+1 Will of the Sultai
+
+### Edgar Markov | 7,6% | EDHREC Durchschnittsdeck Bracket 3, 5866 Decks, 19.11.26
+Commander
+Edgar Markov
+
+Deck
+1 Arcane Signet
+1 Blade of the Bloodchief
+1 Herald's Horn
+1 Orzhov Signet
+1 Skullclamp
+1 Sol Ring
+1 Talisman of Hierarchy
+1 Talisman of Indulgence
+1 Vanquisher's Banner
+1 Blood Crypt
+1 Bloodstained Mire
+1 Bojuka Bog
+1 Cavern of Souls
+1 Caves of Koilos
+1 Command Tower
+1 Dragonskull Summit
+1 Exotic Orchard
+1 Godless Shrine
+1 Isolated Chapel
+1 Luxury Suite
+1 Marsh Flats
+3 Mountain
+1 Nomad Outpost
+1 Path of Ancestry
+4 Plains
+1 Sacred Foundry
+1 Savai Triome
+1 Secluded Courtyard
+1 Shattered Sanctum
+6 Swamp
+1 Unclaimed Territory
+1 Vault of Champions
+1 Vault of the Archangel
+1 Voldaren Estate
+1 Blood Artist
+1 Bloodletter of Aclazotz
+1 Bloodline Keeper
+1 Bloodthirsty Conqueror
+1 Captivating Vampire
+1 Champion of Dusk
+1 Charismatic Conqueror
+1 Clavileño, First of the Blessed
+1 Cordial Vampire
+1 Cruel Celebrant
+1 Drana, Liberator of Malakir
+1 Edgar, Charmed Groom
+1 Elenda, the Dusk Rose
+1 Forerunner of the Legion
+1 Indulgent Aristocrat
+1 Knight of the Ebon Legion
+1 Legion Lieutenant
+1 Malakir Bloodwitch
+1 Markov Baron
+1 Master of Dark Rites
+1 Mavren Fein, Dusk Apostle
+1 Patron of the Vein
+1 Ruthless Lawbringer
+1 Sanctum Seeker
+1 Scheming Silvertongue
+1 Stromkirk Captain
+1 Twilight Prophet
+1 Vampire Socialite
+1 Vampire of the Dire Moon
+1 Vengeful Bloodwitch
+1 Viscera Seer
+1 Vito, Thorn of the Dusk Rose
+1 Welcoming Vampire
+1 Yahenni, Undying Partisan
+1 Anointed Procession
+1 Black Market Connections
+1 Exquisite Blood
+1 Phyrexian Arena
+1 Sanguine Bond
+1 Shared Animosity
+1 Anguished Unmaking
+1 Boros Charm
+1 Dark Ritual
+1 Path to Exile
+1 Swords to Plowshares
+1 Teferi's Protection
+1 Vampiric Tutor
+1 Village Rites
+1 Sorin, Imperious Bloodlord
+1 Damn
+1 Demonic Tutor
+1 New Blood
+1 Olivia's Wrath
+1 Pact of the Serpent
+1 Ruinous Ultimatum
+
+### The Ur-Dragon | 7,0% | EDHREC Durchschnittsdeck Bracket 3, 5419 Decks, 19.11.26
+Commander
+The Ur-Dragon
+
+Deck
+1 Arcane Signet
+1 Chromatic Lantern
+1 Dragon's Hoard
+1 Fellwar Stone
+1 Herald's Horn
+1 Mox Jasper
+1 Sol Ring
+1 Urza's Incubator
+1 Arid Mesa
+1 Blood Crypt
+1 Bloodstained Mire
+1 Breeding Pool
+1 Cavern of Souls
+1 Command Tower
+1 Exotic Orchard
+1 Flooded Strand
+2 Forest
+1 Hallowed Fountain
+1 Haven of the Spirit Dragon
+2 Island
+1 Ketria Triome
+1 Maelstrom of the Spirit Dragon
+1 Misty Rainforest
+2 Mountain
+1 Overgrown Tomb
+1 Path of Ancestry
+1 Plains
+1 Polluted Delta
+1 Reflecting Pool
+1 Sacred Foundry
+1 Scalding Tarn
+1 Steam Vents
+1 Stomping Ground
+2 Swamp
+1 Temple Garden
+1 The World Tree
+1 Verdant Catacombs
+1 Watery Grave
+1 Windswept Heath
+1 Wooded Foothills
+1 Ancient Copper Dragon
+1 Ancient Gold Dragon
+1 Ancient Silver Dragon
+1 Atarka, World Render
+1 Balefire Dragon
+1 Birds of Paradise
+1 Bladewing the Risen
+1 Dragonlord Dromoka
+1 Dragonlord's Servant
+1 Dragonspeaker Shaman
+1 Goldspan Dragon
+1 Hellkite Courser
+1 Klauth, Unrivaled Ancient
+1 Lathliss, Dragon Queen
+1 Miirym, Sentinel Wyrm
+1 Morophon, the Boundless
+1 Old Gnawbone
+1 Ramos, Dragon Engine
+1 Rith, Liberated Primeval
+1 Rivaz of the Claw
+1 Sarkhan, Soul Aflame
+1 Savage Ventmaw
+1 Scalelord Reckoner
+1 Scion of Draco
+1 Scion of the Ur-Dragon
+1 Scourge of Valkas
+1 Silumgar, the Drifting Death
+1 Terror of the Peaks
+1 Tiamat
+1 Twinflame Tyrant
+1 Two-Headed Hellkite
+1 Ureni of the Unwritten
+1 Utvara Hellkite
+1 Call the Spirit Dragons
+1 Dracogenesis
+1 Dragon Tempest
+1 Garruk's Uprising
+1 Kindred Discovery
+1 Rhythm of the Wild
+1 Smothering Tithe
+1 Temur Ascendancy
+1 Counterspell
+1 Cyclonic Rift
+1 Heroic Intervention
+1 Path to Exile
+1 Swords to Plowshares
+1 Teferi's Protection
+1 Sarkhan Unbroken
+1 Crux of Fate
+1 Cultivate
+1 Farseek
+1 Kodama's Reach
+1 Nature's Lore
+1 Skyshroud Claim
+1 Three Visits
+
+### Sauron, the Dark Lord | 6,9% | EDHREC Durchschnittsdeck Bracket 3, 5336 Decks, 19.11.26
+Commander
+Sauron, the Dark Lord
+
+Deck
+1 Arcane Signet
+1 Commander's Sphere
+1 Dimir Signet
+1 Fellwar Stone
+1 Inherited Envelope
+1 Palantír of Orthanc
+1 Relic of Sauron
+1 Sol Ring
+1 Talisman of Creativity
+1 Talisman of Dominance
+1 Talisman of Indulgence
+1 The One Ring
+1 Barad-dûr
+1 Blood Crypt
+1 Choked Estuary
+1 Command Tower
+1 Crumbling Necropolis
+1 Dragonskull Summit
+1 Drowned Catacomb
+1 Exotic Orchard
+1 Foreboding Ruins
+1 Frostboil Snarl
+4 Island
+1 Minas Morgul, Dark Fortress
+1 Mount Doom
+4 Mountain
+1 Path of Ancestry
+1 Rogue's Passage
+1 Smoldering Marsh
+1 Steam Vents
+1 Sulfur Falls
+1 Sulfurous Springs
+1 Sunken Hollow
+6 Swamp
+1 The Black Gate
+1 Underground River
+1 Watery Grave
+1 Anger
+1 Cavern-Hoard Dragon
+1 Corsairs of Umbar
+1 Gothmog, Morgul Lieutenant
+1 Grishnákh, Brash Instigator
+1 Lord of the Nazgûl
+1 Mauhúr, Uruk-hai Captain
+1 Moria Scavenger
+7 Nazgûl
+1 Orcish Bowmasters
+1 Orcish Siegemaster
+1 Saruman, the White Hand
+1 Sauron, Lord of the Rings
+1 The Balrog of Moria
+1 The Great Goblin
+1 The Mouth of Sauron
+1 Warg Rider
+1 Witch-king of Angmar
+1 Call of the Ring
+1 Dreadhorde Invasion
+1 Fiery Inscription
+1 In the Darkness Bind Them
+1 March from the Black Gate
+1 One Ring to Rule Them All
+1 An Offer You Can't Refuse
+1 Arcane Denial
+1 Counterspell
+1 Dark Ritual
+1 Orcish Medicine
+1 Saruman's Trickery
+1 Sauron's Ransom
+1 Soothing of Sméagol
+1 Swan Song
+1 Blasphemous Act
+1 Claim the Precious
+1 Faithless Looting
+1 Feed the Swarm
+1 Foray of Orcs
+1 Living Death
+1 Reanimate
+1 Ringsight
+1 Summons of Saruman
+1 Too Greedily, Too Deep
+1 Toxic Deluge
+1 Treason of Isengard
+
+### Hearthhull, the Worldseed | 6,8% | EDHREC Durchschnittsdeck Bracket 3, 5286 Decks, 19.11.26
+Commander
+Hearthhull, the Worldseed
+
+Deck
+1 Conduit of Worlds
+1 Crucible of Worlds
+1 Exploration Broodship
+1 Sol Ring
+1 Zuran Orb
+1 Blood Crypt
+1 Bloodstained Mire
+1 Bojuka Bog
+1 Cabaretti Courtyard
+1 Cinder Glade
+1 Command Tower
+1 Dakmor Salvage
+1 Escape Tunnel
+1 Eumidian Hatchery
+1 Evolving Wilds
+1 Fabled Passage
+1 Festering Thicket
+7 Forest
+1 Karplusan Forest
+1 Llanowar Wastes
+1 Maestros Theater
+3 Mountain
+1 Overgrown Tomb
+1 Riveteers Overlook
+1 Sheltered Thicket
+1 Smoldering Marsh
+1 Stomping Ground
+1 Sulfurous Springs
+4 Swamp
+1 Terramorphic Expanse
+1 Twilight Mire
+1 Verdant Catacombs
+1 Vernal Fen
+1 Wooded Foothills
+1 Aftermath Analyst
+1 Ancient Greenwarden
+1 Augur of Autumn
+1 Azusa, Lost but Seeking
+1 Baloth Prime
+1 Braids, Arisen Nightmare
+1 Evendo Brushrazer
+1 Famished Worldsire
+1 Horizon Explorer
+1 Icetill Explorer
+1 Korvold, Fae-Cursed King
+1 Lotus Cobra
+1 Mayhem Devil
+1 Mazirek, Kraul Death Priest
+1 Moraug, Fury of Akoum
+1 Omnath, Locus of Rage
+1 Oracle of Mul Daya
+1 Rampaging Baloths
+1 Ramunap Excavator
+1 Sabotender
+1 Scouring Swarm
+1 Scute Swarm
+1 Soul of Windgrace
+1 Springbloom Druid
+1 Sylvan Safekeeper
+1 Szarel, Genesis Shepherd
+1 Tannuk, Memorial Ensign
+1 The Gitrog Monster
+1 Tireless Provisioner
+1 Titania, Protector of Argoth
+1 Exploration
+1 Spelunking
+1 Valakut Exploration
+1 Walk-In Closet // Forgotten Cellar
+1 Assassin's Trophy
+1 Beast Within
+1 Crop Rotation
+1 Harrow
+1 Infernal Grasp
+1 Putrefy
+1 Rakdos Charm
+1 Roiling Regrowth
+1 Tear Asunder
+1 Blasphemous Act
+1 Cultivate
+1 Farseek
+1 Nahiri's Lithoforming
+1 Nature's Lore
+1 Planar Engineering
+1 Planetary Annihilation
+1 Scapeshift
+1 Skyshroud Claim
+1 Splendid Reclamation
+1 Worldsoul's Rage
+
+### Pantlaza, Sun-Favored | 6,6% | EDHREC Durchschnittsdeck Bracket 3, 5147 Decks, 19.11.26
+Commander
+Pantlaza, Sun-Favored
+
+Deck
+1 Arcane Signet
+1 Monster Manual
+1 Sol Ring
+1 The Great Henge
+1 The Skullspore Nexus
+1 Urza's Incubator
+1 Canopy Vista
+1 Cavern of Souls
+1 Cinder Glade
+1 Clifftop Retreat
+1 Command Tower
+1 Exotic Orchard
+6 Forest
+1 Fortified Village
+1 Game Trail
+1 Jetmir's Garden
+1 Jungle Shrine
+1 Kessig Wolf Run
+1 Mosswort Bridge
+4 Mountain
+1 Path of Ancestry
+4 Plains
+1 Rogue's Passage
+1 Rootbound Crag
+1 Sacred Foundry
+1 Secluded Courtyard
+1 Stomping Ground
+1 Temple Garden
+1 Unclaimed Territory
+1 Windswept Heath
+1 Wooded Foothills
+1 Apex Altisaur
+1 Bonehoard Dracosaur
+1 Bronzebeak Foragers
+1 Curious Altisaur
+1 Dinosaurs on a Spaceship
+1 Earthshaker Dreadmaw
+1 Etali, Primal Conqueror
+1 Etali, Primal Storm
+1 Ghalta and Mavren
+1 Ghalta, Primal Hunger
+1 Ghalta, Stampede Tyrant
+1 Gishath, Sun's Avatar
+1 Hulking Raptor
+1 Hunting Velociraptor
+1 Kinjalli's Sunwing
+1 Marauding Raptor
+1 Otepec Huntmaster
+1 Palani's Hatcher
+1 Quartzwood Crasher
+1 Regal Behemoth
+1 Regisaur Alpha
+1 Runic Armasaur
+1 Scion of Calamity
+1 Sunfrill Imitator
+1 Temple Altisaur
+1 Thrashing Brontodon
+1 Topiary Stomper
+1 Trumpeting Carnosaur
+1 Vaultborn Tyrant
+1 Wakening Sun's Avatar
+1 Wayward Swordtooth
+1 Wrathful Raptors
+1 Zacama, Primal Calamity
+1 Zetalpa, Primal Dawn
+1 Cream of the Crop
+1 Descendants' Path
+1 Elemental Bond
+1 Garruk's Uprising
+1 Monstrous Vortex
+1 Rhythm of the Wild
+1 Welcome to . . .
+1 Akroma's Will
+1 Eerie Interlude
+1 Ephemerate
+1 Generous Gift
+1 Heroic Intervention
+1 Path to Exile
+1 Return of the Wildspeaker
+1 Swords to Plowshares
+1 Blasphemous Act
+1 Cultivate
+1 Farseek
+1 Nature's Lore
+1 Rampant Growth
+1 Rishkar's Expertise
+1 Savage Order
+1 Three Visits
+
+### Ms. Bumbleflower | 6,1% | EDHREC Durchschnittsdeck Bracket 3, 4733 Decks, 19.11.26
+Commander
+Ms. Bumbleflower
+
+Deck
+1 Arcane Signet
+1 Fellwar Stone
+1 Mind Stone
+1 Sol Ring
+1 Swiftfoot Boots
+1 Thought Vessel
+1 Wedding Ring
+1 Adarkar Wastes
+1 Breeding Pool
+1 Brushland
+1 Canopy Vista
+1 Command Tower
+1 Exotic Orchard
+1 Flooded Grove
+4 Forest
+1 Glacial Fortress
+1 Hallowed Fountain
+1 Hinterland Harbor
+4 Island
+1 Overflowing Basin
+3 Plains
+1 Prairie Stream
+1 Razorverge Thicket
+1 Rejuvenating Springs
+1 Reliquary Tower
+1 Seachrome Coast
+1 Seaside Citadel
+1 Skycloud Expanse
+1 Spara's Headquarters
+1 Sungrass Prairie
+1 Sunpetal Grove
+1 Temple Garden
+1 Windswept Heath
+1 Yavimaya Coast
+1 Birds of Paradise
+1 Body of Knowledge
+1 Chasm Skulker
+1 Evolution Witness
+1 Faeburrow Elder
+1 Faerie Mastermind
+1 Forgotten Ancient
+1 Gluntch, the Bestower
+1 Incubation Druid
+1 Jolrael, Mwonvuli Recluse
+1 Kalonian Hydra
+1 Kami of Whispered Hopes
+1 Kutzil, Malamet Exemplar
+1 Kwain, Itinerant Meddler
+1 Loran of the Third Path
+1 Managorger Hydra
+1 Mangara, the Diplomat
+1 Psychosis Crawler
+1 Rishkar, Peema Renegade
+1 Scrawling Crawler
+1 Selvala, Explorer Returned
+1 Spore Frog
+1 Tataru Taru
+1 Triskaidekaphile
+1 Twenty-Toed Toad
+1 Communal Brewing
+1 Gleaming Splendor
+1 Hardened Scales
+1 On the Trail
+1 Propaganda
+1 Rites of Flourishing
+1 Simic Ascendancy
+1 Smothering Tithe
+1 Wizard Class
+1 An Offer You Can't Refuse
+1 Arcane Denial
+1 Counterspell
+1 Dawn's Truce
+1 Frantic Search
+1 Generous Gift
+1 Heroic Intervention
+1 Illusionist's Gambit
+1 Long River's Pull
+1 Path to Exile
+1 Peerless Recycling
+1 Perch Protection
+1 Riot Control
+1 Snap
+1 Swords to Plowshares
+1 Tamiyo, Field Researcher
+1 Cultivate
+1 Farseek
+1 Nature's Lore
+1 Promise of Loyalty
+1 Tempt with Bunnies
+1 Tempt with Discovery
+1 Wear Down
+
+### Cloud, Ex-SOLDIER | 5,9% | EDHREC Durchschnittsdeck Bracket 3, 4602 Decks, 19.11.26
+Commander
+Cloud, Ex-SOLDIER
+
+Deck
+1 Arcane Signet
+1 Behemoth Sledge
+1 Blackblade Reforged
+1 Buster Sword
+1 Champion's Helm
+1 Colossus Hammer
+1 Conformer Shuriken
+1 Conqueror's Flail
+1 Darksteel Plate
+1 Excalibur, Sword of Eden
+1 Genji Glove
+1 Hammer of Nazahn
+1 Hero's Blade
+1 Lightning Greaves
+1 Shadowspear
+1 Sol Ring
+1 Summoning Materia
+1 Swiftfoot Boots
+1 Sword of Feast and Famine
+1 Sword of the Animist
+1 The Reaver Cleaver
+1 Trailblazer's Boots
+1 Wrecking Ball Arm
+1 Battlefield Forge
+1 Brushland
+1 Canopy Vista
+1 Cinder Glade
+1 Clifftop Retreat
+1 Command Tower
+1 Exotic Orchard
+1 Fire-Lit Thicket
+3 Forest
+1 Fortified Village
+1 Furycalm Snarl
+1 Game Trail
+1 Jungle Shrine
+1 Mossfire Valley
+3 Mountain
+1 Path of Ancestry
+5 Plains
+1 Rootbound Crag
+1 Rugged Prairie
+1 Sacred Foundry
+1 Scavenger Grounds
+1 Slayers' Stronghold
+1 Spire of Industry
+1 Stomping Ground
+1 Sungrass Prairie
+1 Sunpetal Grove
+1 Sunscorched Divide
+1 Temple Garden
+1 Akiri, Fearless Voyager
+1 Barret, Avalanche Leader
+1 Bastion Protector
+1 Bugenhagen, Wise Elder
+1 Cid, Freeflier Pilot
+1 Cloud, Midgar Mercenary
+1 Codsworth, Handy Helper
+1 Danitha Capashen, Paragon
+1 Firion, Wild Rose Warrior
+1 Kutzil, Malamet Exemplar
+1 Lightning, Army of One
+1 Professional Face-Breaker
+1 Professor Hojo
+1 Puresteel Paladin
+1 Red XIII, Proud Warrior
+1 Sephiroth, Fallen Hero
+1 Sram, Senior Edificer
+1 Stoneforge Mystic
+1 Tifa, Martial Artist
+1 Vincent, Vengeful Atoner
+1 Yuffie, Materia Hunter
+1 Zack Fair
+1 Fighter Class
+1 Forge Anew
+1 Sigarda's Aid
+1 Chaos Warp
+1 Clever Concealment
+1 Cloud's Limit Break
+1 Dispatch
+1 Heroic Intervention
+1 Path to Exile
+1 Swords to Plowshares
+1 Ultimate Magic: Holy
+1 Austere Command
+1 Cultivate
+1 Nature's Lore
+1 Open the Armory
+1 Rampant Growth
+1 Steelshaper's Gift
+1 Vandalblast
+
+### Giada, Font of Hope | 5,7% | EDHREC Durchschnittsdeck Bracket 3, 4456 Decks, 19.11.26
+Commander
+Giada, Font of Hope
+
+Deck
+1 Arcane Signet
+1 Archaeomancer's Map
+1 Herald's Horn
+1 Lightning Greaves
+1 Oketra's Monument
+1 Pearl Medallion
+1 Sol Ring
+1 Swiftfoot Boots
+1 Sword of the Animist
+1 The Book of Exalted Deeds
+1 Urza's Incubator
+1 Vanquisher's Banner
+1 Bonders' Enclave
+1 Cavern of Souls
+1 Emeria, the Sky Ruin
+1 Minas Tirith
+1 Myriad Landscape
+1 Nykthos, Shrine to Nyx
+1 Path of Ancestry
+25 Plains
+1 Seraph Sanctuary
+1 War Room
+1 Angel of Destiny
+1 Angel of Finality
+1 Angel of Jubilation
+1 Angel of Vitality
+1 Angel of the Ruins
+1 Angelic Field Marshal
+1 Archangel of Thune
+1 Archangel of Tithes
+1 Avacyn, Angel of Hope
+1 Battle Angels of Tyr
+1 Bishop of Wings
+1 Bruna, the Fading Light
+1 Emeria Shepherd
+1 Exemplar of Light
+1 Firemane Commando
+1 Gisela, the Broken Blade
+1 Herald of War
+1 Inspiring Overseer
+1 Linvala, Keeper of Silence
+1 Lyra Dawnbringer
+1 Lyra, Archangel of Dawn
+1 Metropolis Reformer
+1 Ob Nixilis, the Ascended
+1 Resplendent Angel
+1 Righteous Valkyrie
+1 Segovian Angel
+1 Sephara, Sky's Blade
+1 Serra's Emissary
+1 Starnheim Aspirant
+1 Thraben Watcher
+1 Valkyrie Harbinger
+1 Youthful Valkyrie
+1 Angelic Accord
+1 Authority of the Consuls
+1 Court of Grace
+1 Folk Hero
+1 Land Tax
+1 Luminarch Ascension
+1 Smothering Tithe
+1 Akroma's Will
+1 Enlightened Tutor
+1 Flare of Fortitude
+1 Flawless Maneuver
+1 Generous Gift
+1 Path to Exile
+1 Stroke of Midnight
+1 Swords to Plowshares
+1 Teferi's Protection
+1 Serra the Benevolent
+1 Austere Command
+1 Farewell
+1 Kindred Judgment
+1 Wrath of God
+
+### Atraxa, Praetors' Voice | 5,4% | EDHREC Durchschnittsdeck Bracket 3, 4186 Decks, 19.11.26
+Commander
+Atraxa, Praetors' Voice
+
+Deck
+1 Arcane Signet
+1 Astral Cornucopia
+1 Chromatic Lantern
+1 Contagion Engine
+1 Everflowing Chalice
+1 Fellwar Stone
+1 Glistening Sphere
+1 Lightning Greaves
+1 Sol Ring
+1 Breeding Pool
+1 Command Tower
+1 Exotic Orchard
+1 Flooded Strand
+3 Forest
+1 Godless Shrine
+1 Hallowed Fountain
+1 Indatha Triome
+3 Island
+1 Karn's Bastion
+1 Marsh Flats
+1 Misty Rainforest
+1 Opulent Palace
+1 Overgrown Tomb
+1 Path of Ancestry
+3 Plains
+1 Polluted Delta
+1 Raffine's Tower
+1 Rejuvenating Springs
+1 Sandsteppe Citadel
+1 Seaside Citadel
+1 Spara's Headquarters
+2 Swamp
+1 Temple Garden
+1 Verdant Catacombs
+1 Watery Grave
+1 Windswept Heath
+1 Zagoth Triome
+1 Birds of Paradise
+1 Blightbelly Rat
+1 Blighted Agent
+1 Bloated Contaminator
+1 Bloom Tender
+1 Cankerbloom
+1 Contaminant Grafter
+1 Deepglow Skate
+1 Dreamtide Whale
+1 Evolution Sage
+1 Ezuri, Stalker of Spheres
+1 Flux Channeler
+1 Ichor Rats
+1 Ixhel, Scion of Atraxa
+1 Metastatic Evangel
+1 Skithiryx, the Blight Dragon
+1 Skrelv, Defector Mite
+1 Tainted Observer
+1 Tekuthal, Inquiry Dominus
+1 Thrummingbird
+1 Venerated Rotpriest
+1 Vishgraz, the Doomhive
+1 Voidwing Hybrid
+1 Vorinclex, Monstrous Raider
+1 Brokers Ascendancy
+1 Doubling Season
+1 Inexorable Tide
+1 Innkeeper's Talent
+1 Norn's Decree
+1 Oath of Teferi
+1 Rhystic Study
+1 Assassin's Trophy
+1 Counterspell
+1 Experimental Augury
+1 Heroic Intervention
+1 Infectious Bite
+1 Path to Exile
+1 Prologue to Phyresis
+1 Swords to Plowshares
+1 Vraska's Fall
+1 Ajani, Sleeper Agent
+1 Narset, Parter of Veils
+1 Oko, Thief of Crowns
+1 Tamiyo, Field Researcher
+1 Teferi, Master of Time
+1 Vraska, Betrayal's Sting
+1 Cultivate
+1 Drown in Ichor
+1 Farseek
+1 Infectious Inquiry
+1 Nature's Lore
+1 Phyresis Outbreak
+1 Tezzeret's Gambit
+1 Three Visits
+1 Unnatural Restoration
+
+### Lathril, Blade of the Elves | 5,1% | EDHREC Durchschnittsdeck Bracket 3, 3935 Decks, 19.11.26
+Commander
+Lathril, Blade of the Elves
+
+Deck
+1 Arcane Signet
+1 Coat of Arms
+1 Lightning Greaves
+1 Skullclamp
+1 Sol Ring
+1 Staff of Domination
+1 Swiftfoot Boots
+1 Command Tower
+1 Darkbore Pathway
+1 Deathcap Glade
+11 Forest
+1 Gilt-Leaf Palace
+1 Llanowar Wastes
+1 Necroblossom Snarl
+1 Overgrown Tomb
+1 Path of Ancestry
+1 Rogue's Passage
+6 Swamp
+1 Three Tree City
+1 Twilight Mire
+1 Undergrowth Stadium
+1 Verdant Catacombs
+1 Wirewood Lodge
+1 Woodland Cemetery
+1 Yavimaya, Cradle of Growth
+1 Allosaurus Shepherd
+1 Beast Whisperer
+1 Canopy Tactician
+1 Champions of the Perfect
+1 Circle of Dreams Druid
+1 Craterhoof Behemoth
+1 Dionus, Elvish Archdruid
+1 Dwynen, Gilt-Leaf Daen
+1 Eladamri, Korvecdal
+1 Elves of Deep Shadow
+1 Elvish Archdruid
+1 Elvish Champion
+1 Elvish Harbinger
+1 Elvish Mystic
+1 Elvish Warmaster
+1 Ezuri, Renegade Leader
+1 Fyndhorn Elves
+1 High Perfect Morcant
+1 Immaculate Magistrate
+1 Imperious Perfect
+1 Leaf-Crowned Visionary
+1 Llanowar Elves
+1 Lys Alana Huntmaster
+1 Marwyn, the Nurturer
+1 Poison-Tip Archer
+1 Priest of Titania
+1 Realmwalker
+1 Reclamation Sage
+1 Seedborn Muse
+1 Selfless Safewright
+1 Shaman of the Pack
+1 Skemfar Shadowsage
+1 Timberwatch Elf
+1 Wirewood Channeler
+1 Wolverine Riders
+1 Elderfang Venom
+1 Elven Chorus
+1 Growing Rites of Itlimoc
+1 Guardian Project
+1 Prowess of the Fair
+1 Quest for Renewal
+1 Abrupt Decay
+1 Assassin's Trophy
+1 Beast Within
+1 Elven Ambush
+1 Galadhrim Ambush
+1 Golgari Charm
+1 Heroic Intervention
+1 Putrefy
+1 Vitalize
+1 Tyvar Kell
+1 Casualties of War
+1 Cultivate
+1 Elvish Promenade
+1 Finale of Devastation
+1 Harvest Season
+1 Kindred Dominance
+1 Pact of the Serpent
+1 Shamanic Revelation
+
+### Sephiroth, Fabled SOLDIER | 5,0% | EDHREC Durchschnittsdeck Bracket 3, 3913 Decks, 19.11.26
+Commander
+Sephiroth, Fabled SOLDIER
+
+Deck
+1 Arcane Signet
+1 Ashnod's Altar
+1 Bolas's Citadel
+1 Bontu's Monument
+1 Jet Medallion
+1 Phyrexian Altar
+1 Skullclamp
+1 Sol Ring
+1 The Masamune
+1 Bojuka Bog
+1 Cabal Coffers
+1 Cabal Stronghold
+1 High Market
+1 Midgar, City of Mako
+1 Nykthos, Shrine to Nyx
+1 Phyrexian Tower
+25 Swamp
+1 Urborg, Tomb of Yawgmoth
+1 Accursed Marauder
+1 Ayara, First of Locthwain
+1 Bitterbloom Bearer
+1 Blood Artist
+1 Bloodghast
+1 Braids, Arisen Nightmare
+1 Carrion Feeder
+1 Crypt Ghast
+1 Demon's Disciple
+1 Drivnod, Carnage Dominus
+1 Endrek Sahr, Master Breeder
+1 Fleshbag Marauder
+1 Forsaken Miner
+1 Gravecrawler
+1 Gray Merchant of Asphodel
+1 Jadar, Ghoulcaller of Nephalia
+1 Marionette Apprentice
+1 Merciless Executioner
+1 Morbid Opportunist
+1 Nether Traitor
+1 Nine-Lives Familiar
+1 Ophiomancer
+1 Pawn of Ulamog
+1 Pitiless Plunderer
+1 Plaguecrafter
+1 Reassembling Skeleton
+1 Syr Konrad, the Grim
+1 Viscera Seer
+1 Warren Soultrader
+1 Yawgmoth, Thran Physician
+1 Zulaport Cutthroat
+1 Bastion of Remembrance
+1 Bitterblossom
+1 Black Market Connections
+1 Dictate of Erebos
+1 Dreadhorde Invasion
+1 Grave Pact
+1 The Meathook Massacre
+1 Culling the Weak
+1 Dark Ritual
+1 Deadly Dispute
+1 Deadly Rollick
+1 Fell the Profane
+1 Flare of Malice
+1 Malakir Rebirth
+1 Sheoldred's Edict
+1 Village Rites
+1 Withering Torment
+1 Liliana, Dreadhorde General
+1 Blasphemous Edict
+1 Diabolic Intent
+1 Feed the Swarm
+1 Innocent Blood
+1 Reanimate
+1 Toxic Deluge
+1 Unearth
+1 Victimize
+
+### The Wise Mothman | 5,0% | EDHREC Durchschnittsdeck Bracket 3, 3899 Decks, 19.11.26
+Commander
+The Wise Mothman
+
+Deck
+1 Altar of the Brood
+1 Arcane Signet
+1 Mesmeric Orb
+1 Mindcrank
+1 Sol Ring
+1 Swiftfoot Boots
+1 Talisman of Curiosity
+1 Talisman of Dominance
+1 Talisman of Resilience
+1 The Water Crystal
+1 Bojuka Bog
+1 Breeding Pool
+1 Command Tower
+1 Darkwater Catacombs
+1 Drowned Catacomb
+1 Exotic Orchard
+4 Forest
+1 Hinterland Harbor
+4 Island
+1 Mariposa Military Base
+1 Mortuary Mire
+1 Opulent Palace
+1 Overflowing Basin
+1 Overgrown Tomb
+1 Path of Ancestry
+1 Polluted Delta
+1 Rejuvenating Springs
+1 Sunken Hollow
+4 Swamp
+1 Tainted Isle
+1 Tainted Wood
+1 Undergrowth Stadium
+1 Viridescent Bog
+1 Watery Grave
+1 Woodland Cemetery
+1 Zagoth Triome
+1 Agent Frank Horrigan
+1 Bloatfly Swarm
+1 Bruvac the Grandiloquent
+1 Corpsejack Menace
+1 Danny Pink
+1 Evolution Sage
+1 Evolution Witness
+1 Fathom Mage
+1 Feral Ghoul
+1 Glowing One
+1 Infesting Radroach
+1 Kami of Whispered Hopes
+1 Marcus, Mutant Mayor
+1 Mirelurk Queen
+1 Muldrotha, the Gravetide
+1 Nightkin Ambusher
+1 Raul, Trouble Shooter
+1 Ruin Crab
+1 Screeching Scorchbeast
+1 Strong, the Brutish Thespian
+1 Syr Konrad, the Grim
+1 Tato Farmer
+1 The Master of Lake-town
+1 The Master, Transcendent
+1 Thrummingbird
+1 Vexing Radgull
+1 Winding Constrictor
+1 Bloodchief Ascension
+1 Branching Evolution
+1 Guardian Project
+1 Hardened Scales
+1 Inexorable Tide
+1 Psychic Corrosion
+1 Struggle for Project Purity
+1 Vault 12: The Necropolis
+1 Assassin's Trophy
+1 Atomize
+1 Contaminated Drink
+1 Counterspell
+1 Heroic Intervention
+1 Inspiring Call
+1 Mutational Advantage
+1 Putrefy
+1 Radstorm
+1 Ripples of Potential
+1 Casualties of War
+1 Cultivate
+1 Farseek
+1 Maddening Cacophony
+1 Nature's Lore
+1 Nuclear Fallout
+1 Rampant Growth
+1 Reanimate
+1 Three Visits
+
+### Kaalia of the Vast | 5,0% | EDHREC Durchschnittsdeck Bracket 3, 3895 Decks, 19.11.26
+Commander
+Kaalia of the Vast
+
+Deck
+1 Arcane Signet
+1 Boros Signet
+1 Fellwar Stone
+1 Lightning Greaves
+1 Orzhov Signet
+1 Rakdos Signet
+1 Sol Ring
+1 Swiftfoot Boots
+1 Talisman of Conviction
+1 Talisman of Hierarchy
+1 Talisman of Indulgence
+1 Arid Mesa
+1 Battlefield Forge
+1 Blood Crypt
+1 Bloodstained Mire
+1 Bojuka Bog
+1 Caves of Koilos
+1 Clifftop Retreat
+1 Command Tower
+1 Dragonskull Summit
+1 Exotic Orchard
+1 Godless Shrine
+1 Isolated Chapel
+1 Luxury Suite
+1 Marsh Flats
+4 Mountain
+1 Nomad Outpost
+5 Plains
+1 Rogue's Passage
+1 Sacred Foundry
+1 Savai Triome
+1 Shattered Sanctum
+1 Spectator Seating
+1 Sulfurous Springs
+5 Swamp
+1 Vault of Champions
+1 Ancient Copper Dragon
+1 Angel of Despair
+1 Angel of Serenity
+1 Angelic Arbiter
+1 Archfiend of Depravity
+1 Archfiend of Despair
+1 Aurelia, the Warleader
+1 Avacyn, Angel of Hope
+1 Avacyn, Angel of Horror
+1 Balefire Dragon
+1 Drana and Linvala
+1 Gisela, Blade of Goldnight
+1 Grand Abolisher
+1 Hellkite Tyrant
+1 Isshin, Two Heavens as One
+1 Kaalia, Zenith Seeker
+1 Liesa, Forgotten Archangel
+1 Lord of the Void
+1 Master of Cruelties
+1 Mother of Runes
+1 Rakdos, Patron of Chaos
+1 Razaketh, the Foulblooded
+1 Reya Dawnbringer
+1 Rune-Scarred Demon
+1 Sephara, Sky's Blade
+1 Serra's Emissary
+1 Terror of the Peaks
+1 Twinflame Tyrant
+1 Valgavoth, Terror Eater
+1 Vilis, Broker of Blood
+1 Dragon Tempest
+1 Phyrexian Arena
+1 Reconnaissance
+1 Smothering Tithe
+1 Windcrag Siege
+1 Akroma's Will
+1 Anguished Unmaking
+1 Boros Charm
+1 Dark Ritual
+1 Deflecting Swat
+1 Flawless Maneuver
+1 Path to Exile
+1 Swords to Plowshares
+1 Teferi's Protection
+1 Terminate
+1 Blasphemous Act
+1 Damn
+1 Demonic Counsel
+1 Demonic Tutor
+1 Night's Whisper
+1 Reanimate
+1 Ruinous Ultimatum
+
+### Frodo, Adventurous Hobbit / Sam, Loyal Attendant | 4,9% | EDHREC Durchschnittsdeck Bracket 3, 3788 Decks, 19.11.26
+Commander
+Frodo, Adventurous Hobbit
+Sam, Loyal Attendant
+
+Deck
+1 Arcane Signet
+1 Bag End Banquet
+1 Field-Tested Frying Pan
+1 Nuka-Cola Vending Machine
+1 Sol Ring
+1 The One Ring
+1 Well of Lost Dreams
+1 Access Tunnel
+1 Brushland
+1 Canopy Vista
+1 Command Tower
+1 Exotic Orchard
+6 Forest
+1 Fortified Village
+1 Godless Shrine
+1 Hobbit Hole
+1 Isolated Chapel
+1 Llanowar Wastes
+1 Murmuring Bosk
+1 Necroblossom Snarl
+1 Overgrown Tomb
+1 Path of Ancestry
+4 Plains
+1 Rogue's Passage
+1 Sandsteppe Citadel
+1 Scattered Groves
+1 Scoured Barrens
+1 Shineshadow Snarl
+1 Sunpetal Grove
+3 Swamp
+1 Temple Garden
+1 The Shire
+1 Woodland Cemetery
+1 Academy Manufactor
+1 Banquet Guests
+1 Belladonna Took
+1 Bilbo, Fellow Conspirator
+1 Birds of Paradise
+1 Delighted Halfling
+1 Elanor Gardner
+1 Essence Warden
+1 Farmer Cotton
+1 Feasting Hobbit
+1 Frodo, Sauron's Bane
+1 Gilded Goose
+1 Gollum, Obsessed Stalker
+1 Gwaihir, Greatest of the Eagles
+1 Jaheira, Friend of the Forest
+1 Lobelia, Defender of Bag End
+1 Lotho, Corrupt Shirriff
+1 Meriadoc Brandybuck
+1 Merry, Warden of Isengard
+1 Mirkwood Bats
+1 Peregrin Took
+1 Pippin, Warden of Isengard
+1 Prize Pig
+1 Prosperous Innkeeper
+1 Rapacious Guest
+1 Rosie Cotton of South Lane
+1 Samwise Gamgee
+1 Savvy Hunter
+1 The Gaffer
+1 The Sackville-Bagginses
+1 Tireless Provisioner
+1 Treebeard, Gracious Host
+1 Vito, Thorn of the Dusk Rose
+1 Agent of the Iron Throne
+1 Call of the Ring
+1 Night of the Sweets' Revenge
+1 Ninja Pizza
+1 Of Herbs and Stewed Rabbit
+1 Sanguine Bond
+1 Anguished Unmaking
+1 Assassin's Trophy
+1 Crypt Incursion
+1 Go for the Throat
+1 Heroic Intervention
+1 Mortify
+1 Path to Exile
+1 Swords to Plowshares
+1 Cultivate
+1 Dusk // Dawn
+1 Farseek
+1 Many Partings
+1 Night's Whisper
+1 Revive the Shire
+1 The Battle of Bywater
+1 Toxic Deluge
