@@ -1,4 +1,4 @@
-### Y'shtola, Night's Blessed | 9,9% | EDHREC Durchschnittsdeck Bracket 4, 4573 Decks, 19.11.26
+### Y'shtola, Night's Blessed | 9,9% | EDHREC Durchschnittsdeck Bracket 4, 4581 Decks, 20.11.26
 Commander
 Y'shtola, Night's Blessed
 
@@ -97,7 +97,7 @@ Deck
 1 Toxic Deluge
 1 Vindicate
 
-### Edgar Markov | 9,3% | EDHREC Durchschnittsdeck Bracket 4, 4303 Decks, 19.11.26
+### Edgar Markov | 9,3% | EDHREC Durchschnittsdeck Bracket 4, 4310 Decks, 20.11.26
 Commander
 Edgar Markov
 
@@ -192,7 +192,7 @@ Deck
 1 Olivia's Wrath
 1 Ruinous Ultimatum
 
-### The Ur-Dragon | 8,2% | EDHREC Durchschnittsdeck Bracket 4, 3810 Decks, 19.11.26
+### The Ur-Dragon | 8,2% | EDHREC Durchschnittsdeck Bracket 4, 3809 Decks, 20.11.26
 Commander
 The Ur-Dragon
 
@@ -295,7 +295,7 @@ Deck
 1 Nature's Lore
 1 Three Visits
 
-### Vivi Ornitier | 7,9% | EDHREC Durchschnittsdeck Bracket 4, 3678 Decks, 19.11.26
+### Vivi Ornitier | 7,9% | EDHREC Durchschnittsdeck Bracket 4, 3682 Decks, 20.11.26
 Commander
 Vivi Ornitier
 
@@ -385,7 +385,7 @@ Deck
 1 Vandalblast
 1 Windfall
 
-### Krenko, Mob Boss | 7,8% | EDHREC Durchschnittsdeck Bracket 4, 3591 Decks, 19.11.26
+### Krenko, Mob Boss | 7,8% | EDHREC Durchschnittsdeck Bracket 4, 3593 Decks, 20.11.26
 Commander
 Krenko, Mob Boss
 
@@ -464,7 +464,7 @@ Deck
 1 Krenko's Command
 1 Vandalblast
 
-### Kaalia of the Vast | 6,7% | EDHREC Durchschnittsdeck Bracket 4, 3108 Decks, 19.11.26
+### Kaalia of the Vast | 6,7% | EDHREC Durchschnittsdeck Bracket 4, 3113 Decks, 20.11.26
 Commander
 Kaalia of the Vast
 
@@ -559,7 +559,7 @@ Deck
 1 Reanimate
 1 Ruinous Ultimatum
 
-### Nekusar, the Mindrazer | 5,8% | EDHREC Durchschnittsdeck Bracket 4, 2694 Decks, 19.11.26
+### Nekusar, the Mindrazer | 5,8% | EDHREC Durchschnittsdeck Bracket 4, 2697 Decks, 20.11.26
 Commander
 Nekusar, the Mindrazer
 
@@ -656,7 +656,7 @@ Deck
 1 Windfall
 1 Winds of Change
 
-### Yuriko, the Tiger's Shadow | 5,8% | EDHREC Durchschnittsdeck Bracket 4, 2676 Decks, 19.11.26
+### Yuriko, the Tiger's Shadow | 5,8% | EDHREC Durchschnittsdeck Bracket 4, 2680 Decks, 20.11.26
 Commander
 Yuriko, the Tiger's Shadow
 
@@ -750,7 +750,7 @@ Deck
 1 Temporal Trespass
 1 Treasure Cruise
 
-### Sephiroth, Fabled SOLDIER | 5,7% | EDHREC Durchschnittsdeck Bracket 4, 2633 Decks, 19.11.26
+### Sephiroth, Fabled SOLDIER | 5,7% | EDHREC Durchschnittsdeck Bracket 4, 2636 Decks, 20.11.26
 Commander
 Sephiroth, Fabled SOLDIER
 
@@ -833,7 +833,7 @@ Deck
 1 Unearth
 1 Victimize
 
-### Atraxa, Praetors' Voice | 5,6% | EDHREC Durchschnittsdeck Bracket 4, 2613 Decks, 19.11.26
+### Atraxa, Praetors' Voice | 5,6% | EDHREC Durchschnittsdeck Bracket 4, 2615 Decks, 20.11.26
 Commander
 Atraxa, Praetors' Voice
 
@@ -932,7 +932,7 @@ Deck
 1 Tezzeret's Gambit
 1 Three Visits
 
-### Kefka, Court Mage | 5,4% | EDHREC Durchschnittsdeck Bracket 4, 2483 Decks, 19.11.26
+### Kefka, Court Mage | 5,4% | EDHREC Durchschnittsdeck Bracket 4, 2482 Decks, 20.11.26
 Commander
 Kefka, Court Mage
 
@@ -1029,7 +1029,7 @@ Deck
 1 Vandalblast
 1 Windfall
 
-### Chatterfang, Squirrel General | 5,1% | EDHREC Durchschnittsdeck Bracket 4, 2380 Decks, 19.11.26
+### Chatterfang, Squirrel General | 5,1% | EDHREC Durchschnittsdeck Bracket 4, 2377 Decks, 20.11.26
 Commander
 Chatterfang, Squirrel General
 
@@ -1122,7 +1122,7 @@ Deck
 1 Reanimate
 1 Swarmyard Massacre
 
-### Fire Lord Azula | 4,6% | EDHREC Durchschnittsdeck Bracket 4, 2112 Decks, 19.11.26
+### Fire Lord Azula | 4,6% | EDHREC Durchschnittsdeck Bracket 4, 2115 Decks, 20.11.26
 Commander
 Fire Lord Azula
 
@@ -1219,7 +1219,7 @@ Deck
 1 Mana Geyser
 1 Sozin's Comet
 
-### Sauron, the Dark Lord | 4,4% | EDHREC Durchschnittsdeck Bracket 4, 2031 Decks, 19.11.26
+### Sauron, the Dark Lord | 4,4% | EDHREC Durchschnittsdeck Bracket 4, 2034 Decks, 20.11.26
 Commander
 Sauron, the Dark Lord
 
@@ -1309,7 +1309,7 @@ Deck
 1 Victimize
 1 Windfall
 
-### Teval, the Balanced Scale | 3,9% | EDHREC Durchschnittsdeck Bracket 4, 1819 Decks, 19.11.26
+### Teval, the Balanced Scale | 3,9% | EDHREC Durchschnittsdeck Bracket 4, 1820 Decks, 20.11.26
 Commander
 Teval, the Balanced Scale
 
@@ -1408,7 +1408,7 @@ Deck
 1 Victimize
 1 Will of the Sultai
 
-### Hashaton, Scarab's Fist | 3,9% | EDHREC Durchschnittsdeck Bracket 4, 1799 Decks, 19.11.26
+### Hashaton, Scarab's Fist | 3,9% | EDHREC Durchschnittsdeck Bracket 4, 1802 Decks, 20.11.26
 Commander
 Hashaton, Scarab's Fist
 
@@ -1446,8 +1446,8 @@ Deck
 1 Raffine's Tower
 1 Sea of Clouds
 3 Swamp
-1 Undercity Sewers
 1 Underground River
+1 Underground Sea
 1 Vault of Champions
 1 Watery Grave
 1 Angel of the Ruins

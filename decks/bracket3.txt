@@ -1,4 +1,4 @@
-### Y'shtola, Night's Blessed | 9,2% | EDHREC Durchschnittsdeck Bracket 3, 7114 Decks, 19.11.26
+### Y'shtola, Night's Blessed | 9,2% | EDHREC Durchschnittsdeck Bracket 3, 7114 Decks, 20.11.26
 Commander
 Y'shtola, Night's Blessed
 
@@ -95,7 +95,7 @@ Deck
 1 Toxic Deluge
 1 Vindicate
 
-### Teval, the Balanced Scale | 7,8% | EDHREC Durchschnittsdeck Bracket 3, 6021 Decks, 19.11.26
+### Teval, the Balanced Scale | 7,8% | EDHREC Durchschnittsdeck Bracket 3, 6026 Decks, 20.11.26
 Commander
 Teval, the Balanced Scale
 
@@ -193,7 +193,7 @@ Deck
 1 Victimize
 1 Will of the Sultai
 
-### Edgar Markov | 7,6% | EDHREC Durchschnittsdeck Bracket 3, 5866 Decks, 19.11.26
+### Edgar Markov | 7,6% | EDHREC Durchschnittsdeck Bracket 3, 5871 Decks, 20.11.26
 Commander
 Edgar Markov
 
@@ -288,7 +288,7 @@ Deck
 1 Pact of the Serpent
 1 Ruinous Ultimatum
 
-### The Ur-Dragon | 7,0% | EDHREC Durchschnittsdeck Bracket 3, 5419 Decks, 19.11.26
+### The Ur-Dragon | 7,0% | EDHREC Durchschnittsdeck Bracket 3, 5418 Decks, 20.11.26
 Commander
 The Ur-Dragon
 
@@ -319,14 +319,14 @@ Deck
 2 Mountain
 1 Overgrown Tomb
 1 Path of Ancestry
-1 Plains
+2 Plains
 1 Polluted Delta
 1 Reflecting Pool
 1 Sacred Foundry
 1 Scalding Tarn
 1 Steam Vents
 1 Stomping Ground
-2 Swamp
+1 Swamp
 1 Temple Garden
 1 The World Tree
 1 Verdant Catacombs
@@ -389,7 +389,7 @@ Deck
 1 Skyshroud Claim
 1 Three Visits
 
-### Sauron, the Dark Lord | 6,9% | EDHREC Durchschnittsdeck Bracket 3, 5336 Decks, 19.11.26
+### Sauron, the Dark Lord | 6,9% | EDHREC Durchschnittsdeck Bracket 3, 5339 Decks, 20.11.26
 Commander
 Sauron, the Dark Lord
 
@@ -398,7 +398,6 @@ Deck
 1 Commander's Sphere
 1 Dimir Signet
 1 Fellwar Stone
-1 Inherited Envelope
 1 Palantír of Orthanc
 1 Relic of Sauron
 1 Sol Ring
@@ -416,7 +415,7 @@ Deck
 1 Exotic Orchard
 1 Foreboding Ruins
 1 Frostboil Snarl
-4 Island
+5 Island
 1 Minas Morgul, Dark Fortress
 1 Mount Doom
 4 Mountain
@@ -477,7 +476,7 @@ Deck
 1 Toxic Deluge
 1 Treason of Isengard
 
-### Hearthhull, the Worldseed | 6,8% | EDHREC Durchschnittsdeck Bracket 3, 5286 Decks, 19.11.26
+### Hearthhull, the Worldseed | 6,8% | EDHREC Durchschnittsdeck Bracket 3, 5288 Decks, 20.11.26
 Commander
 Hearthhull, the Worldseed
 
@@ -571,7 +570,7 @@ Deck
 1 Splendid Reclamation
 1 Worldsoul's Rage
 
-### Pantlaza, Sun-Favored | 6,6% | EDHREC Durchschnittsdeck Bracket 3, 5147 Decks, 19.11.26
+### Pantlaza, Sun-Favored | 6,6% | EDHREC Durchschnittsdeck Bracket 3, 5150 Decks, 20.11.26
 Commander
 Pantlaza, Sun-Favored
 
@@ -665,7 +664,7 @@ Deck
 1 Savage Order
 1 Three Visits
 
-### Ms. Bumbleflower | 6,1% | EDHREC Durchschnittsdeck Bracket 3, 4733 Decks, 19.11.26
+### Ms. Bumbleflower | 6,1% | EDHREC Durchschnittsdeck Bracket 3, 4735 Decks, 20.11.26
 Commander
 Ms. Bumbleflower
 
@@ -762,7 +761,7 @@ Deck
 1 Tempt with Discovery
 1 Wear Down
 
-### Cloud, Ex-SOLDIER | 5,9% | EDHREC Durchschnittsdeck Bracket 3, 4602 Decks, 19.11.26
+### Cloud, Ex-SOLDIER | 5,9% | EDHREC Durchschnittsdeck Bracket 3, 4605 Decks, 20.11.26
 Commander
 Cloud, Ex-SOLDIER
 
@@ -859,7 +858,7 @@ Deck
 1 Steelshaper's Gift
 1 Vandalblast
 
-### Giada, Font of Hope | 5,7% | EDHREC Durchschnittsdeck Bracket 3, 4456 Decks, 19.11.26
+### Giada, Font of Hope | 5,7% | EDHREC Durchschnittsdeck Bracket 3, 4461 Decks, 20.11.26
 Commander
 Giada, Font of Hope
 
@@ -940,7 +939,7 @@ Deck
 1 Kindred Judgment
 1 Wrath of God
 
-### Atraxa, Praetors' Voice | 5,4% | EDHREC Durchschnittsdeck Bracket 3, 4186 Decks, 19.11.26
+### Atraxa, Praetors' Voice | 5,4% | EDHREC Durchschnittsdeck Bracket 3, 4192 Decks, 20.11.26
 Commander
 Atraxa, Praetors' Voice
 
@@ -1038,7 +1037,7 @@ Deck
 1 Three Visits
 1 Unnatural Restoration
 
-### Lathril, Blade of the Elves | 5,1% | EDHREC Durchschnittsdeck Bracket 3, 3935 Decks, 19.11.26
+### Lathril, Blade of the Elves | 5,1% | EDHREC Durchschnittsdeck Bracket 3, 3939 Decks, 20.11.26
 Commander
 Lathril, Blade of the Elves
 
@@ -1128,7 +1127,7 @@ Deck
 1 Pact of the Serpent
 1 Shamanic Revelation
 
-### Sephiroth, Fabled SOLDIER | 5,0% | EDHREC Durchschnittsdeck Bracket 3, 3913 Decks, 19.11.26
+### Sephiroth, Fabled SOLDIER | 5,0% | EDHREC Durchschnittsdeck Bracket 3, 3916 Decks, 20.11.26
 Commander
 Sephiroth, Fabled SOLDIER
 
@@ -1209,7 +1208,7 @@ Deck
 1 Unearth
 1 Victimize
 
-### The Wise Mothman | 5,0% | EDHREC Durchschnittsdeck Bracket 3, 3899 Decks, 19.11.26
+### The Wise Mothman | 5,0% | EDHREC Durchschnittsdeck Bracket 3, 3902 Decks, 20.11.26
 Commander
 The Wise Mothman
 
@@ -1305,7 +1304,7 @@ Deck
 1 Reanimate
 1 Three Visits
 
-### Kaalia of the Vast | 5,0% | EDHREC Durchschnittsdeck Bracket 3, 3895 Decks, 19.11.26
+### Kaalia of the Vast | 5,0% | EDHREC Durchschnittsdeck Bracket 3, 3897 Decks, 20.11.26
 Commander
 Kaalia of the Vast
 
@@ -1399,7 +1398,7 @@ Deck
 1 Reanimate
 1 Ruinous Ultimatum
 
-### Frodo, Adventurous Hobbit / Sam, Loyal Attendant | 4,9% | EDHREC Durchschnittsdeck Bracket 3, 3788 Decks, 19.11.26
+### Frodo, Adventurous Hobbit / Sam, Loyal Attendant | 4,9% | EDHREC Durchschnittsdeck Bracket 3, 3790 Decks, 20.11.26
 Commander
 Frodo, Adventurous Hobbit
 Sam, Loyal Attendant

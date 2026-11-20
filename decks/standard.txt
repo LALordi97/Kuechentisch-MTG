@@ -23,7 +23,7 @@ Sideboard
 4 Erode
 2 Shattered Acolyte
 
-### Dimir Aggro | 11% | MTGO League, 2. Platz, 16.11.26
+### Dimir Aggro | 10% | MTGO League, 2. Platz, 16.11.26
 1 Hidden Lair
 1 Multiversal Passage
 4 Gloomlake Verge
@@ -59,42 +59,6 @@ Sideboard
 2 Day of Black Sun
 1 The Theorist, Jace Beleren
 1 Raven Eagle
-
-### Jund Aggro | 9% | MTGO Challenge 16, 1. Platz, 15.11.26
-4 Biotech Specialist
-4 Blooming Marsh
-1 Thornspire Verge
-4 Gene Pollinator
-4 Greedy Freebooter
-4 Lively Dirge
-4 Obsessive Pursuit
-4 Starting Town
-1 Swamp
-1 Forest
-4 The Sackville-Bagginses
-3 Umbral Collar Zealot
-1 Smaug the Magnificent
-3 Blood Crypt
-4 Torch the Tower
-3 Stomping Ground
-3 Overgrown Tomb
-1 Blazemire Verge
-2 Witherbloom Charm
-1 Deadly Precision
-1 Mountain
-1 Wolverine, Fierce Fighter
-2 Syr Ginger, the Meal Ender
-
-Sideboard
-2 The Ooze
-2 Vicious Rivalry
-2 Deathmark
-1 Guerrilla Gorilla
-1 Maelstrom Pulse
-3 Duress
-2 Terminal Criticism
-1 Glorious Decay
-1 Q, Stacking the Deck
 
 ### Selesnya Aggro | 9% | Planeswalker Series: Competitive, 1. Platz, 15.11.26
 4 Llanowar Elves
@@ -167,6 +131,42 @@ Sideboard
 2 Karn, Argent Defender
 2 Georgiou, Terran Emperor
 
+### Jund Aggro | 8% | MTGO Challenge 16, 1. Platz, 15.11.26
+4 Biotech Specialist
+4 Blooming Marsh
+1 Thornspire Verge
+4 Gene Pollinator
+4 Greedy Freebooter
+4 Lively Dirge
+4 Obsessive Pursuit
+4 Starting Town
+1 Swamp
+1 Forest
+4 The Sackville-Bagginses
+3 Umbral Collar Zealot
+1 Smaug the Magnificent
+3 Blood Crypt
+4 Torch the Tower
+3 Stomping Ground
+3 Overgrown Tomb
+1 Blazemire Verge
+2 Witherbloom Charm
+1 Deadly Precision
+1 Mountain
+1 Wolverine, Fierce Fighter
+2 Syr Ginger, the Meal Ender
+
+Sideboard
+2 The Ooze
+2 Vicious Rivalry
+2 Deathmark
+1 Guerrilla Gorilla
+1 Maelstrom Pulse
+3 Duress
+2 Terminal Criticism
+1 Glorious Decay
+1 Q, Stacking the Deck
+
 ### Mono Green Aggro | 6% | RCQ, 1. Platz, 15.11.26
 4 Sazh's Chocobo
 1 Hard-Hitting Question
@@ -235,74 +235,7 @@ Sideboard
 1 Flashfreeze
 2 Annul
 
-### Orzhov Aggro | 5% | MTGO Challenge 16, 1. Platz, 14.11.26
-4 Enlightened Confidant
-3 Erode
-4 Concealed Courtyard
-1 Aunt May
-4 Starting Town
-4 Amalia Benavides Aguirre
-1 Fountainport
-4 Haliya, Guided by Light
-4 Case of the Uneaten Feast
-4 Multiversal Passage
-4 Moseo, Vein's New Dean
-4 Plains
-4 Hinterland Sanctifier
-4 Godless Shrine
-2 Liliana the Faultless
-2 Starscape Cleric
-1 Great Arashin City
-1 Salt Vampire
-4 Lunar Convocation
-1 Springleaf Drum
-
-Sideboard
-1 Erode
-2 Sheltered by Ghosts
-1 Cathar Commando
-3 Seam Rip
-2 Pyrrhic Strike
-1 Vicious Rivalry
-1 Space-Time Anomaly
-1 Curious Farm Animals
-3 Duress
-
-### Azorius Aggro | 5% | MTGO Challenge 32, 1. Platz, 16.11.26
-1 Guiding Hydra
-4 Momo, Friendly Flier
-1 Erode
-4 Floodfarm Verge
-2 Multiversal Passage
-2 Seam Rip
-4 Practiced Offense
-1 Spider-Sense
-3 Daydream
-2 The Wondrous Wasp
-4 Gleaming Bastion
-4 Sage of the Skies
-4 Starfield Shepherd
-1 Nurturing Pixie
-4 Steamcore Scholar
-4 Quantum Riddler
-4 Hallowed Fountain
-4 Springleaf Drum
-6 Plains
-1 Island
-
-Sideboard
-1 Erode
-1 Seam Rip
-1 Spider-Sense
-1 Pyrrhic Strike
-3 The Theorist, Jace Beleren
-1 Ghost Vacuum
-2 No More Lies
-2 Settle the Wreckage
-1 Spell Pierce
-2 Clarion Conqueror
-
-### UW Control | 5% | MTGO League, 1. Platz, 16.11.26
+### UW Control | 6% | MTGO League, 1. Platz, 16.11.26
 1 Captain Marvel, Earth's Protector
 4 Consult the Star Charts
 4 Countersculpt
@@ -337,6 +270,71 @@ Sideboard
 1 Ultima
 2 Wan Shi Tong, Librarian
 2 Chandra, Chill of Compliance
+
+### Azorius Aggro | 5% | Weekly Standard League, 1. Platz, 18.11.26
+5 Plains
+4 Hallowed Fountain
+4 Floodfarm Verge
+4 Cavern of Souls
+2 Skycoach Waypoint
+2 Restless Anchorage
+2 Deserted Beach
+1 Island
+4 Arahbo, the First Fang
+4 Enduring Curiosity
+4 Emeritus of Truce
+4 Gloryheath Lynx
+4 Helpful Hunter
+3 Regal Caracal
+2 Basri, Tomorrow's Champion
+2 Winnowing
+2 Erode
+2 Get Lost
+2 Parting Gust
+2 Elspeth, Storm Slayer
+1 Practiced Offense
+
+Sideboard
+2 Basri, Tomorrow's Champion
+2 Winnowing
+2 Seam Rip
+2 Kutzil's Flanker
+2 Clarion Conqueror
+3 Rest in Peace
+2 Spell Pierce
+
+### Orzhov Aggro | 4% | MTGO Challenge 16, 1. Platz, 14.11.26
+4 Enlightened Confidant
+3 Erode
+4 Concealed Courtyard
+1 Aunt May
+4 Starting Town
+4 Amalia Benavides Aguirre
+1 Fountainport
+4 Haliya, Guided by Light
+4 Case of the Uneaten Feast
+4 Multiversal Passage
+4 Moseo, Vein's New Dean
+4 Plains
+4 Hinterland Sanctifier
+4 Godless Shrine
+2 Liliana the Faultless
+2 Starscape Cleric
+1 Great Arashin City
+1 Salt Vampire
+4 Lunar Convocation
+1 Springleaf Drum
+
+Sideboard
+1 Erode
+2 Sheltered by Ghosts
+1 Cathar Commando
+3 Seam Rip
+2 Pyrrhic Strike
+1 Vicious Rivalry
+1 Space-Time Anomaly
+1 Curious Farm Animals
+3 Duress
 
 ### UR Aggro | 4% | RCQ, 1. Platz, 15.11.26
 2 Shock
@@ -432,6 +430,41 @@ Sideboard
 3 Case of the Crimson Pulse
 3 Strategic Betrayal
 
+### Esper Aggro | 1% | MTGO Challenge 32, 1. Platz, 09.11.26
+2 Bitter Triumph
+3 Grim Bauble
+3 Practiced Offense
+3 Kaito, Bane of Nightmares
+1 Mabel, Bitter Recluse
+1 Guiding Hydra
+2 Likeness Looter
+3 Overlord of the Balemurk
+3 Starfield Shepherd
+4 Nurturing Pixie
+4 Moonshadow
+4 Dark Matter Manipulator
+4 Mockingbird
+1 Bleachbone Verge
+1 Plains
+1 Restless Anchorage
+2 Gloomlake Verge
+2 Starting Town
+4 Hallowed Fountain
+4 Concealed Courtyard
+4 Godless Shrine
+4 Watery Grave
+
+Sideboard
+2 Sheltered by Ghosts
+1 Curious Farm Animals
+3 Clarion Conqueror
+1 Annul
+1 Requiting Hex
+3 Strategic Betrayal
+2 Duress
+1 Spell Pierce
+1 Kaito, Bane of Nightmares
+
 ### Reanimator | 1% | Champions Cup Store Qualifier, 1. Platz, 15.11.26
 2 Terror of the Peaks
 3 Bringer of the Last Gift
@@ -474,78 +507,31 @@ Sideboard
 2 Ancient Vendetta
 1 Strategic Betrayal
 
-### Esper Aggro | 0,9% | MTGO Challenge 32, 1. Platz, 09.11.26
-2 Bitter Triumph
-3 Grim Bauble
-3 Practiced Offense
-3 Kaito, Bane of Nightmares
-1 Mabel, Bitter Recluse
-1 Guiding Hydra
-2 Likeness Looter
-3 Overlord of the Balemurk
-3 Starfield Shepherd
-4 Nurturing Pixie
+### Mardu Aggro | 0,7% | MTGO Challenge 16, 3.–4. Platz, 11.11.26
 4 Moonshadow
-4 Dark Matter Manipulator
-4 Mockingbird
-1 Bleachbone Verge
-1 Plains
-1 Restless Anchorage
-2 Gloomlake Verge
-2 Starting Town
-4 Hallowed Fountain
-4 Concealed Courtyard
-4 Godless Shrine
-4 Watery Grave
-
-Sideboard
-2 Sheltered by Ghosts
-1 Curious Farm Animals
-3 Clarion Conqueror
-1 Annul
-1 Requiting Hex
-3 Strategic Betrayal
-2 Duress
-1 Spell Pierce
-1 Kaito, Bane of Nightmares
-
-### Jeskai Control | 0,9% | RCQ, 2. Platz, 07.11.26
-1 Warmaker Gunship
-1 Torpor Orb
-1 The Irencrag
-1 The Fire Crystal
-1 Authority of the Consuls
-1 The Enigma Jewel
-1 Braided Net
-1 Spring-Loaded Sawblades
-1 White Auracite
-2 Solitary Cell
-3 Pinnacle Starcage
-3 The Mind Stone
-3 Repurposing Bay
-4 United Battlefront
-4 Cryogen Relic
-4 Perilous Snare
-4 Simulacrum Synthesizer
-1 Gleaming Bastion
-1 Island
-1 Petrified Hamlet
-1 Meticulous Archive
-4 Plains
-4 Castle Doom
-4 Hallowed Fountain
-4 Floodfarm Verge
+4 Marauding Mako
+4 Hardened Academic
+4 Sacred Foundry
+4 Iron-Shield Elf
+2 Multiversal Passage
+2 Erode
+2 Requiting Hex
+4 Practiced Offense
+4 Cool but Rude
+1 Mountain
+2 Inspiring Vantage
+3 Godless Shrine
+2 Concealed Courtyard
+4 Blood Crypt
+3 Carnage, Crimson Chaos
+4 Bloodghast
 4 Starting Town
+3 Captain James T. Kirk
 
 Sideboard
-2 Negate
-1 Astelli Reclaimer
-1 Seam Rip
-1 Day of Judgment
-1 Erode
 2 Voice of Victory
-2 Rest in Peace
-1 Krang, Master Mind
-2 Torpor Orb
-1 Authority of the Consuls
-1 Braided Net
+4 Doorkeeper Thrull
+2 Sheltered by Ghosts
+2 Duress
+3 Strategic Betrayal
+2 Salt Vampire
