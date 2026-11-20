@@ -2651,6 +2651,8 @@ async function botTurn(){
     BOT.bf.forEach(c => { if(!jail) c.tap = false; c.sick = false; delete c.tkwOff; delete c.phased; delete c.pump; });
     botLog(`beginnt Zug ${BOT.turn}`);
     if(!(BOT.turn === 1 && BOT.onPlay)) { if(!botDraw(1)) return; }
+    // Mindslaver Etappe 3: ich steuere diesen Zug der KI selbst
+    if(BOT.slaved && BOT.slaved.turn === BOT.turn){ const sl = BOT.slaved; delete BOT.slaved; if(sl.by === me.id){ await slaveBotTurn(); botDiscard7(); botLog("beendet den Zug (Mindslaver)."); return; } }
     let plan = null;
     if(claudeOn()){
       try { botLog("denkt nach …"); plan = await callClaude(`Es ist dein Zug ${BOT.turn}; du hast bereits gezogen. Plane den ganzen Zug.`, TURN_TOOL); }
@@ -2682,17 +2684,70 @@ async function botTurn(){
       }
     }
     if(plan) (plan.postcombat || []).forEach(runAction); else heurMain2();
-    while(BOT.hand.length > 7){
-      const lands = BOT.bf.filter(isLand).length;
-      const pool = lands >= 5 ? BOT.hand.filter(isLand) : [];
-      const d = (pool.length ? pool : [...BOT.hand].sort((a, b) => b.cmc - a.cmc))[0];
-      BOT.hand.splice(BOT.hand.indexOf(d), 1); BOT.gy.push(d); botLog(`wirft ${d.n} ab`);
-    }
+    botDiscard7();
     botLog("beendet den Zug.");
   } finally {
     botBusy = false; commit(); botChanged();
     const me2 = BOT_ID; if(TURN.active === me2 && BOT.active && BOT.life > 0 && S.life > 0) setTimeout(() => { if(TURN.active === me2) advanceTurn(); }, 500);
   }
+}
+function botDiscard7(){
+  while(BOT.hand.length > 7){
+    const lands = BOT.bf.filter(isLand).length;
+    const pool = lands >= 5 ? BOT.hand.filter(isLand) : [];
+    const d = (pool.length ? pool : [...BOT.hand].sort((a, b) => b.cmc - a.cmc))[0];
+    BOT.hand.splice(BOT.hand.indexOf(d), 1); BOT.gy.push(d); botLog(`wirft ${d.n} ab`);
+  }
+}
+/* Mindslaver Etappe 3: den Zug einer KI steuern (nur wenn die KI bei mir läuft). Ich spiele Länder und Zauber aus ihrer Hand und greife mit ihren Kreaturen an.
+   Zauber werden bezahlt; Wirkungen, die eine Wahl brauchen (Ziele, Entfernen, Schaden), führe ich von Hand aus – die eingebauten Regeln der KI würden sonst mich treffen. */
+async function slaveBotTurn(){
+  const nm = displayName(BOT_ID), b0 = BOT, id0 = BOT_ID;
+  toast(`<b>Mindslaver:</b> Du steuerst den Zug von ${esc(nm)}.`, 8000);
+  for(let guard = 0; guard < 80; guard++){
+    if(BOT !== b0 || TURN.active !== id0) return;
+    const pick = await abilModal(`Mindslaver: du steuerst ${nm}`, (box, done) => {
+      box.append(Object.assign(document.createElement("p"), {textContent:`${nm}: ${BOT.life} Leben, ${manaUnits().length} Mana frei, ${BOT.landPlayed ? "Land schon gespielt" : "noch kein Land gespielt"}.`}));
+      box.append(Object.assign(document.createElement("h3"), {textContent:`Hand (${BOT.hand.length})`}));
+      const row = document.createElement("div"); row.className = "row"; row.style.flexWrap = "wrap";
+      BOT.hand.forEach(c => { const land = isLand(c); const ok = land ? !BOT.landPlayed : !botCastLocked(c) && !!castPlan(c);
+        const b = btn(`${land ? "Land: " : ""}${c.n}${c.mc ? " " + c.mc : ""}`, () => done({a:"play", c}), "small slaveBotCard"); b.disabled = !ok; b.title = `${c.type || ""}\n${c.o || ""}`; row.append(b); });
+      if(!BOT.hand.length) row.append(Object.assign(document.createElement("span"), {className:"muted", textContent:"keine Handkarten"}));
+      const r2 = document.createElement("div"); r2.className = "row";
+      r2.append(btn("Angreifen …", () => done({a:"attack"}), "small"), btn("Zug beenden", () => done({a:"end"}), "primary"));
+      box.append(row, r2);
+    });
+    if(!pick || pick.a === "end") break;
+    if(pick.a === "play"){
+      const c = pick.c; if(!BOT.hand.includes(c)) continue;
+      if(isLand(c)){ if(BOT.landPlayed) continue; BOT.hand.splice(BOT.hand.indexOf(c), 1); BOT.bf.push(c); BOT.landPlayed = true; botLog(`spielt Land ${c.n} (gesteuert von ${me.name || "dir"})`); botChanged(); commit(); continue; }
+      const plan = castPlan(c); if(!plan || botCastLocked(c)) continue;
+      castFromHand(c, plan);
+      const plain = isPermanentType(c) && !etbRemoval(c);
+      botLog(`${isPermanentType(c) ? "spielt" : "wirkt"} ${c.n} (gesteuert von ${me.name || "dir"})`);
+      if(!isPermanentType(c)) BOT.gy.push(c);
+      if(!plain || (c.o && !isPermanentType(c))){ act(`Mindslaver: ${c.n} von ${nm} – Wirkung bitte von Hand ausführen`); toast(`<b>Mindslaver:</b> ${esc(c.n)} ist bezahlt${isPermanentType(c) ? " und liegt im Spiel" : " und im Friedhof"}. Die Wirkung führst du von Hand aus.`, 9000); }
+      botChanged(); commit(); continue;
+    }
+    if(pick.a === "attack") await slaveBotAttack();
+  }
+}
+async function slaveBotAttack(){
+  const nm = displayName(BOT_ID);
+  const lk = botAttackLocked(); if(lk){ toast(`<b>Mindslaver:</b> ${esc(nm)} darf nicht angreifen (${esc(lk.src || "Sperre")}).`); return; }
+  const elig = BOT.bf.filter(c => isCreature(c) && !c.tap && !c.sick && !kwHas(c, "defender"));
+  if(!elig.length){ toast(`<b>Mindslaver:</b> ${esc(nm)} hat keine Kreatur, die angreifen kann.`); return; }
+  const atk = (await pickCards(`Mindslaver: mit welchen Kreaturen von ${nm} angreifen?`, elig, elig.length, {none:"Keine"})) || [];
+  if(!atk.length) return;
+  const others2 = botIds().filter(id => id !== BOT_ID && BOTS[id].life > 0);
+  let tid = me.id;
+  if(others2.length){ const r = await abilModal("Mindslaver: wen angreifen?", (box, done) => { const row = document.createElement("div"); row.className = "row"; row.append(btn(`Dich (${S.life})`, () => done(me.id), "small")); others2.forEach(id => row.append(btn(`${displayName(id)} (${BOTS[id].life})`, () => done(id), "small"))); box.append(row); }); if(!r) return; tid = r; }
+  atk.forEach(c => { if(!kwHas(c, "vigilance")) c.tap = true; }); botChanged();
+  atk.forEach(c => fxSend({kind:"arrow", style:"attack", from:{u:c.u}, to:{pid:tid}}));
+  botLog(`greift ${displayName(tid)} an mit ${atk.map(c => c.n).join(", ")} (gesteuert von ${me.name || "dir"})`);
+  if(isBotId(tid)){ const blocks = withBot(tid, () => botChooseBlocks(atk)); botVsBot(atk, blocks, tid); }
+  else { const blocks = await openBlockDialog(atk); resolveCombat(atk, blocks, true); }
+  botChanged(); commit();
 }
 /* --- Kampf (gegen KI und Mitspieler) --- */
 function computeCombat(attackers, blocks){
@@ -6708,6 +6763,15 @@ function slaveManaList(){
 function slaveManaLabel(o){ return (o.combo ? `${o.combo} Mana in beliebigen Farben` : o.add && o.add.length ? symStr(o.add) : "kein Mana") + (o.pain ? ` (${o.pain} Schaden an dir)` : "") + (o.life ? ` (${o.life} Leben)` : ""); }
 let SLAVE_DLG_SENT = "", SLAVE_DLG_T = null, SLAVE_DLG_N = 0;
 function slaveDlgEls(){ const box = $("#modalBox"); return box ? [...box.querySelectorAll("button, .card, input, select")].filter(el => !el.closest(".slaveNote") && !(el.classList.contains("card") && el.closest("button"))) : []; }
+/* Etappe 3: Kartenknöpfe zeigen nur den Namen (ohne Typzeile), dazu Token/Besitzer */
+function slaveCardLabel(el){
+  const im = el.querySelector("img"), b = el.querySelector(".txt b"), fm = el.querySelector(".fdmark");
+  let n = im && im.alt ? im.alt : b ? b.textContent : fm ? `${fm.textContent} (verdeckt)` : el.querySelector(".back") ? "verdeckte Karte" : (el.title || el.textContent || "Karte");
+  n = String(n).trim().replace(/\s+/g, " ");
+  if(el.querySelector(".tokmark")) n += " (Token)";
+  const ow = el.querySelector(".owmark"); if(ow) n += ` (${ow.textContent.trim()})`;
+  return n || "Karte";
+}
 function slaveDlgSnap(){
   if($("#modal").hidden) return {close:true};
   const box = $("#modalBox");
@@ -6717,7 +6781,7 @@ function slaveDlgSnap(){
     if(el.tagName === "BUTTON") return {i, k:"btn", l:el.textContent.trim().slice(0, 120), p:el.classList.contains("primary"), d:!!el.disabled};
     if(el.tagName === "SELECT") return {i, k:"sel", v:el.value, o:[...el.options].slice(0, 20).map(o => [String(o.value).slice(0, 60), o.textContent.slice(0, 60)])};
     if(el.tagName === "INPUT") return {i, k:"in", t:el.type, v:el.type === "checkbox" ? !!el.checked : String(el.value).slice(0, 20)};
-    return {i, k:"card", l:(el.textContent || el.title || "Karte").trim().replace(/\s+/g, " ").slice(0, 80), p:el.classList.contains("picked")};
+    return {i, k:"card", l:slaveCardLabel(el).slice(0, 80), p:el.classList.contains("picked")};
   });
   return {title, texts, items};
 }
@@ -11691,7 +11755,10 @@ function botReq(m){
   if(q.kind === "delayDraw"){ botDraw(Math.max(1, parseInt(q.n, 10) || 1)); botLog("zieht (Arcane Denial)"); botChanged(); reply({ok:true}); return; }
   if(q.kind === "selfOthers"){ const v = botSelfOthers(q); botLog(`wählt «${v === "self" ? "sich selbst" : "die anderen"}» (${q.src || "Komplott"})`); reply({choice:v}); return; }
   if(q.kind === "vote"){ const opts = Array.isArray(q.options) ? q.options : []; reply({vote:opts[Math.floor(Math.random() * opts.length)]}); return; }
-  if(q.kind === "slave"){ botLog(`wird im nächsten Zug von ${q.src || "Mindslaver"} kontrolliert – bitte sag der KI, was sie tun soll`); reply({ok:true}); return; }
+  if(q.kind === "slave"){
+    if(m.from === me.id){ BOT.slaved = {by:me.id, turn:BOT.turn + 1}; botLog(`wird im nächsten Zug von ${me.name || "dir"} gesteuert (${q.src || "Mindslaver"})`); botChanged(); }
+    else botLog(`wird im nächsten Zug von ${q.src || "Mindslaver"} kontrolliert – bitte sag der KI, was sie tun soll`);
+    reply({ok:true}); return; }
   if(q.kind === "arcum"){ const c = BOT.bf.find(x => x.u === q.u); if(!c){ reply({ok:false}); return; } botToZone(c, "gy"); const a = BOT.library.find(x => /\bArtifact\b/.test(x.type || "") && !/\bCreature\b/.test(x.type || "")); if(a){ BOT.library.splice(BOT.library.indexOf(a), 1); BOT.bf.push(a); BOT.library = shuffle(BOT.library); } botLog(`opfert ${c.n}${a ? ", holt " + a.n : ""}`); botChanged(); reply({ok:true, found:a ? a.n : null}); return; }
   if(q.kind === "mill"){ const n = Math.max(0, parseInt(q.n, 10) || 0); const m2 = BOT.library.splice(0, n); BOT.gy.push(...m2); botLog(`mahlt ${m2.length}`); botChanged(); reply({cards:m2.map(pubCard)}); return; }
   if(q.kind === "mayTap"){ const c = BOT.bf.find(x => x.u === q.u); const ok = !!c && !c.tap && !isCreature(c); if(ok){ c.tap = true; botLog(`tappt ${c.n}`); botChanged(); } reply({tapped:ok}); return; }

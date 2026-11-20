@@ -95,7 +95,7 @@ const passB = async () => { await wait(60); const b = btnText(B, 'OK, weiter', '
   ev(B, `S.hand.push(newCard({n:"Wahl A", type:"Instant"}), newCard({n:"Wahl B", type:"Instant"})); commit(); window.__pick = null; queued(async () => { window.__pick = await pickCards("Welche Karte?", S.hand.filter(c => /^Wahl/.test(c.n)), 1, {none:"Keine"}); })`); await wait(300);
   check(!$(B, '#modal').hidden && /entscheidet diesen Dialog/.test($(B, '#modalBox').textContent), 'Ben sieht den Dialog mit dem Hinweis, dass Anna entscheidet');
   check(!$(A, '#modal').hidden && /Mindslaver – Ben: Welche Karte\?/.test(($(A, '#modalBox h2') || {}).textContent || ''), `Anna bekommt Bens Dialog (${($(A, '#modalBox h2') || {}).textContent})`);
-  { const cb = [...A.document.querySelectorAll('#modalBox button.slaveDlgCard')].find(b => /Wahl B/.test(b.textContent)); check(!!cb, 'Anna sieht die Karten als Knöpfe'); if(cb){ cb.click(); await wait(300); } }
+  { const cb = [...A.document.querySelectorAll('#modalBox button.slaveDlgCard')].find(b => /Wahl B/.test(b.textContent)); check(!!cb, 'Anna sieht die Karten als Knöpfe'); check(cb && cb.textContent.trim() === 'Wahl B', `Etappe 3: Knopf zeigt nur den Kartennamen ohne Typzeile («${cb && cb.textContent.trim()}»)`); if(cb){ cb.click(); await wait(300); } }
   check(ev(B, 'window.__pick && window.__pick.map(c => c.n).join()') === 'Wahl B' && $(B, '#modal').hidden, `Annas Klick wählt bei Ben «Wahl B» (${ev(B, 'JSON.stringify((window.__pick || []).map(c => c.n))')})`);
   await wait(150); check($(A, '#modal').hidden, 'Dialog bei Anna geht zu');
   // Etappe 2: Zahl eingeben (askNumber) und Knöpfe
