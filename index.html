@@ -2273,9 +2273,9 @@ function counterMatch(counter, spell){
 function removalOf(c){
   const o = (c.o || "").replace(/\n/g, " ");
   let m;
-  if((m = o.match(/(destroy|exile) target (creature|nonland permanent|permanent|artifact or creature|creature or planeswalker|attacking creature)/i))) return {kind: m[1].toLowerCase(), any: /permanent/i.test(m[2])};
+  if((m = o.match(/(destroy|exile) target (creature|nonland permanent|permanent|artifact or creature|creature or planeswalker|attacking creature)/i))) return {kind: m[1].toLowerCase(), any: /permanent/i.test(m[2]), attacking: /attacking/i.test(m[2])};
   if((m = o.match(/deals (\d+) damage to (target creature|any target|target creature or planeswalker)/i))) return {kind:"damage", amount:+m[1], face: /any/i.test(m[2])};
-  if((m = o.match(/target creature gets -(\d+)\/-(\d+)/i))) return {kind:"damage", amount:+m[2]};
+  if((m = o.match(/target creature gets -(\d+)\/-(\d+)/i))) return {kind:"damage", amount:+m[2], shrink:true};
   if(/return target (creature|nonland permanent)[^.]* to its owner's hand/i.test(o)) return {kind:"bounce"};
   if(/target (player|opponent) sacrifices a creature|each opponent sacrifices a creature/i.test(o)) return {kind:"edict"};
   return null;
@@ -2308,11 +2308,20 @@ function threatScore(c){
   if(c.o && /whenever|at the beginning|you may cast|can't|win the game|extra turn/i.test(c.o)) s += 1.5;
   return s;
 }
-function bestTarget(pool, fits){ return pool.filter(fits || (() => true)).sort((a, b) => threatScore(b) - threatScore(a))[0] || null; }
+function bestTarget(pool, fits, score = threatScore){ return pool.filter(fits || (() => true)).sort((a, b) => score(b) - score(a))[0] || null; }
+/* KI verbessern (21.11.2026): Removal-Ziele – keine unzerstörbaren Ziele für Zerstören/Schaden, -N/-N trifft auch Unzerstörbare, Zurückschicken lohnt vor allem bei Token */
+function remFits(rem, inCombat = false){
+  return x => {
+    if(rem.attacking && !inCombat) return false;
+    if(rem.kind === "damage") return isCreature(x) && (rem.shrink ? tough(x) <= rem.amount : (!kwHas(x, "indestructible") && !(S.bf.includes(x) && myCreaturesShielded()) && tough(x) <= archDmg(rem.amount, false)));
+    if(rem.kind === "destroy") return !kwHas(x, "indestructible");
+    return true;
+  };
+}
+function remScore(rem){ return x => threatScore(x) * (rem.kind === "bounce" && !x.tok ? 0.5 : 1) + (rem.kind === "bounce" && x.tok ? 2 : 0); }
 function applyRemovalToMe(card, rem){
   const pool = (rem.any ? S.bf.filter(x => !isLand(x)) : myCreatures()).filter(myTargetable);
-  const fits = rem.kind === "damage" ? (x => isCreature(x) && !myCreaturesShielded() && tough(x) <= archDmg(rem.amount, false)) : null;
-  const t = bestTarget(pool, fits);
+  const t = bestTarget(pool.filter(x => !rem.attacking || (S.attackKey === turnKey() && (S.attacking || []).includes(x.u))), remFits(rem, true), remScore(rem));
   if(!t) return false;
   if(!botPayWard(t, card.n)) return true;
   const zone = rem.kind === "exile" ? "ex" : rem.kind === "bounce" ? "hand" : "gy";
@@ -2390,10 +2399,11 @@ function heurPrecombat(){
   // Removal auf Bedrohungen; Spontanzauber-Removal nur bei grosser Gefahr, sonst für deinen Zug aufheben
   BOT.hand.filter(c => removalOf(c) && !isPermanentType(c)).sort((a, b) => (a.cmc || 0) - (b.cmc || 0)).forEach(c => {
     const rem = removalOf(c);
-    const t = bestTarget((rem.any ? S.bf.filter(x => !isLand(x)) : myCreatures()).filter(x => myTargetable(x) && (!myWard(x) || !!castPlan(c, myWard(x)))), rem.kind === "damage" ? (x => isCreature(x) && !myCreaturesShielded() && tough(x) <= archDmg(rem.amount, false)) : null);
+    const sc = remScore(rem);
+    const t = bestTarget((rem.any ? S.bf.filter(x => !isLand(x)) : myCreatures()).filter(x => myTargetable(x) && (!myWard(x) || !!castPlan(c, myWard(x)))), remFits(rem, false), sc);
     if(!t) return;
-    const urgent = threatScore(t) >= 5;
-    if((!isInstant(c) && threatScore(t) >= 2.5) || urgent) botCastHeur(c, `gegen ${t.n}`);
+    const urgent = sc(t) >= 5;
+    if((!isInstant(c) && sc(t) >= 2.5) || urgent) botCastHeur(c, `gegen ${t.n}`);
   });
 }
 function heurMain2(){
@@ -2940,8 +2950,9 @@ async function botDefend(attackers, remote, attackerId){
     const inst = BOT.hand.filter(c => isInstant(c) && removalOf(c) && castPlan(c));
     for(const c of inst){
       const rem = removalOf(c);
-      const t = attackers.filter(live).filter(a => rem.kind !== "damage" || tough(a) <= rem.amount).sort((a, b) => threatScore(b) - threatScore(a))[0];
-      if(t && threatScore(t) >= 3){
+      const sc = remScore(rem);
+      const t = attackers.filter(live).filter(remFits(rem, true)).sort((a, b) => sc(b) - sc(a))[0];
+      if(t && sc(t) >= 3){
         castFromHand(c, castPlan(c)); BOT.gy.push(c); botLog(`wirkt ${c.n} auf ${t.n}`);
         const kind = rem.kind === "exile" ? "exile" : rem.kind === "bounce" ? "bounce" : "destroy";
         if(remote){ killRemote(t, kind); attackers.splice(attackers.indexOf(t), 1); }
@@ -12282,7 +12293,7 @@ function historyAdd(win){
 /* ---------- Automatische Updates ---------- */
 // Liegt die App im Web, prüft sie regelmässig version.json im selben Ordner und lädt sich bei einer neuen Version neu.
 // Alles Wichtige (Spielstand, Deck, Tisch) liegt im Browser-Speicher und ist nach dem Neuladen wieder da.
-const APP_VERSION = "2026.11.21-1";
+const APP_VERSION = "2026.11.21-2";
 const ONLINE = /^https?:$/.test(location.protocol);
 let updPending = null, updTimer = null, updSnoozeUntil = 0;
 function busyForUpdate(){ return botBusy || (!$("#modal").hidden && modalState && ["block","deck"].includes(modalState.kind)); }
