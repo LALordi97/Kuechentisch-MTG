@@ -1,4 +1,4 @@
 {
-  "version": "2026.11.21-2",
-  "notes": "Die KI wählt Removal-Ziele klüger: kein Zerstören oder Schaden auf unzerstörbare Kreaturen, Zurückschicken lieber auf Token, «target attacking creature» nur auf Angreifer. Dazu von heute Nacht: 30 weitere Karten automatisch (u. a. Chaos Warp, Braids, Chatterfang, Captain Kirk, Case of the Crimson Pulse)."
+  "version": "2026.11.22-1",
+  "notes": "30 weitere Karten aus den Top-Decks automatisch, u. a. Damn und Overload allgemein («target» wird «each»), Day of Black Sun, Dark Deal, Crypt Incursion, Court of Grace, Deem Inferior, Den of the Bugbear, Colossus Hammer, Dracogenesis. Ziele «tapped creature» werden jetzt richtig gefiltert."
 }
