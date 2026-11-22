@@ -2366,7 +2366,43 @@ function botCastHeur(c, why){
   else if(!removalOf(c) && !etbRemoval(c) && !isCreature(c) && !isLand(c) && c.o && !/^\{T\}: Add/.test(c.o) && /Planeswalker/.test(c.type)) botLog(`(${c.n}: Fähigkeiten bitte selbst im Blick behalten)`);
   return true;
 }
-function heldInteraction(){ return BOT.hand.filter(c => isInstant(c) && (counterMatch(c, {type:"Sorcery"}) || counterMatch(c, {type:"Creature"}) || removalOf(c))); }
+function heldInteraction(){ return BOT.hand.filter(c => isInstant(c) && (counterMatch(c, {type:"Sorcery"}) || counterMatch(c, {type:"Creature"}) || removalOf(c) || (pumpOf(c) && BOT.bf.some(isCreature)))); }
+/* KI verbessern (22.11.2026): Kampftricks – «Target creature gets +N/+N (and gains …) until end of turn» beim Blocken */
+function pumpOf(c){
+  if(!c || !isInstant(c) || isPermanentType(c)) return null;
+  const m = noReminder(String(c.o || "")).replace(/\n/g, " ").match(/^(?:[^.]*?\. )?Target creature(?: you control)? gets \+(\d+)\/\+(\d+)(?: and gains ([a-z ,]+?))? until end of turn\.?/i);
+  if(!m) return null;
+  return {p:+m[1], t:+m[2], kw:(m[3] || "").split(/,\s*(?:and\s+)?|\s+and\s+/).map(x => x.trim()).filter(Boolean)};
+}
+function withPump(b, pu, fn){
+  const p0 = b.pump, k0 = b.tkw;
+  b.pump = {p:((p0 && p0.p) || 0) + pu.p, t:((p0 && p0.t) || 0) + pu.t}; if(pu.kw.length) b.tkw = [...(k0 || []), ...pu.kw.map(k => k[0].toUpperCase() + k.slice(1))];
+  try{ return fn(); } finally { if(p0 === undefined) delete b.pump; else b.pump = p0; if(k0 === undefined) delete b.tkw; else b.tkw = k0; }
+}
+function botCombatTrick(attackers, blocks){
+  const tricks = BOT.hand.filter(c => pumpOf(c) && castPlan(c));
+  if(!tricks.length) return null;
+  let best = null;
+  const consider = (a, b, c, isNew) => {
+    const pu = pumpOf(c), before = isNew ? {aDead:false, bDead:false} : blockOutcome(a, b), after = withPump(b, pu, () => blockOutcome(a, b));
+    if(after.bDead) return;
+    let v = (before.bDead ? threatScore(b) + 1 : 0) + (after.aDead && !before.aDead ? threatScore(a) : 0) - (c.cmc || 0) * 0.3;
+    if(isNew && !after.aDead) return;
+    if(v > 1 && (!best || v > best.v)) best = {a, b, c, pu, v, isNew};
+  };
+  for(const c of tricks){
+    blocks.forEach((b, aU) => { const a = attackers.find(x => x.u === aU); if(a) consider(a, b, c, false); });
+    const used = new Set([...blocks.values()]);
+    attackers.filter(a => !blocks.has(a.u)).forEach(a => BOT.bf.filter(b => isCreature(b) && !b.tap && !used.has(b) && canBlock(b, a)).forEach(b => consider(a, b, c, true)));
+  }
+  if(!best) return null;
+  castFromHand(best.c, castPlan(best.c)); BOT.gy.push(best.c);
+  best.b.pump = {p:((best.b.pump && best.b.pump.p) || 0) + best.pu.p, t:((best.b.pump && best.b.pump.t) || 0) + best.pu.t};
+  if(best.pu.kw.length) best.b.tkw = [...(best.b.tkw || []), ...best.pu.kw.map(k => k[0].toUpperCase() + k.slice(1))];
+  if(best.isNew) blocks.set(best.a.u, best.b);
+  botLog(`wirkt ${best.c.n} auf ${best.b.n} (+${best.pu.p}/+${best.pu.t}${best.pu.kw.length ? ", " + best.pu.kw.join(", ") : ""})`);
+  return best;
+}
 function botPlayLand(){
   if(BOT.landPlayed) return;
   const lands = BOT.hand.filter(isLand);
@@ -2962,7 +2998,9 @@ async function botDefend(attackers, remote, attackerId){
         break;
       }
     }
-    return botChooseBlocks(attackers.filter(live));
+    const blocks = botChooseBlocks(attackers.filter(live));
+    if(!remote) botCombatTrick(attackers.filter(live), blocks); // Fern-Kampf überträgt Pumps nicht (combatInfo)
+    return blocks;
   } finally { botBusy = false; botChanged(); }
 }
 async function botReceiveAttack(m){
@@ -12436,7 +12474,7 @@ function historyAdd(win){
 /* ---------- Automatische Updates ---------- */
 // Liegt die App im Web, prüft sie regelmässig version.json im selben Ordner und lädt sich bei einer neuen Version neu.
 // Alles Wichtige (Spielstand, Deck, Tisch) liegt im Browser-Speicher und ist nach dem Neuladen wieder da.
-const APP_VERSION = "2026.11.22-1";
+const APP_VERSION = "2026.11.22-2";
 const ONLINE = /^https?:$/.test(location.protocol);
 let updPending = null, updTimer = null, updSnoozeUntil = 0;
 function busyForUpdate(){ return botBusy || (!$("#modal").hidden && modalState && ["block","deck"].includes(modalState.kind)); }
