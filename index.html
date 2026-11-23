@@ -2405,6 +2405,33 @@ function botCombatTrick(attackers, blocks){
   botLog(`wirkt ${best.c.n} auf ${best.b.n} (+${best.pu.p}/+${best.pu.t}${best.pu.kw.length ? ", " + best.pu.kw.join(", ") : ""})`);
   return best;
 }
+/* KI verbessern (23.11.2026): Kampftricks beim Angreifen – nach den Blocks des Verteidigers (nur an meinem Tisch) */
+function botAttackTrick(attackers, blocks, defLife){
+  const tricks = BOT.hand.filter(c => pumpOf(c) && castPlan(c));
+  if(!tricks.length) return null;
+  const mult = a => kwHas(a, "double strike") ? 2 : 1;
+  const unbl = attackers.filter(a => BOT.bf.includes(a) && !blocks.has(a.u));
+  const unblDmg = unbl.reduce((t, a) => t + Math.max(0, power(a)) * mult(a), 0);
+  let best = null;
+  for(const c of tricks){
+    const pu = pumpOf(c);
+    blocks.forEach((b, aU) => {
+      const a = attackers.find(x => x.u === aU); if(!a || !BOT.bf.includes(a) || !b) return;
+      const before = blockOutcome(a, b), after = withPump(a, pu, () => blockOutcome(a, b));
+      if(after.aDead) return; // der Trick rettet den Angreifer nicht
+      const v = (before.aDead ? threatScore(a) + 1 : 0) + (after.bDead && !before.bDead ? threatScore(b) : 0) - (c.cmc || 0) * 0.3;
+      if(v > 1 && (!best || v > best.v)) best = {a, c, pu, v};
+    });
+    // ungeblockt: nur wenn der Schaden dadurch tödlich wird
+    if(unbl.length && defLife > unblDmg){ const a = [...unbl].sort((x, y) => mult(y) - mult(x))[0]; if(unblDmg + pu.p * mult(a) >= defLife && (!best || best.v < 100)) best = {a, c, pu, v:100, lethal:true}; }
+  }
+  if(!best) return null;
+  castFromHand(best.c, castPlan(best.c)); BOT.gy.push(best.c);
+  best.a.pump = {p:((best.a.pump && best.a.pump.p) || 0) + best.pu.p, t:((best.a.pump && best.a.pump.t) || 0) + best.pu.t};
+  if(best.pu.kw.length) best.a.tkw = [...(best.a.tkw || []), ...best.pu.kw.map(k => k[0].toUpperCase() + k.slice(1))];
+  botLog(`wirkt ${best.c.n} auf ${best.a.n} (+${best.pu.p}/+${best.pu.t}${best.pu.kw.length ? ", " + best.pu.kw.join(", ") : ""})${best.lethal ? " – tödlicher Schaden" : ""}`);
+  return best;
+}
 function botPlayLand(){
   if(BOT.landPlayed) return;
   const lands = BOT.hand.filter(isLand);
@@ -2726,7 +2753,9 @@ async function botTurn(){
         botVsBot(attackers, blocks, atkTarget);
       } else {
         const blocks = await openBlockDialog(attackers);
+        const trk = botAttackTrick(attackers.filter(a => BOT.bf.includes(a)), blocks, S.life);
         resolveCombat(attackers, blocks, true);
+        if(trk && trk.a.pump){ trk.a.pump = {p:trk.a.pump.p - trk.pu.p, t:trk.a.pump.t - trk.pu.t}; if(!trk.a.pump.p && !trk.a.pump.t) delete trk.a.pump; if(trk.pu.kw.length && Array.isArray(trk.a.tkw)){ const rm = trk.pu.kw.map(k => k[0].toUpperCase() + k.slice(1)); trk.a.tkw = trk.a.tkw.filter(k => { const i = rm.indexOf(k); if(i >= 0){ rm.splice(i, 1); return false; } return true; }); } } // bis Zugende: nach dem Kampf weg
       }
     }
     if(plan) (plan.postcombat || []).forEach(runAction); else heurMain2();
@@ -12653,7 +12682,7 @@ function historyAdd(win){
 /* ---------- Automatische Updates ---------- */
 // Liegt die App im Web, prüft sie regelmässig version.json im selben Ordner und lädt sich bei einer neuen Version neu.
 // Alles Wichtige (Spielstand, Deck, Tisch) liegt im Browser-Speicher und ist nach dem Neuladen wieder da.
-const APP_VERSION = "2026.11.23-1";
+const APP_VERSION = "2026.11.23-2";
 const ONLINE = /^https?:$/.test(location.protocol);
 let updPending = null, updTimer = null, updSnoozeUntil = 0;
 function busyForUpdate(){ return botBusy || (!$("#modal").hidden && modalState && ["block","deck"].includes(modalState.kind)); }
