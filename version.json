@@ -1,4 +1,4 @@
 {
-  "version": "2026.11.23-2",
-  "notes": "Die KI nutzt Kampftricks jetzt auch beim Angreifen: nach deinen Blocks wirkt sie einen Pump-Spontanzauber, wenn ihr Angreifer dadurch überlebt oder den Blocker tötet, oder wenn ungeblockter Schaden dadurch tödlich wird. Dazu von heute Nacht: 30 weitere Karten automatisch (u. a. Elvish Champion, Edgar Markov, Etali, Fire Lord Azula)."
+  "version": "2026.11.24-1",
+  "notes": "30 weitere Karten automatisch, u. a. Goblin King, Grave Pact, Ghostly Prison (die KI zahlt pro Angreifer), Gisela (doppelter Schaden), Ghalta, Gishath, Fling, Fire Magic (Tiered), Forge Anew. Die KI nutzt Kampftricks jetzt auch im Kampf gegen eine andere KI."
 }
