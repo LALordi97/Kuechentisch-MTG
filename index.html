@@ -2463,12 +2463,20 @@ function botCrackFetch(l){
   BOT.library.splice(BOT.library.indexOf(pick), 1); pick.tap = false; BOT.bf.push(pick); shuffle(BOT.library);
   botLog(`knackt ${l.n} (1 Leben) und holt ${pick.n}`);
 }
+/* KI verbessern (25.11.2026): Mana für einen Kampftrick (Pump-Spontanzauber) durch das erste Hauptsegment retten, wenn die KI angreifen kann */
+function trickReserve(){
+  if(!BOT.bf.some(c => isCreature(c) && !c.tap && (!c.sick || kwHas(c, "haste")) && !kwHas(c, "defender"))) return 0;
+  const pumps = BOT.hand.filter(c => isInstant(c) && pumpOf(c) && !isFreeSpell(c) && castPlan(c));
+  return pumps.length ? Math.min(...pumps.map(c => c.cmc || 1)) : 0;
+}
+const trickOk = (c, res) => !res || manaUnits().length - (c.cmc || 0) >= res;
 function heurPrecombat(){
   // tödlicher Schaden direkt ins Gesicht?
   const burns = BOT.hand.filter(c => burnFace(c) && castPlan(c));
   if(burns.reduce((s, c) => s + burnFace(c), 0) >= S.life){ burns.forEach(c => botCastHeur(c, "tödlich")); return; }
-  // Handangriff früh
-  BOT.hand.filter(c => isDiscard(c) && !isPermanentType(c) && S.hand.length).forEach(c => botCastHeur(c));
+  const res = trickReserve(); let held = false;
+  // Handangriff früh (aber nicht mit dem Mana für den Kampftrick)
+  BOT.hand.filter(c => isDiscard(c) && !isPermanentType(c) && S.hand.length).forEach(c => { if(trickOk(c, res)) botCastHeur(c); else held = true; });
   // Removal auf Bedrohungen; Spontanzauber-Removal nur bei grosser Gefahr, sonst für deinen Zug aufheben
   BOT.hand.filter(c => removalOf(c) && !isPermanentType(c)).sort((a, b) => (a.cmc || 0) - (b.cmc || 0)).forEach(c => {
     const rem = removalOf(c);
@@ -2476,8 +2484,10 @@ function heurPrecombat(){
     const t = bestTarget((rem.any ? S.bf.filter(x => !isLand(x)) : myCreatures()).filter(x => myTargetable(x) && (!myWard(x) || !!castPlan(c, myWard(x)))), remFits(rem, false), sc);
     if(!t) return;
     const urgent = sc(t) >= 5;
+    if(!urgent && !trickOk(c, res)){ if(!isInstant(c) && sc(t) >= 2.5) held = true; return; }
     if((!isInstant(c) && sc(t) >= 2.5) || urgent) botCastHeur(c, `gegen ${t.n}`);
   });
+  if(held) botLog("hält Mana für einen Kampftrick zurück");
 }
 function heurMain2(){
   const myHand = S.hand.length;
@@ -2486,7 +2496,7 @@ function heurMain2(){
   let guard = 0;
   while(guard++ < 25){
     const avail = manaUnits().length;
-    const options = [...BOT.cz, ...BOT.hand].filter(c => !isLand(c) && (isPermanentType(c) || (!isInstant(c) && (drawCount(c) || removalOf(c))) ));
+    const options = [...BOT.cz, ...BOT.hand].filter(c => !isLand(c) && (isPermanentType(c) || (!isInstant(c) && (drawCount(c) || removalOf(c) || (isDiscard(c) && S.hand.length))) ));
     const cands = options.map(c => ({c, plan: castPlan(c, BOT.cz.includes(c) ? 2 * BOT.cmdCasts : 0)})).filter(x => x.plan && !x.plan.free);
     if(!cands.length) break;
     const noBoard = !BOT.bf.some(isCreature);
@@ -12928,7 +12938,7 @@ function historyAdd(win){
 /* ---------- Automatische Updates ---------- */
 // Liegt die App im Web, prüft sie regelmässig version.json im selben Ordner und lädt sich bei einer neuen Version neu.
 // Alles Wichtige (Spielstand, Deck, Tisch) liegt im Browser-Speicher und ist nach dem Neuladen wieder da.
-const APP_VERSION = "2026.11.25-1";
+const APP_VERSION = "2026.11.25-2";
 const ONLINE = /^https?:$/.test(location.protocol);
 let updPending = null, updTimer = null, updSnoozeUntil = 0;
 function busyForUpdate(){ return botBusy || (!$("#modal").hidden && modalState && ["block","deck"].includes(modalState.kind)); }
