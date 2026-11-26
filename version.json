@@ -1,4 +1,4 @@
 {
-  "version": "2026.11.26-1",
-  "notes": "30 weitere Karten automatisch, u. a. Krenko, Tin Street Kingpin, Laboratory Maniac, Liesa, Lord of the Void, Liliana, Dreadhorde General (−9), Lethal Scheme, Keen-Eyed Curator, Magebane Lizard, Mana Echoes, Kotis, Kefka. Neu: verlorene Leben pro Zug werden gemerkt (Knight of the Ebon Legion, Luminarch Ascension, Lunar Convocation)."
+  "version": "2026.11.26-2",
+  "notes": "Die KI nutzt Kampftricks jetzt auch, wenn ein Mitspieler sie über das Netz angreift; Pumps auf Angreifern und Blockern werden im Fern-Kampf mitgeschickt. Dazu 30 weitere Karten automatisch (2026.11.26-1)."
 }

@@ -2870,12 +2870,12 @@ function botVsBot(attackers, blocks, defId){
   if(!botAlive().filter(id => id !== BOT_ID).length && S.life <= 0) botLog("gewinnt das Spiel");
   commit(); botChanged();
 }
-function combatInfo(c){ return {u:c.u, n:c.n, img:c.img, type:c.type, pw:c.pwO ?? c.pw ?? null, tg:c.tgO ?? c.tg ?? null, c:c.c || 0, kw:[...(c.kw || []), ...(c.tkw || []), ...(c.kwc || [])].filter(k => !(c.tkwOff || []).includes(String(k).toLowerCase())).slice(0, 10), o:((c.o || "").split("\n")[0] || "").slice(0, 200), cmdr:!!c.cmdr}; }
+function combatInfo(c){ return {u:c.u, n:c.n, img:c.img, type:c.type, pw:c.pwO ?? c.pw ?? null, tg:c.tgO ?? c.tg ?? null, c:c.c || 0, kw:[...(c.kw || []), ...(c.tkw || []), ...(c.kwc || [])].filter(k => !(c.tkwOff || []).includes(String(k).toLowerCase())).slice(0, 10), o:((c.o || "").split("\n")[0] || "").slice(0, 200), cmdr:!!c.cmdr, ...(c.pump && (c.pump.p || c.pump.t) ? {pump:{p:+c.pump.p || 0, t:+c.pump.t || 0}} : {})}; } // Pump geht mit (KI verbessern 26.11.2026)
 function cleanInfo(x){
   if(!x || typeof x !== "object") return null;
   const num = v => Number.isFinite(+v) && v !== null ? Math.max(-99, Math.min(99, +v)) : null;
   return {u:String(x.u || "").slice(0, 20), n:String(x.n || "Kreatur").slice(0, 150), img: okImg(x.img) ? x.img : null, type:String(x.type || "").slice(0, 200),
-    pw:num(x.pw), tg:num(x.tg), c:num(x.c) || 0, kw: Array.isArray(x.kw) ? x.kw.slice(0, 8).map(k => String(k).slice(0, 30)) : [], o:String(x.o || "").slice(0, 200), cmdr:!!x.cmdr};
+    pw:num(x.pw), tg:num(x.tg), c:num(x.c) || 0, kw: Array.isArray(x.kw) ? x.kw.slice(0, 8).map(k => String(k).slice(0, 30)) : [], o:String(x.o || "").slice(0, 200), cmdr:!!x.cmdr, ...(x.pump && typeof x.pump === "object" && (num(x.pump.p) || num(x.pump.t)) ? {pump:{p:num(x.pump.p) || 0, t:num(x.pump.t) || 0}} : {})};
 }
 /* Block-Fenster; mehrere Angriffe werden nacheinander gezeigt */
 const BLOCKQ = []; let blockOpen = false;
@@ -3071,7 +3071,7 @@ async function botDefend(attackers, remote, attackerId){
       }
     }
     const blocks = botChooseBlocks(attackers.filter(live));
-    if(!remote) botCombatTrick(attackers.filter(live), blocks); // Fern-Kampf überträgt Pumps nicht (combatInfo)
+    botCombatTrick(attackers.filter(live), blocks); // Fern-Kampf: combatInfo überträgt den Pump seit 26.11.2026
     return blocks;
   } finally { botBusy = false; botChanged(); }
 }
@@ -13065,7 +13065,7 @@ function historyAdd(win){
 /* ---------- Automatische Updates ---------- */
 // Liegt die App im Web, prüft sie regelmässig version.json im selben Ordner und lädt sich bei einer neuen Version neu.
 // Alles Wichtige (Spielstand, Deck, Tisch) liegt im Browser-Speicher und ist nach dem Neuladen wieder da.
-const APP_VERSION = "2026.11.26-1";
+const APP_VERSION = "2026.11.26-2";
 const ONLINE = /^https?:$/.test(location.protocol);
 let updPending = null, updTimer = null, updSnoozeUntil = 0;
 function busyForUpdate(){ return botBusy || (!$("#modal").hidden && modalState && ["block","deck"].includes(modalState.kind)); }
