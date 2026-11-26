@@ -1,4 +1,4 @@
 {
-  "version": "2026.11.25-2",
-  "notes": "Die KI hebt im ersten Hauptsegment Mana für einen Kampftrick auf, statt es für Handangriff oder nicht dringendes Removal auszugeben. Dazu 30 weitere Karten automatisch (2026.11.25-1), u. a. Hardened Scales, Kalonian Hydra, Howling Mine, Kaalia of the Vast, Isshin, Herald's Horn."
+  "version": "2026.11.26-1",
+  "notes": "30 weitere Karten automatisch, u. a. Krenko, Tin Street Kingpin, Laboratory Maniac, Liesa, Lord of the Void, Liliana, Dreadhorde General (−9), Lethal Scheme, Keen-Eyed Curator, Magebane Lizard, Mana Echoes, Kotis, Kefka. Neu: verlorene Leben pro Zug werden gemerkt (Knight of the Ebon Legion, Luminarch Ascension, Lunar Convocation)."
 }
