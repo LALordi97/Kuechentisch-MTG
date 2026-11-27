@@ -4,8 +4,12 @@ Diese Anleitung führt eine geplante Aufgabe jede Nacht ohne Rückfragen aus. Si
 
 ## Zeitrahmen
 
-- Start gegen 01:45 Uhr. **Spätestens um 04:30 Uhr (Zürich) aufhören**: dann committen, was fertig und grün ist, den Rest verwerfen oder auf einen Zweig legen. Am Morgen ab 07:00 Uhr muss das Kontingent für die Arbeit frei sein.
-- Die Uhrzeit mit `TZ=Europe/Zurich date` prüfen, vor jedem grösseren Schritt.
+- Start gegen 01:35 Uhr. Wann aufhören (Zürcher Zeit):
+  - **Samstag- und Sonntagmorgen** (Läufe in der Nacht auf Samstag und auf Sonntag): **spätestens um 09:00 Uhr**. Am Wochenende ist das Kontingent am Morgen nicht für die Arbeit nötig (Wunsch von Lukas, 27.11.2026).
+  - **Montag bis Freitag:** **spätestens um 04:30 Uhr**, damit das Kontingent ab 07:00 Uhr für die Arbeit frei ist.
+  - Dann committen, was fertig und grün ist, den Rest verwerfen oder auf einen Zweig legen.
+- Mit der Wochenendzeit lieber mehrere abgeschlossene Pakete nacheinander (je testen, committen, pushen) als ein grosses am Schluss.
+- Uhrzeit und Wochentag mit `TZ=Europe/Zurich date` prüfen, vor jedem grösseren Schritt.
 
 ## Regeln fürs Pushen
 
