@@ -3114,6 +3114,7 @@ function botChooseBlocks(attackers){
   const free = BOT.bf.filter(c => isCreature(c) && !c.tap);
   let remaining = attackers.reduce((s, a) => s + atkDmg(a), 0);
   [...attackers].sort((a, b) => atkDmg(b) - atkDmg(a)).forEach(a => {
+    if(kwHas(a, "menace")) return; // KI verbessern (27.11.2026): Menace braucht zwei Blocker, die App kennt nur einen pro Angreifer – ein Einzelblock wäre regelwidrig
     const opts = free.filter(b => canBlock(b, a));
     if(!opts.length) return;
     const survives = b => !blockOutcome(a, b).bDead;
@@ -13163,7 +13164,7 @@ function historyAdd(win){
 /* ---------- Automatische Updates ---------- */
 // Liegt die App im Web, prüft sie regelmässig version.json im selben Ordner und lädt sich bei einer neuen Version neu.
 // Alles Wichtige (Spielstand, Deck, Tisch) liegt im Browser-Speicher und ist nach dem Neuladen wieder da.
-const APP_VERSION = "2026.11.27-1";
+const APP_VERSION = "2026.11.27-2";
 const ONLINE = /^https?:$/.test(location.protocol);
 let updPending = null, updTimer = null, updSnoozeUntil = 0;
 function busyForUpdate(){ return botBusy || (!$("#modal").hidden && modalState && ["block","deck"].includes(modalState.kind)); }
