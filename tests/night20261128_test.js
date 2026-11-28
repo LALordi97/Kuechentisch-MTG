@@ -159,5 +159,16 @@ const AUTO = ["Raffine's Informant", "Olivia's Wrath", "Peer into the Abyss", "P
   await reset(); { const b = N('Bär', 'Creature — Bear', '', {pw:2, tg:2}); put(b); const o = opp('KI-Riese', {pw:4, tg:4}); const pr = spell('Pick Your Poison'); await wait(200); await click('1× All creatures'); await wait(300); await drain(); await pr;
     check(S().gy.includes(b) && pt(o) === '2/2', `Pick Your Poison: -2/-2 für alle (${pt(o)})`); }
 
+  // Nykthos, Shrine to Nyx (aus der Prüfdatei vom 27.11.): Mana in Höhe der Hingabe
+  { const T27 = Object.fromEntries(JSON.parse(fs.readFileSync(require('path').join(__dirname, 'night20261127_cards.json'), 'utf8')).map(([n, type, o, mc, cmc]) => [n, {n, type, o, mc, cmc}]));
+    w.__c = T27['Nykthos, Shrine to Nyx']; check(ev('cardCheck(window.__c).status') === 'auto', 'Nykthos, Shrine to Nyx: automatisch');
+    await reset(); const ny = ev('newCard')({...T27['Nykthos, Shrine to Nyx'], img:null}); put(ny, N('Elf', 'Creature — Elf', '', {pw:1, tg:1, mc:'{G}{G}'}), N('Bär', 'Creature — Bear', '', {pw:2, tg:2, mc:'{1}{G}'}), N('Insel-Ding', 'Enchantment', '', {mc:'{U}'}));
+    const a = abil(ny, /devotion/); const pr = ev('runSteps')(ev('parseSteps')(a.text, ny), ny, {}); await wait(150); { const b = [...d.querySelectorAll('#modalBox button')].find(b => b.textContent.includes('Grün')); if(b) b.click(); } await wait(150); await pr;
+    check(ev('poolOf().G') === 3, `Nykthos: Hingabe an Grün 3 – {G}{G}{G} (${ev('poolOf().G')})`);
+    // Nyxborn Hydra als Aura (Bestow): +1/+1 pro Marke, Reichweite und Trampelschaden
+    w.__c = T27['Nyxborn Hydra']; check(ev('cardCheck(window.__c).status') === 'auto', 'Nyxborn Hydra: automatisch');
+    await reset(); const b = N('Bär', 'Creature — Bear', '', {pw:2, tg:2}); const hy = ev('newCard')({...T27['Nyxborn Hydra'], img:null, pw:0, tg:0}); hy.bestowed = true; hy.eq = b.u; hy.c = 3; put(b, hy);
+    check(pt(b) === '5/5' && kw(b, 'reach') && kw(b, 'trample'), `Nyxborn Hydra: Bär 5/5 mit Reichweite und Trampelschaden (${pt(b)})`); }
+
   console.log(fails ? `${fails} FEHLER` : 'ALLES OK'); process.exit(0);
 })();

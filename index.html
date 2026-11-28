@@ -2101,7 +2101,7 @@ function lifeBoost(c){
 const isPermanentType = c => /\b(Creature|Artifact|Enchantment|Planeswalker|Battle|Land)\b/.test(c.type || "");
 const isInstant = c => /\bInstant\b/.test(c.type || "") || /\bFlash\b/i.test((c.o || "").split("\n")[0]);
 const kwHas = (c, k) => !(c.tkwOff && c.tkwOff.includes(k)) && !(k === "flying" && typeof hammerLoses === "function" && hammerLoses(c)) && kwHas0(c, k);
-const attachKw = (c, k) => typeof S !== "undefined" && S && Array.isArray(S.bf) && !!c && !!c.u && S.bf.some(x => x.eq === c.u && x !== c && (() => { const m = String(x.o || "").match(/(?:Enchanted|Equipped) creature (?:gets [+-]\d+\/[+-]\d+ and )?has ([a-z ,]+?)(?: and ward \{\d+\})?(?:\.|$)/im); return !!m && m[1].split(/,\s*(?:and\s+)?|\s+and\s+/).map(s => s.trim().toLowerCase()).includes(k); })());
+const attachKw = (c, k) => typeof S !== "undefined" && S && Array.isArray(S.bf) && !!c && !!c.u && S.bf.some(x => x.eq === c.u && x !== c && (() => { const m = String(x.o || "").match(/(?:Enchanted|Equipped) creature (?:gets [+-]\d+\/[+-]\d+(?: for each \+1\/\+1 counter on this Aura)? and )?has ([a-z ,]+?)(?: and ward \{\d+\})?(?:\.|$)/im); return !!m && m[1].split(/,\s*(?:and\s+)?|\s+and\s+/).map(s => s.trim().toLowerCase()).includes(k); })());
 const kwHas0 = (c, k) => (c.kwc || []).includes(k) || (c.ntkw || []).includes(k) || tribalKw(c, k) || (typeof nightKw === "function" && nightKw(c, k)) || (typeof night21Kw === "function" && night21Kw(c, k)) || (typeof night22Kw === "function" && night22Kw(c, k)) || (typeof night23Kw === "function" && night23Kw(c, k)) || (typeof night24Kw === "function" && night24Kw(c, k)) || (typeof night26Kw === "function" && night26Kw(c, k)) || (typeof night27Kw === "function" && night27Kw(c, k)) || (typeof night28Kw === "function" && night28Kw(c, k)) ||
   (k === "first strike" && (/^During your turn, (?:this creature|[^,]+?) has first strike/im.test(c.o || "") || /^(?:This creature|[^.\n]+?) has first strike during your turn/im.test(c.o || "")) && typeof TURN !== "undefined" && TURN.active === me.id) ||
   chosenKwFor(c, k) ||
@@ -2567,15 +2567,25 @@ function botPickTarget(fixed){
   opts.sort((a, b) => b.score - a.score);
   return opts[0] && opts[0].score >= 0 ? opts[0] : {d:{id:me.id}, atk:[]};
 }
+/* KI verbessern (28.11.2026): Alpha-Schlag tödlich? Jeder meiner Blocker hält nur einen Angreifer auf, den er auch blocken darf (Fliegen, Landwalk …);
+   Trampelschaden über die Widerstandskraft des Blockers geht trotzdem durch. Bisher wurden einfach die stärksten Angreifer als geblockt gezählt. */
+function alphaLethal(cands, myBlk, life){
+  const atk = cands.slice().sort((a, b) => power(b) - power(a)); const free = myBlk.slice();
+  let dmg = atk.reduce((s, a) => s + Math.max(0, power(a)), 0);
+  for(const a of atk){
+    const i = free.map((b, k) => [b, k]).filter(([b]) => canBlock(b, a)).sort(([x], [y]) => tough(y) - tough(x))[0]; if(!i) continue;
+    const b = i[0]; free.splice(i[1], 1);
+    dmg -= kwHas(a, "trample") ? Math.min(Math.max(0, power(a)), Math.max(0, tough(b))) : Math.max(0, power(a));
+  }
+  return dmg >= life;
+}
 function botChooseAttackers(def){
   def = def || {blk:myCreatures(), life:S.life};
   const myBlk = def.blk.filter(c => !c.tap);
   const cands = BOT.bf.filter(c => isCreature(c) && !c.tap && !c.sick && power(c) > 0 && !kwHas(c, "defender") && !(c.vow && c.vowBy === me.id && (!def.id || def.id === me.id)));
   if(!cands.length) return [];
   // Alpha-Schlag tödlich, selbst wenn du optimal blockst?
-  const powers = cands.map(power).sort((a, b) => b - a);
-  const blocked = powers.slice(0, myBlk.length).reduce((s, p) => s + p, 0);
-  if(powers.reduce((s, p) => s + p, 0) - blocked >= def.life) return cands;
+  if(alphaLethal(cands, myBlk, def.life)) return cands;
   let atk = cands.filter(a => {
     const bl = myBlk.filter(b => canBlock(b, a));
     if(!bl.length) return true;
@@ -5504,6 +5514,9 @@ function matchStep2(p, src, full, SELF){
     if(/^target opponent may have you draw a card$/i.test(p)) return [{t:"palantir"}];
     if(/^(?:if that player doesn't, )?(?:you )?mill x cards$|^that player loses life equal to the total mana value of those cards$|^(?:if that player doesn't, )?(?:you )?mill x cards, and that player loses life equal to the total mana value of those cards$/i.test(p)) return [{t:"skip"}]; }
   if(/^(?:if you do, )?discard a card unless a permanent entered the battlefield face down under your control this turn or you turned a permanent face up this turn$/i.test(p)) return [{t:"discard", n:"a", unlessFd:true}]; // Oblivious Bookworm
+  if(/Choose a color\. Add an amount of mana of that color equal to your devotion to that color/i.test((src && src.o) || full || "")){ // Nykthos, Shrine to Nyx
+    if(/^choose a colou?r$/i.test(p)) return [{t:"nykthos"}];
+    if(/^add an amount of mana of that colou?r equal to your devotion to that colou?r$/i.test(p)) return [{t:"skip"}]; }
   if(/^each player puts a vow counter on a creature they control and sacrifices the rest$/i.test(p)) return [{t:"promiseVow"}]; // Promise of Loyalty
   if(/^each of those creatures can't attack you or planeswalkers you control for as long as it has a vow counter on it$/i.test(p)) return [{t:"skip"}];
   if(/^target artifact or creature loses all abilities and becomes a green elk creature with base power and toughness 3\/3$/i.test(p)) return [{t:"elk"}]; // Oko, Thief of Crowns
@@ -6915,7 +6928,7 @@ function attachBoost(c){
   if(typeof S === "undefined" || !S || !Array.isArray(S.bf) || !c || !c.u) return {p:0, t:0};
   let p = 0, t = 0;
   if(c.stk){ p += c.stk.p || 0; t += c.stk.t || 0; }
-  for(const x of S.bf){ if(x.eq !== c.u || x === c) continue; const m = String(x.o || "").match(/(?:Enchanted|Equipped) creature gets ([+-]\d+)\/([+-]\d+)(?! for each)/i); if(m){ p += +m[1]; t += +m[2]; } const ec = String(x.o || "").match(/Equipped creature gets \+(\d+)\/\+(\d+) for each \+1\/\+1 counter on this Equipment/i); if(ec){ p += +ec[1] * Math.max(0, x.c || 0); t += +ec[2] * Math.max(0, x.c || 0); } }
+  for(const x of S.bf){ if(x.eq !== c.u || x === c) continue; const m = String(x.o || "").match(/(?:Enchanted|Equipped) creature gets ([+-]\d+)\/([+-]\d+)(?! for each)/i); if(m){ p += +m[1]; t += +m[2]; } const ec = String(x.o || "").match(/Equipped creature gets \+(\d+)\/\+(\d+) for each \+1\/\+1 counter on this Equipment/i); if(ec){ p += +ec[1] * Math.max(0, x.c || 0); t += +ec[2] * Math.max(0, x.c || 0); } const ea = String(x.o || "").match(NYXBORN_RE); if(ea){ p += +ea[1] * Math.max(0, x.c || 0); t += +ea[2] * Math.max(0, x.c || 0); } }
   return {p, t};
 }
 /* Aura kommt ins Spiel: woran wird sie angelegt? */
@@ -7302,6 +7315,7 @@ function partnerWith(c, name){
 }
 /* Nacht 28.11.2026 */
 const TWO_TYPE_KW_RE = /^Other ([A-Z][a-z]+?)s and ([A-Z][a-z]+?)s you control have ([a-z ,]+?)\.?$/m; // Orcish Siegemaster
+const NYXBORN_RE = /^Enchanted creature gets \+(\d+)\/\+(\d+) for each \+1\/\+1 counter on this Aura and has ([a-z ,]+?)\.?$/m; // Nyxborn Hydra (attachBoost, attachKw)
 const MULDAYA_RE = /^You may play lands from the top of your library\.?$/m; // Oracle of Mul Daya (Menü «Oberstes Land spielen»)
 const REVEAL_TOP_RE = /^Play with the top card of your library revealed\.?$/m;
 const QUEST_RENEW_RE = /^As long as there are four or more quest counters on (?:this enchantment|[^,]+), untap all creatures you control during each other player's untap step\.?$/m; // Quest for Renewal
@@ -9586,6 +9600,11 @@ async function runSteps(steps, src, ctx = {}){
       case "ctrType": { const l = S.bf.filter(c => !c.fd && isCreature(c) && !(st.other && c === src) && typeMatch(c, st.ty.replace(/s$/, ""))); l.forEach(c => { c.c = (c.c || 0) + plusCtrN(c, st.n); abilEvent({kind:"countersOn", c}); }); act(`${src.n}: +${st.n} Marke(n) auf ${l.length} ${st.ty}`); break; }
       // Nacht 24.11.2026
       // Nacht 28.11.2026
+      case "nykthos": {
+        const col = await pickColor(`${src.n}: welche Farbe?`, COLORS); if(!col) break;
+        const name = Object.keys(COLW).find(k => COLW[k] === col); const n = xExpr(`your devotion to ${name}`, src) || 0;
+        if(n){ const got = Array(n).fill(col); poolAdd(got); ctx.lastMana = got; } act(`${src.n}: Hingabe an ${name} = ${n} – ${n} {${col}} in den Pool`); commit(); break;
+      }
       case "promiseVow": {
         const mine = S.bf.filter(c => !c.fd && isCreature(c));
         if(mine.length){ const p = await pickCards(`${src.n}: welche Kreatur bekommt die Gelöbnismarke (der Rest wird geopfert)?`, mine, 1, {none:"Erste"}); const keep = (p && p[0]) || mine[0];
@@ -12231,7 +12250,7 @@ function oppDrawScan(){
 
 /* ---------- Fähigkeiten-Check: Was kann die App mit den Karten im Deck? ---------- */
 const HANDLED_STATIC = [
-  TWO_TYPE_KW_RE, PEREGRIN_RE, PURESTEEL_RE, QUEST_RENEW_RE, MULDAYA_RE, REVEAL_TOP_RE, // Nacht 28.11.2026
+  TWO_TYPE_KW_RE, PEREGRIN_RE, PURESTEEL_RE, QUEST_RENEW_RE, MULDAYA_RE, REVEAL_TOP_RE, NYXBORN_RE, // Nacht 28.11.2026
   MELT_RE, MOMO_RE, PIZZA_RE, NIGHTKIN_RE, SEP_ENTER_RE, MYOJIN_RE, NOWHERE_RE, OATH_RE, PARTNER_WITH_RE, DECK_NINE_RE, // Nacht 27.11.2026
   // Nacht 26.11.2026
   PLUS1_TYPES_RE, LYSE_RE, ENTER_KWC_RE, LABMAN_RE, LIESA_RE, CURATOR_RE, KOTIS_RE, /^Wraiths you control have protection from Ring-bearers\.?$/, // Ring-bearer gibt es in der App nicht
@@ -13354,7 +13373,7 @@ function historyAdd(win){
 /* ---------- Automatische Updates ---------- */
 // Liegt die App im Web, prüft sie regelmässig version.json im selben Ordner und lädt sich bei einer neuen Version neu.
 // Alles Wichtige (Spielstand, Deck, Tisch) liegt im Browser-Speicher und ist nach dem Neuladen wieder da.
-const APP_VERSION = "2026.11.28-2";
+const APP_VERSION = "2026.11.28-3";
 const ONLINE = /^https?:$/.test(location.protocol);
 let updPending = null, updTimer = null, updSnoozeUntil = 0;
 function busyForUpdate(){ return botBusy || (!$("#modal").hidden && modalState && ["block","deck"].includes(modalState.kind)); }
