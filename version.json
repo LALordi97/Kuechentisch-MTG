@@ -1,4 +1,4 @@
 {
-  "version": "2026.11.28-3",
-  "notes": "KI erkennt tödliche Angriffe besser: sie rechnet mit, welche Angreifer deine Blocker überhaupt blocken dürfen (z. B. Flieger) und dass Trampelschaden durchgeht. Dazu automatisch: Nykthos, Shrine to Nyx (Mana in Höhe der Hingabe) und Nyxborn Hydra als Aura. Von heute Nacht insgesamt 30 neue automatische Karten."
+  "version": "2026.11.28-4",
+  "notes": "KI blockt geschickter: Blocker mit Reichweite bleiben für Flieger frei, und gegen kleine Angreifer blockt der schwächste Blocker, der genügt. Beim Rückschlag rechnet sie mit Fliegern und Trampelschaden – und greift trotzdem an, wenn Zuhausebleiben sie ohnehin nicht rettet."
 }

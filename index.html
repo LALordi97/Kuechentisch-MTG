@@ -2594,10 +2594,11 @@ function botChooseAttackers(def){
     return bl.every(b => !blockOutcome(a, b).aDead);
   });
   // Rückschlag-Rechnung: genug Blocker zu Hause lassen
-  const myPower = botDefenders().flatMap(d => d.blk).map(power).sort((a, b) => b - a); // Rückschlag: von allen Gegnern
+  const oppAtk = botDefenders().flatMap(d => d.blk).filter(c => power(c) > 0 && !kwHas(c, "defender")); // Rückschlag: von allen Gegnern
   const stayHome = () => BOT.bf.filter(c => isCreature(c) && (!atk.includes(c) || kwHas(c, "vigilance")));
-  const danger = () => { const n = stayHome().length; return myPower.slice(n).reduce((s, p) => s + p, 0) >= BOT.life; };
-  while(atk.length && danger()) atk.sort((a, b) => tough(b) - tough(a)).shift();
+  const danger = () => alphaLethal(oppAtk, stayHome(), BOT.life); // 28.11.2026: mit Fliegen/Trampelschaden wie alphaLethal
+  const hopeless = alphaLethal(oppAtk, BOT.bf.filter(c => isCreature(c)), BOT.life); // zu Hause bleiben rettet ohnehin nicht – dann angreifen
+  while(atk.length && !hopeless && danger()) atk.sort((a, b) => tough(b) - tough(a)).shift();
   return atk;
 }
 /* --- Claude --- */
@@ -3126,7 +3127,9 @@ function botChooseBlocks(attackers){
   let remaining = attackers.reduce((s, a) => s + atkDmg(a), 0);
   [...attackers].sort((a, b) => atkDmg(b) - atkDmg(a)).forEach(a => {
     if(kwHas(a, "menace")) return; // KI verbessern (27.11.2026): Menace braucht zwei Blocker, die App kennt nur einen pro Angreifer – ein Einzelblock wäre regelwidrig
-    const opts = free.filter(b => canBlock(b, a));
+    const others = attackers.filter(x => x !== a && !blocks.has(x.u));
+    const flex = b => others.filter(x => canBlock(b, x)).length; // KI verbessern (28.11.2026): zuerst Blocker nehmen, die sonst wenig blocken können, dann den schwächsten
+    const opts = free.filter(b => canBlock(b, a)).sort((x, y) => (flex(x) - flex(y)) || (threatScore(x) - threatScore(y)));
     if(!opts.length) return;
     const survives = b => !blockOutcome(a, b).bDead;
     const kills = b => blockOutcome(a, b).aDead;
@@ -13373,7 +13376,7 @@ function historyAdd(win){
 /* ---------- Automatische Updates ---------- */
 // Liegt die App im Web, prüft sie regelmässig version.json im selben Ordner und lädt sich bei einer neuen Version neu.
 // Alles Wichtige (Spielstand, Deck, Tisch) liegt im Browser-Speicher und ist nach dem Neuladen wieder da.
-const APP_VERSION = "2026.11.28-3";
+const APP_VERSION = "2026.11.28-4";
 const ONLINE = /^https?:$/.test(location.protocol);
 let updPending = null, updTimer = null, updSnoozeUntil = 0;
 function busyForUpdate(){ return botBusy || (!$("#modal").hidden && modalState && ["block","deck"].includes(modalState.kind)); }
