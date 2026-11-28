@@ -635,7 +635,7 @@ function moveCardRaw(u, to, where){
 }
 async function play(u, faceDown){
   const f = findCard(u); if(!f) return;
-  if(faceDown){ f.c.fd = true; moveCard(u, "bf"); return; }
+  if(faceDown){ f.c.fd = true; S.fdEnterKey = turnKey(); moveCard(u, "bf"); return; } // fdEnterKey: Oblivious Bookworm (Nacht 28.11.2026)
   if((f.z === "hand" || f.z === "cz") && !isLand(f.c)){
     if(!(await castWarn(f.c, f.z))) return;
     if(!(await castCosts(f.c))) return;
@@ -1056,7 +1056,7 @@ function cardMenu(c, zone){
       freeO.forEach(o => items.push({h:`Mana: ${optHtml(o)}`, f:() => tapForMana(c, o)}));
       if(c.imprint) items.push({t:`Eingeprägt: ${c.imprint}`}); }
     if(c.back) items.push({l:"Auf andere Seite drehen", f:() => { c.flip=!c.flip; act(`dreht ${c.n} um`); commit(); }});
-    items.push({l: c.fd ? "Aufdecken" : "Verdecken", f:() => { c.fd=!c.fd; if(!c.fd && c.mfd) unmanifest(c); act(c.fd ? "verdeckt eine Karte" : `deckt ${c.n} auf`); commit(); }});
+    items.push({l: c.fd ? "Aufdecken" : "Verdecken", f:() => { c.fd=!c.fd; if(!c.fd && S.bf.includes(c)) S.fdUpKey = turnKey(); if(!c.fd && c.mfd) unmanifest(c); act(c.fd ? "verdeckt eine Karte" : `deckt ${c.n} auf`); commit(); }});
     items.push({l:"Marke +1", f:() => { c.c++; commit(); }});
     items.push({l:"Marke −1", f:() => { c.c--; commit(); }});
     if(isCreature(c)) items.push({l: c.pwO != null ? `Stärke/Widerstand ändern (${power(c)}/${tough(c)})` : "Stärke/Widerstand setzen …", f:() => openPtDialog(c)});
@@ -2570,7 +2570,7 @@ function botPickTarget(fixed){
 function botChooseAttackers(def){
   def = def || {blk:myCreatures(), life:S.life};
   const myBlk = def.blk.filter(c => !c.tap);
-  const cands = BOT.bf.filter(c => isCreature(c) && !c.tap && !c.sick && power(c) > 0 && !kwHas(c, "defender"));
+  const cands = BOT.bf.filter(c => isCreature(c) && !c.tap && !c.sick && power(c) > 0 && !kwHas(c, "defender") && !(c.vow && c.vowBy === me.id && (!def.id || def.id === me.id)));
   if(!cands.length) return [];
   // Alpha-Schlag tödlich, selbst wenn du optimal blockst?
   const powers = cands.map(power).sort((a, b) => b - a);
@@ -2772,6 +2772,7 @@ async function botTurn(){
     }
     botChanged();
     { const lk = attackers.length && botAttackLocked(); if(lk){ botLog(`darf nicht angreifen (${lk.src})`); attackers = []; } }
+    if(attackers.length && atkTarget === me.id && attackers.some(c => c.vow && c.vowBy === me.id)){ const v = attackers.filter(c => c.vow && c.vowBy === me.id); attackers = attackers.filter(c => !v.includes(c)); botLog(`${v.map(c => c.n).join(", ")} greift nicht an (Gelöbnismarke)`); } // Promise of Loyalty (Nacht 28.11.2026)
     if(attackers.length && atkTarget === me.id) attackers = botPrisonTax(attackers); // Ghostly Prison (Nacht 24.11.2026)
     if(attackers.length){
       attackers.forEach(c => { if(!kwHas(c, "vigilance")) c.tap = true; });
@@ -3373,6 +3374,7 @@ function applyHitToCard(c, m, isBot){
   if(m.kind === "shuffleIn"){ if(c.tok){ move("gy"); return `${name} (Token) verschwindet`; } if(isBot){ BOT.bf.splice(BOT.bf.indexOf(c), 1); BOT.library.push(c); BOT.library = shuffle(BOT.library); } else { moveCard(c.u, "library"); S.library = shuffle(S.library); } return `${name} kommt in die Bibliothek, sie wird gemischt`; }
   if(m.kind === "detain"){ c.detainBy = String(m.by || ""); return `${name} ist festgehalten: kann nicht angreifen, blocken oder Fähigkeiten aktivieren bis zum nächsten Zug von ${oppByPid(m.by)}`; }
   if(m.kind === "faceDown"){ if(!c.tok){ c.fd = true; } return `${name} wird umgedreht (2/2, verdeckt)`; }
+  if(m.kind === "elk"){ elkify(c); return `${name} ist ein grüner 3/3-Elch ohne Fähigkeiten`; } // Oko (Nacht 28.11.2026)
   if(m.kind === "frog"){ if(!c._frogO) c._frogO = {o:c.o, kw:c.kw, pw:c.pw, tg:c.tg, type:c.type}; c.o = ""; c.kw = []; c.noAb = true; c.pw = 1; c.tg = 1; c.type = "Creature — Frog"; c.mc = "{U}"; delete c._ab; delete c._abO; return `${name} ist ein 1/1-Frosch ohne Fähigkeiten`; }
   if(m.kind === "unfrog"){ if(c._frogO){ Object.assign(c, c._frogO); delete c._frogO; delete c.noAb; delete c._ab; delete c._abO; } return `${name} ist kein Frosch mehr`; }
   if(m.kind === "restoreAll"){ if(c.noAb && c._oBak != null){ c.o = c._oBak; c.kw = c._kwBak || []; delete c.noAb; delete c._ab; delete c._abO; } return `${name} hat seine Fähigkeiten zurück`; }
@@ -5365,6 +5367,9 @@ function parseAbilities(c){
     // Spree: «+ {1} — …» sind Modi mit Zusatzkosten
     if(isSpell && /^Spree$/i.test(line)){ out.push({kind:"spell", text:"", line, modal:{n:"one or more", modes:[], costs:[], spree:true}}); return; }
     // Tiered (Nacht 24.11.2026): «• Name — {Kosten} — …», genau ein Modus mit Zusatzkosten
+    // Nacht 28.11.2026: «Choose any number of modes that total exactly N» mit «[k] …»-Modi (Pick Your Poison)
+    { const pm = isSpell && line.match(/^Choose any number of modes that total exactly (\d+)\. You may choose the same mode more than once\.?$/i); if(pm){ out.push({kind:"spell", text:"", line, modal:{n:"points", total:+pm[1], modes:[], pts:[], lines:[], points:true}}); return; } }
+    { const pk = line.match(/^\[(\d+)\]\s*(.+)$/); const last = out[out.length - 1]; if(pk && last && last.modal && last.modal.points){ last.modal.modes.push(pk[2]); last.modal.pts.push(+pk[1]); last.modal.lines.push(line); return; } }
     if(isSpell && /^Tiered$/i.test(line)){ out.push({kind:"spell", text:"", line, modal:{n:"one", modes:[], costs:[], spree:true, tiered:true}}); return; }
     { const tm = line.match(/^[•●]\s*[^—]{1,40}?\s*—\s*((?:\{[^}]+\})+)\s*—\s*(.+)$/); const last = out[out.length - 1];
       if(tm && last && last.modal && last.modal.tiered){ last.modal.modes.push(tm[2]); last.modal.costs.push(tm[1] === "{0}" ? "" : tm[1]); last.modal.lines = [...(last.modal.lines || []), line]; return; } }
@@ -5495,6 +5500,14 @@ function matchStep2(p, src, full, SELF){
   // Nacht 28.11.2026
   if((m = p.match(/^[Tt]arget ([A-Z][a-z]+) gains ([a-z ]+?) until end of turn$/)) && !/^(?:Creature|Artifact|Player|Opponent|Permanent)$/.test(m[1])) return [{t:"pump", who:"target " + m[1].toLowerCase() + " creature", p:"+0", tg:"+0", kw:m[2]}]; // Otepec Huntmaster
   if(/^it connives$/i.test(p) && /When this creature enters, it connives/i.test((src && src.o) || full || "")) return [{t:"connive"}]; // Raffine's Informant
+  if(/Then target opponent may have you draw a card\. If that player doesn't, you mill X cards, where X is the number of influence counters on/i.test((src && src.o) || full || "")){ // Palantír of Orthanc
+    if(/^target opponent may have you draw a card$/i.test(p)) return [{t:"palantir"}];
+    if(/^(?:if that player doesn't, )?(?:you )?mill x cards$|^that player loses life equal to the total mana value of those cards$|^(?:if that player doesn't, )?(?:you )?mill x cards, and that player loses life equal to the total mana value of those cards$/i.test(p)) return [{t:"skip"}]; }
+  if(/^(?:if you do, )?discard a card unless a permanent entered the battlefield face down under your control this turn or you turned a permanent face up this turn$/i.test(p)) return [{t:"discard", n:"a", unlessFd:true}]; // Oblivious Bookworm
+  if(/^each player puts a vow counter on a creature they control and sacrifices the rest$/i.test(p)) return [{t:"promiseVow"}]; // Promise of Loyalty
+  if(/^each of those creatures can't attack you or planeswalkers you control for as long as it has a vow counter on it$/i.test(p)) return [{t:"skip"}];
+  if(/^target artifact or creature loses all abilities and becomes a green elk creature with base power and toughness 3\/3$/i.test(p)) return [{t:"elk"}]; // Oko, Thief of Crowns
+  if(/^exchange control of target artifact or creature you control and target creature an opponent controls with power 3 or less$/i.test(p)) return [{t:"okoSwap"}];
   if(/^each non-vampire creature gets -x\/-x until end of turn$/i.test(p)) return [{t:"oliviaWrath"}]; // Olivia's Wrath
   if(/^target player draws cards equal to half the number of cards in their library and loses half their life$/i.test(p)) return [{t:"peerAbyss"}]; // Peer into the Abyss
   if(/^round up each time$/i.test(p) && /draws cards equal to half the number of cards in their library and loses half their life/i.test((src && src.o) || full || "")) return [{t:"skip"}];
@@ -7294,6 +7307,7 @@ const REVEAL_TOP_RE = /^Play with the top card of your library revealed\.?$/m;
 const QUEST_RENEW_RE = /^As long as there are four or more quest counters on (?:this enchantment|[^,]+), untap all creatures you control during each other player's untap step\.?$/m; // Quest for Renewal
 const PURESTEEL_RE = /^(?:Metalcraft — )?Equipment you control have equip \{0\} as long as you control three or more artifacts\.?$/m; // Puresteel Paladin
 function puresteelOn(){ return typeof S !== "undefined" && !!S && Array.isArray(S.bf) && S.bf.some(x => !x.fd && PURESTEEL_RE.test(x.o || "")) && S.bf.filter(x => !x.fd && /\bArtifact\b/.test(x.type || "")).length >= 3; }
+function elkify(e){ e.o = ""; e.kw = []; e.noAb = true; e.pw = 3; e.tg = 3; e.type = "Creature — Elk"; e.mc = "{G}"; delete e.tkw; delete e._ab; delete e._abO; delete e._frogO; } // Oko, Thief of Crowns: dauerhaft
 function night28Kw(c, k){
   if(!c || !isCreature(c) || typeof S === "undefined" || !S || !Array.isArray(S.bf) || !S.bf.includes(c)) return false;
   for(const x of S.bf){ if(x === c || x.fd || !x.o) continue; const m = noReminder(x.o).match(TWO_TYPE_KW_RE); if(m && kwListHas(m[3], k) && (typeMatch(c, m[1]) || typeMatch(c, m[2]))) return true; }
@@ -7677,7 +7691,7 @@ async function scheduleReturn(t, src){
 }
 /* Mobilize: Krieger kommen getappt und angreifend dazu und werden am Ende geopfert */
 /* Manifest dread: verdeckt als 2/2 ohne Text; beim Aufdecken oder Verlassen des Spielfelds zurück */
-function manifestCard(c){ c._stO = c.o; c._stType = c.type; c._stKw = c.kw; c.mfd = true; c.o = ""; c.type = "Creature"; c.kw = []; c.pwO = 2; c.tgO = 2; c.fd = true; delete c._ab; delete c._abO; }
+function manifestCard(c){ if(typeof S !== "undefined" && S) S.fdEnterKey = turnKey(); c._stO = c.o; c._stType = c.type; c._stKw = c.kw; c.mfd = true; c.o = ""; c.type = "Creature"; c.kw = []; c.pwO = 2; c.tgO = 2; c.fd = true; delete c._ab; delete c._abO; }
 function unmanifest(c){ if(!c.mfd) return; delete c.mfd; if(c._stO != null){ c.o = c._stO; c.type = c._stType || c.type; if(c._stKw) c.kw = c._stKw; } delete c._stO; delete c._stType; delete c._stKw; delete c._ab; delete c._abO; c.pwO = null; c.tgO = null; }
 /* Ainok/Winota: Kreaturen, die «getappt und angreifend» ins Spiel kommen, nach den Angriffsauslösern in den Angriff aufnehmen */
 const ATK_JOIN_RE = [/attacks an opponent, you may put an? [A-Z][a-z]+(?:, [A-Z][a-z]+)*,? or [A-Z][a-z]+ creature card from your hand onto the battlefield tapped and attacking that opponent/i, /for each opponent, create a 1\/1 red Goblin creature token that's tapped and attacking that player/i, /You may put a Human creature card from among them onto the battlefield tapped and attacking/i, /attacks?, [^.]*create (?:a|an|one|two|three|four|five|\d+) \d+\/\d+ [a-z ,]+? creature tokens?(?: with [a-z ,]+?)? that(?: are| is|'s) tapped and attacking/i, /are attacking, and you both own and control them, exile them, then meld them into/i];
@@ -7966,6 +7980,7 @@ async function runSteps(steps, src, ctx = {}){
     if(st.ifNotKicked && (src.kicked || src.blighted)) continue; // Nacht 26.11.2026
     if(st.ifTgtGone && !(ctx.target && ctx.target.card && !S.bf.includes(ctx.target.card))) continue; // Nurturing Pixie (Nacht 27.11.2026)
     if(st.ifDiscCreature && !src.discCreature){ act(`${src.n}: abgeworfene Karte war keine Kreatur – entfällt`); continue; } // Moria Scavenger
+    if(st.unlessFd && (S.fdEnterKey === turnKey() || S.fdUpKey === turnKey())){ act(`${src.n}: diesen Zug verdeckt ins Spiel gebracht oder aufgedeckt – kein Abwerfen`); continue; } // Oblivious Bookworm (Nacht 28.11.2026)
     if(st.unlessEntered && src.enterKey === turnKey()){ act(`${src.n}: diesen Zug ins Spiel gekommen – kein Abwerfen`); continue; } // Moon-Circuit Hacker
     if(st.ifTgtMine && !(ctx.target && ctx.target.mine)) continue;
     if(st.ifCond && !interveningIf(`if ${st.ifCond}, x`, src).ok) continue;
@@ -9571,6 +9586,41 @@ async function runSteps(steps, src, ctx = {}){
       case "ctrType": { const l = S.bf.filter(c => !c.fd && isCreature(c) && !(st.other && c === src) && typeMatch(c, st.ty.replace(/s$/, ""))); l.forEach(c => { c.c = (c.c || 0) + plusCtrN(c, st.n); abilEvent({kind:"countersOn", c}); }); act(`${src.n}: +${st.n} Marke(n) auf ${l.length} ${st.ty}`); break; }
       // Nacht 24.11.2026
       // Nacht 28.11.2026
+      case "promiseVow": {
+        const mine = S.bf.filter(c => !c.fd && isCreature(c));
+        if(mine.length){ const p = await pickCards(`${src.n}: welche Kreatur bekommt die Gelöbnismarke (der Rest wird geopfert)?`, mine, 1, {none:"Erste"}); const keep = (p && p[0]) || mine[0];
+          keep.vow = (keep.vow || 0) + 1; mine.filter(c => c !== keep).forEach(c => { moveCard(c.u, "gy"); abilEvent({kind:"youSac", c}); }); act(`${src.n}: ${keep.n} bekommt eine Gelöbnismarke, ${mine.length - 1} Kreatur(en) geopfert`); }
+        for(const o of liveOpps()){
+          const bfo = isBotId(o.id) ? botOf(o.id).bf : (Array.isArray((others[o.id] || {}).bf) ? others[o.id].bf : []); const k = bfo.filter(c => c && !c.fd && isCreature(c)).length; if(!k) continue;
+          if(k > 1){ const r = await requestOpp(o.id, {kind:"sacrifice", n:k - 1, desc:"creature", src:src.n}); act(`${src.n}: ${o.name} behält eine Kreatur und opfert ${r && r.cards && r.cards.length ? r.cards.join(", ") : "nichts"}`); }
+          if(isBotId(o.id)) withBot(o.id, () => { BOT.bf.filter(c => isCreature(c)).forEach(c => { c.vow = (c.vow || 0) + 1; c.vowBy = me.id; }); botChanged(); });
+          else toast(`<b>${esc(src.n)}:</b> ${esc(o.name)} legt eine Gelöbnismarke auf die behaltene Kreatur – sie kann dich nicht angreifen.`);
+        }
+        commit(); break;
+      }
+      case "palantir": {
+        const t = await pickTarget(`${src.n}: welcher Gegner entscheidet?`, "target opponent", false); if(!t || t.kind !== "player" || t.pid === me.id) break;
+        const X = Math.max(0, src.c || 0); const r = await requestOpp(t.pid, {kind:"palantir", x:X, src:src.n});
+        if(r && r.draw){ draw(1); act(`${src.n}: ${oppByPid(t.pid)} lässt dich eine Karte ziehen`); commit(); break; }
+        const m2 = S.library.splice(0, X); S.gy.push(...m2); const mv = m2.reduce((a, c) => a + (c.cmc || 0), 0);
+        act(`${src.n}: du mahlst ${m2.length} (${m2.map(c => c.n).join(", ") || "nichts"}), ${oppByPid(t.pid)} verliert ${mv} Leben`);
+        if(mv) hitOpponent(t.pid, {kind:"loss", amount:mv, src:src.n}); commit(); break;
+      }
+      case "elk": {
+        const t = await pickTarget(`${src.n}: welches Artefakt / welche Kreatur wird ein Elch?`, "target artifact or creature", false); if(!t || t.kind !== "card") break;
+        if(t.mine){ elkify(t.card); act(`${src.n}: ${t.card.n} ist ein grüner 3/3-Elch ohne Fähigkeiten`); } else { hitOpponent(t.pid, {kind:"elk", card:t.card.u, src:src.n}); act(`${src.n}: ${t.card.n} wird ein 3/3-Elch`); }
+        commit(); break;
+      }
+      case "okoSwap": {
+        const mine = S.bf.filter(c => !c.fd && (isCreature(c) || /\bArtifact\b/.test(c.type || ""))); if(!mine.length){ act(`${src.n}: kein eigenes Artefakt / keine eigene Kreatur`); break; }
+        const p = await pickCards(`${src.n}: welches eigene Artefakt / welche eigene Kreatur geben?`, mine, 1, {none:"Abbrechen"}); const my = p && p[0]; if(!my) break;
+        const t = await pickTarget(`${src.n}: welche Kreatur (Stärke 3 oder weniger) bekommst du?`, "target creature an opponent controls", false); if(!t || t.kind !== "card" || t.mine) break;
+        if(power(t.card) > 3){ toast(`${esc(t.card.n)} hat Stärke ${power(t.card)} – nur 3 oder weniger.`); break; }
+        const r = await requestOpp(t.pid, {kind:"giveMe", u:t.card.u, src:src.n}); if(!r || !r.ok){ act(`${src.n}: Tausch nicht möglich`); break; }
+        await new Promise(res => setTimeout(res, 30));
+        if(S.bf.includes(my)) giveControl(my.u, t.pid);
+        act(`${src.n}: tauscht ${my.n} gegen ${t.card.n} von ${oppByPid(t.pid)}`); commit(); break;
+      }
       case "oliviaWrath": { const X = S.bf.filter(c => !c.fd && typeMatch(c, "Vampire")).length; ctx.X = X; if(!X){ act(`${src.n}: keine Vampire – X = 0`); break; } await runSteps([{t:"massPump", p:-X, tg:-X, ex:null, notTy:"Vampire"}], src, ctx); break; }
       case "peerAbyss": {
         const t = await pickTarget(`${src.n}: welcher Spieler?`, "target player", false); if(!t || t.kind !== "player") break;
@@ -11713,6 +11763,14 @@ async function chooseModes(src, modal){
     const r = await chooseModes(src, {...modal, modes:rest, line:""}); if(r && r.length){ const t = (S.bf.find(x => x.u === src.u) || src); t._modesUsed = {k, l:[...used, ...r]}; src._modesUsed = t._modesUsed; } return r; }
   if(modal.line && /If this spell's additional cost was paid, choose both instead/i.test(modal.line) && (src.blighted || src.kicked || src.bargained)){ act(`${src.n}: Zusatzkosten bezahlt – beide Modi`); return modal.modes.slice(); } // Pyrrhic Strike (Nacht 28.11.2026)
   if(modal.line && /If you control six or more lands, choose both instead/i.test(modal.line) && S.bf.filter(c => !c.fd && /\bLand\b/.test(c.type || "")).length >= 6){ act(`${src.n}: sechs oder mehr Länder – beide Modi`); return modal.modes.slice(); }
+  if(modal.points){ // Pick Your Poison (Nacht 28.11.2026): alle Kombinationen mit genau dieser Summe
+    const combos = []; const rec = (i, left, acc) => { if(!left){ combos.push(acc.slice()); return; } for(let k = i; k < modal.modes.length; k++) if(modal.pts[k] <= left){ acc.push(k); rec(k, left - modal.pts[k], acc); acc.pop(); } };
+    rec(0, modal.total, []);
+    return abilModal(`${src.n}: Modi mit zusammen ${modal.total} wählen`, (box, done) => {
+      combos.forEach(cb => { const cnt = {}; cb.forEach(k => { cnt[k] = (cnt[k] || 0) + 1; }); const b = btn(Object.entries(cnt).map(([k, n]) => `${n}× ${modal.modes[k]}`).join(" + "), () => done(cb.map(k => modal.modes[k])), "small"); b.style.textAlign = "left"; b.style.whiteSpace = "normal"; box.append(b); });
+      box.append(btn("Abbrechen", () => done(null), "small"));
+    });
+  }
   if(modal.line && /You may choose the same mode more than once/i.test(modal.line)){
     const n = nWord(modal.n) || 3;
     return abilModal(`${src.n}: ${n} Modi wählen (auch mehrfach)`, (box, done) => {
@@ -12275,6 +12333,7 @@ function cardCheck(t){
   String(c.o || "").split("\n").forEach(raw => {
     let line = cleanLine(raw); if(!line) return;
     if(/^[•●]/.test(line)) return;
+    if(/^\[\d+\]/.test(line) && abs.some(a => a.modal && a.modal.points && (a.modal.lines || []).includes(line))){ out.auto.push("Modus: " + line); return; } // Nacht 28.11.2026
     if(/^\+\s*(?:\{[^}]+\})+\s*[—-]/.test(line) && abs.some(a => a.modal && a.modal.spree && (a.modal.lines || []).includes(line))){ out.auto.push("Spree-Modus: " + line); return; }
     line = line.replace(/^(Revolt|Converge|Threshold|Metalcraft|Delirium|Ferocious|Morbid|Raid|Spell mastery|Formidable|Coven|Hellbent|Domain|Landfall|Magecraft|Constellation|Heroic|Alliance|Celebration|Descend \d+|Fateful hour|Corrupted|Addendum|Adamant|Battalion|Lieutenant|Parley|Radiance|Rally|Strive|Undergrowth|Valiant|Void|Eerie|Survival|Max speed) — /i, "");
     line = line.replace(/^∞\s*[—-]\s*/, "");   // Infinity Stones: gilt erst, wenn «harnessed» (siehe trigMatches)
@@ -12503,6 +12562,7 @@ function receiveReq(m){
   if(q.kind === "discardOrCounter"){ queued(async () => { const p = S.hand.length ? await pickCards(`${src}: eine Karte abwerfen, sonst wird dein Zauber gekontert`, S.hand.slice(), 1, {none:"Nicht abwerfen"}) : []; if(p && p[0] && S.hand.includes(p[0])){ moveCard(p[0].u, "gy"); act(`wirft ${p[0].n} ab (${src})`); commit(); reply({discarded:p[0].n}); return; } act(`${src}: dein Zauber wird gekontert`); reply({discarded:null}); }); return; }
   if(q.kind === "discardRandom"){ const n = Math.max(0, Math.min(10, parseInt(q.n, 10) || 1)); const out = []; for(let i = 0; i < n && S.hand.length; i++){ const d = S.hand[Math.floor(Math.random() * S.hand.length)]; moveCard(d.u, "gy"); out.push(d.n); } act(`wirft zufällig ab: ${out.join(", ") || "nichts"} (${by}: ${src})`); commit(); reply({cards:out}); return; }
   if(q.kind === "delayDraw"){ S.denial = [...(S.denial || []), {n:Math.max(1, Math.min(5, parseInt(q.n, 10) || 1)), may:!!q.may, src:String(src)}]; act(`${src}: du darfst im nächsten Upkeep ziehen`); commit(); reply({ok:true}); return; }
+  if(q.kind === "palantir"){ queued(async () => { const v = await abilModal(`${by} (${src}): du wählst`, (box, done) => { box.append(Object.assign(document.createElement("p"), {textContent:`${by} zieht eine Karte – oder mahlt ${Number(q.x) || 0} Karte(n) und du verlierst Leben in Höhe ihres Manawerts.`})); box.append(btn("Karte ziehen lassen", () => done("draw"), "primary"), btn("Mahlen lassen", () => done("mill"), "small")); }); reply({draw:v === "draw"}); }); return; } // Palantír of Orthanc (Nacht 28.11.2026)
   if(q.kind === "selfOthers"){ queued(async () => { const v = await abilModal(`${by} (${src}): du wählst`, (box, done) => { box.append(Object.assign(document.createElement("p"), {textContent:`Selbst: ${String(q.self || "").slice(0, 160)}. Andere: ${String(q.others || "").slice(0, 160)}.`})); box.append(btn("Ich selbst", () => done("self"), "primary"), btn("Die anderen Gegner", () => done("others"), "primary")); }); reply({choice:v || "self"}); }); return; }
   if(q.kind === "vote"){ const opts = (Array.isArray(q.options) ? q.options : []).slice(0, 4).map(String); const DE = {evidence:"Beweise (Clue)", bribery:"Bestechung (Treasure)"}; queued(async () => { const v = await abilModal(`${by} (${src}): deine Stimme`, (box, done) => opts.forEach(o => box.append(btn(DE[o] || o, () => done(o), "primary")))); reply({vote:v || opts[0]}); }); return; }
   if(q.kind === "slave"){ S.slaveBy = by; act(`${by} wird deinen nächsten Zug kontrollieren (${src})`); toast(`<b>${esc(src)}:</b> ${esc(by)} kontrolliert deinen nächsten Zug.`, 10000); commit(); reply({ok:true}); return; }
@@ -12685,6 +12745,7 @@ function botReq(m){
   if(q.kind === "discardOrCounter"){ if(BOT.hand.length){ const c = BOT.hand.slice().sort((a, b) => (isLand(b) - isLand(a)) || (a.cmc || 0) - (b.cmc || 0))[0]; BOT.hand.splice(BOT.hand.indexOf(c), 1); BOT.gy.push(c); botLog(`wirft ${c.n} ab`); botChanged(); reply({discarded:c.n}); return; } reply({discarded:null}); return; }
   if(q.kind === "discardRandom"){ const n = Math.max(0, parseInt(q.n, 10) || 1); const out = []; for(let i = 0; i < n && BOT.hand.length; i++){ const d = BOT.hand.splice(Math.floor(Math.random() * BOT.hand.length), 1)[0]; BOT.gy.push(d); out.push(d.n); } botLog(`wirft zufällig ab: ${out.join(", ")}`); botChanged(); reply({cards:out}); return; }
   if(q.kind === "delayDraw"){ botDraw(Math.max(1, parseInt(q.n, 10) || 1)); botLog("zieht (Arcane Denial)"); botChanged(); reply({ok:true}); return; }
+  if(q.kind === "palantir"){ const x = Math.max(0, parseInt(q.x, 10) || 0); const yes = x >= 3 || x * 2 >= BOT.life / 2; botLog(yes ? `lässt dich eine Karte ziehen (${q.src || "Palantír"})` : `lässt dich ${x} Karte(n) mahlen (${q.src || "Palantír"})`); reply({draw:yes}); return; } // Nacht 28.11.2026
   if(q.kind === "selfOthers"){ const v = botSelfOthers(q); botLog(`wählt «${v === "self" ? "sich selbst" : "die anderen"}» (${q.src || "Komplott"})`); reply({choice:v}); return; }
   if(q.kind === "vote"){ const opts = Array.isArray(q.options) ? q.options : []; reply({vote:opts[Math.floor(Math.random() * opts.length)]}); return; }
   if(q.kind === "slave"){ botLog(`wird im nächsten Zug von ${q.src || "Mindslaver"} kontrolliert – bitte sag der KI, was sie tun soll`); reply({ok:true}); return; }
@@ -13293,7 +13354,7 @@ function historyAdd(win){
 /* ---------- Automatische Updates ---------- */
 // Liegt die App im Web, prüft sie regelmässig version.json im selben Ordner und lädt sich bei einer neuen Version neu.
 // Alles Wichtige (Spielstand, Deck, Tisch) liegt im Browser-Speicher und ist nach dem Neuladen wieder da.
-const APP_VERSION = "2026.11.28-1";
+const APP_VERSION = "2026.11.28-2";
 const ONLINE = /^https?:$/.test(location.protocol);
 let updPending = null, updTimer = null, updSnoozeUntil = 0;
 function busyForUpdate(){ return botBusy || (!$("#modal").hidden && modalState && ["block","deck"].includes(modalState.kind)); }

@@ -13,7 +13,7 @@ const open = () => !$('#modal').hidden;
 const click = async t => { const b = [...d.querySelectorAll('#modalBox button')].find(b => b.textContent.trim().startsWith(t)); if(b){ b.click(); await wait(40); } return !!b; };
 const clickCard = async t => { const el = [...d.querySelectorAll('#modalBox .card')].find(e => e.textContent.includes(t)); if(el){ el.click(); await wait(40); } return !!el; };
 const cardsShown = () => [...d.querySelectorAll('#modalBox .card')].map(e => e.textContent);
-const AUTO = ["Raffine's Informant", "Olivia's Wrath", "Peer into the Abyss", "Phyresis Outbreak", "Plaguecrafter", "Rakdos Charm", "Okiba-Gang Shinobi", "Patron of the Vein", "Practiced Offense", "Prize Pig", "Papalymo Totolymo", "Rakdos, Patron of Chaos", "Obsessive Pursuit", "Planetary Annihilation", "Otepec Huntmaster", "Plunder the Trollshaws", "Orcish Siegemaster", "Quirion Ranger", "Peregrin Took", "Puresteel Paladin", "Pyrrhic Strike", "Quest for Renewal", "Oracle of Mul Daya"];
+const AUTO = ["Raffine's Informant", "Olivia's Wrath", "Peer into the Abyss", "Phyresis Outbreak", "Plaguecrafter", "Rakdos Charm", "Okiba-Gang Shinobi", "Patron of the Vein", "Practiced Offense", "Prize Pig", "Papalymo Totolymo", "Rakdos, Patron of Chaos", "Obsessive Pursuit", "Planetary Annihilation", "Otepec Huntmaster", "Plunder the Trollshaws", "Orcish Siegemaster", "Quirion Ranger", "Peregrin Took", "Puresteel Paladin", "Pyrrhic Strike", "Quest for Renewal", "Oracle of Mul Daya", "Oko, Thief of Crowns", "Palantír of Orthanc", "Promise of Loyalty", "Oblivious Bookworm", "Pick Your Poison"];
 (async () => {
   $('#lName').value = 'Lukas'; $('#lSolo').click(); await wait(30); ev('closeModal()'); ev('LOOK.autoPay = false');
   ev('startBot("Test", "Test", Array(30).fill(0).map(() => ({n:"Island", type:"Basic Land — Island", o:""})))'); ev('injectBot(); commit()'); await wait(30);
@@ -120,6 +120,44 @@ const AUTO = ["Raffine's Informant", "Olivia's Wrath", "Peer into the Abyss", "P
   await reset(); { const om = C('Oracle of Mul Daya', {pw:2, tg:2}); put(om); w.__om = om; const items = ev('abilMenuItems(window.__om, "bf")') || []; const it = items.find(i => /Oberstes Land spielen/.test(i.l || ''));
     check(!!it, 'Oracle of Mul Daya: Menü «Oberstes Land spielen»');
     if(it){ const top = S().library[0]; it.f(); await wait(300); await drain(); check(S().bf.includes(top), `Oracle of Mul Daya: ${top.n} von oben gespielt`); } }
+
+  // Oko: +1 macht einen KI-Drachen zum 3/3-Elch; −5 tauscht
+  await reset(); { const ok = C('Oko, Thief of Crowns'); put(ok); const o = opp('Drache', {pw:5, tg:5}); o.o = 'Flying'; o.kw = ['Flying']; ev('botChanged(); commit()');
+    const pr = steps(ok, ev('parseSteps')('Target artifact or creature loses all abilities and becomes a green Elk creature with base power and toughness 3/3.', ok)); await wait(200); await clickCard('Drache'); await wait(200); await drain(); await pr;
+    w.__o = o; check(pt(o) === '3/3' && /Elk/.test(o.type) && !ev('kwHas(window.__o, "flying")'), `Oko +1: Drache ist ein 3/3-Elch ohne Flugfähigkeit (${pt(o)}, ${o.type})`); }
+  await reset(); { const ok = C('Oko, Thief of Crowns'); const fd = N('Food', 'Token Artifact — Food', '', {tok:true}); put(ok, fd); const o = opp('Kleiner', {pw:2, tg:2});
+    const pr = steps(ok, ev('parseSteps')('Exchange control of target artifact or creature you control and target creature an opponent controls with power 3 or less.', ok)); await wait(200); await clickCard('Food'); await wait(200); await clickCard('Kleiner'); await wait(300); await drain(); await pr;
+    check(S().bf.some(c => c.n === 'Kleiner') && !S().bf.includes(fd) && ev('BOT.bf.some(c => c.n === "Food")'), 'Oko −5: Food gegen den 2/2 getauscht'); }
+
+  // Palantír of Orthanc: KI lässt bei 3 Marken ziehen, bei 1 Marke mahlen
+  await reset(); { const pl = C('Palantír of Orthanc'); pl.c = 2; put(pl); const h0 = S().hand.length;
+    const pr = ev('runTrigger')(pl, abil(pl, /influence counter/), {kind:"phase", phase:"end", mine:true}); await wait(300); await click('Fertig'); await wait(200); await click('KI'); await wait(300); await drain(); await pr;
+    check(pl.c === 3 && S().hand.length - h0 === 1, `Palantír: 3 Marken, KI lässt ziehen (${pl.c}, ${S().hand.length - h0})`); }
+  await reset(); { const pl = C('Palantír of Orthanc'); put(pl); ev('S.library = Array(5).fill(0).map(() => newCard({n:"Teuer", type:"Sorcery", o:"", cmc:4}))'); const h0 = S().hand.length;
+    const pr = ev('runTrigger')(pl, abil(pl, /influence counter/), {kind:"phase", phase:"end", mine:true}); await wait(300); await click('Fertig'); await wait(200); await click('KI'); await wait(300); await drain(); await pr;
+    check(pl.c === 1 && S().hand.length === h0 && S().gy.length === 1 && ev('BOT.life') === 16, `Palantír: 1 Marke, KI lässt mahlen und verliert 4 (${S().gy.length}, ${ev('BOT.life')})`); }
+
+  // Promise of Loyalty: je eine Kreatur bleibt mit Gelöbnismarke; die der KI greift mich nicht an
+  await reset(); { const a = N('Bär', 'Creature — Bear', '', {pw:2, tg:2}), b = N('Wolf', 'Creature — Wolf', '', {pw:3, tg:3}); put(a, b); const o1 = opp('K1', {pw:2, tg:2}), o2 = opp('K2', {pw:5, tg:5}); o1.sick = false; o2.sick = false;
+    const pr = spell('Promise of Loyalty'); await wait(200); await clickCard('Wolf'); await wait(300); await drain(); await pr;
+    const kept = ev('BOT.bf.filter(c => isCreature(c))');
+    check(S().gy.includes(a) && b.vow === 1 && kept.length === 1 && kept[0].vow === 1, `Promise of Loyalty: Wolf bleibt, KI behält eine Kreatur mit Gelöbnismarke (${kept.length})`);
+    check(ev('botChooseAttackers({id:me.id, blk:[], life:20}).length') === 0, 'Promise of Loyalty: KI greift mit der Gelöbnis-Kreatur nicht an'); }
+
+  // Oblivious Bookworm: ziehen und abwerfen – ausser nach einer verdeckten Karte diesen Zug
+  await reset(); { const ob = C('Oblivious Bookworm', {pw:2, tg:3}); put(ob); S().hand.push(N('Alt', 'Instant', '')); const h0 = S().hand.length;
+    const pr = ev('runTrigger')(ob, abil(ob, /you may draw a card/), {kind:"phase", phase:"end", mine:true}); await wait(200); await click('Ja'); await wait(200); await clickCard('Alt'); await wait(200); await drain(); await pr;
+    check(S().hand.length === h0 && S().gy.some(c => c.n === 'Alt'), `Oblivious Bookworm: gezogen und abgeworfen (${S().hand.length - h0})`); }
+  await reset(); { const ob = C('Oblivious Bookworm', {pw:2, tg:3}); put(ob); w.__m = N('Verdeckt', 'Creature — Bear', '', {pw:2, tg:2}); S().hand.push(w.__m); await ev('play(window.__m.u, true)'); await wait(100); const h0 = S().hand.length;
+    const pr = ev('runTrigger')(ob, abil(ob, /you may draw a card/), {kind:"phase", phase:"end", mine:true}); await wait(200); await click('Ja'); await wait(300); await drain(); await pr;
+    check(S().hand.length === h0 + 1, `Oblivious Bookworm: nach verdeckter Karte kein Abwerfen (${S().hand.length - h0})`); }
+
+  // Pick Your Poison: Modi mit Summe 4
+  await reset(); { const pr = spell('Pick Your Poison'); await wait(200); const bs = [...d.querySelectorAll('#modalBox button')].map(b => b.textContent);
+    check(bs.filter(t => /×/.test(t)).length === 4, `Pick Your Poison: vier Kombinationen (${bs.filter(t => /×/.test(t)).join(' | ')})`);
+    await click('2× Create'); await wait(300); await drain(); await pr; check(S().bf.filter(c => c.tok && /Snake/.test(c.type)).length === 2, `Pick Your Poison: zwei Schlangen (${S().bf.filter(c => c.tok).length})`); }
+  await reset(); { const b = N('Bär', 'Creature — Bear', '', {pw:2, tg:2}); put(b); const o = opp('KI-Riese', {pw:4, tg:4}); const pr = spell('Pick Your Poison'); await wait(200); await click('1× All creatures'); await wait(300); await drain(); await pr;
+    check(S().gy.includes(b) && pt(o) === '2/2', `Pick Your Poison: -2/-2 für alle (${pt(o)})`); }
 
   console.log(fails ? `${fails} FEHLER` : 'ALLES OK'); process.exit(0);
 })();
